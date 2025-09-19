@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - nest-prisma-postgres
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nest-prisma-postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    networks:
+      - nest-prisma-postgres
+    volumes:
+      - ./redis:/data
+      - ./src/core/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+
+  server:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: nest-prisma-postgres
+    restart: always
+    ports:
+      - "2412:2412"
+    networks:
+      - nest-prisma-postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.production.local
+
+volumes:
+  postgres:
+  redis:
+
+networks:
+  nest-prisma-postgres:

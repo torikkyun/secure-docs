@@ -1,0 +1,43 @@
+# Node.js & Build
+node_modules
+dist
+coverage
+*.log
+npm-debug.log
+.pnpm-debug.log
+*.tsbuildinfo
+
+# Environment
+.env*
+
+# IDE & System
+.git
+.gitignore
+.DS_Store
+.idea
+.vscode
+
+# Config files
+.prettierrc
+.editorconfig
+eslint.config.mjs
+jest.config.*
+
+# Docker & Compose files
+Dockerfile
+dockerfile
+compose*.yml
+compose*.yaml
+
+# Prisma
+prisma/dev.db
+prisma/*.sqlite
+prisma/generated/
+generated/
+
+# Docs & Misc
+*.md
+LICENSE
+README.md
+makefile
+Makefile
