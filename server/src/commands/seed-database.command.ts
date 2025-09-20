@@ -1,11 +1,10 @@
 import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@core/prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
 
 @Command({
   name: 'seed-database',
-  description: 'Seed dữ liệu mẫu vào database',
+  description: 'Seed dữ liệu mặc định cho các bảng enum',
 })
 @Injectable()
 export class SeedDatabaseCommand extends CommandRunner {
@@ -14,51 +13,42 @@ export class SeedDatabaseCommand extends CommandRunner {
   }
 
   async run(): Promise<void> {
-    const passwordHash = bcrypt.hashSync('123456', 10);
-
     try {
-      await this.prisma.profile.deleteMany();
-      await this.prisma.user.deleteMany();
-
-      const adminUser = await this.prisma.user.create({
-        data: {
-          email: 'admin@gmail.com',
-          name: 'System Admin',
-          password: passwordHash,
-          Profile: {
-            create: {
-              age: 30,
-              bio: 'System administrator account',
-            },
-          },
-        },
-        include: { Profile: true },
+      // Seed UserRole
+      await this.prisma.userRole.deleteMany();
+      await this.prisma.userRole.createMany({
+        data: [{ name: 'admin' }, { name: 'user' }],
+        skipDuplicates: true,
       });
+      console.log('✅ Seed UserRole thành công');
 
-      console.log(`✅ Admin user đã được tạo: ${adminUser.email}`);
+      // Seed UserStatus
+      await this.prisma.userStatus.deleteMany();
+      await this.prisma.userStatus.createMany({
+        data: [{ name: 'active' }, { name: 'locked' }],
+        skipDuplicates: true,
+      });
+      console.log('✅ Seed UserStatus thành công');
 
-      const sampleUsers = [
-        { email: 'user1@gmail.com', name: 'John Doe', age: 25 },
-        { email: 'user2@gmail.com', name: 'Jane Smith', age: 28 },
-      ];
+      // Seed EventStatus
+      await this.prisma.eventStatus.deleteMany();
+      await this.prisma.eventStatus.createMany({
+        data: [{ name: 'active' }, { name: 'revoked' }],
+        skipDuplicates: true,
+      });
+      console.log('✅ Seed EventStatus thành công');
 
-      for (const userData of sampleUsers) {
-        await this.prisma.user.create({
-          data: {
-            email: userData.email,
-            name: userData.name,
-            password: passwordHash,
-            Profile: {
-              create: { age: userData.age },
-            },
-          },
-        });
-        console.log(`👤 Người dùng đã được tạo: ${userData.email}`);
-      }
+      // Seed LedgerType
+      await this.prisma.ledgerType.deleteMany();
+      await this.prisma.ledgerType.createMany({
+        data: [{ name: 'sepolia_testnet' }, { name: 'amoy_testnet' }],
+        skipDuplicates: true,
+      });
+      console.log('✅ Seed LedgerType thành công');
 
-      console.log('🎉 Quá trình seed dữ liệu đã hoàn tất!');
+      console.log('🎉 Quá trình seed enums đã hoàn tất!');
     } catch (error) {
-      console.error('❌ Lỗi khi seed dữ liệu:', error);
+      console.error('❌ Lỗi khi seed enums:', error);
       process.exit(1);
     }
   }

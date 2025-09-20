@@ -8,45 +8,131 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  user
-  admin
+model UserRole {
+  id   String @id @default(uuid())
+  name String @unique
+  User User[]
+
+  @@map("user_roles")
 }
 
+// enum UserRole {
+//   user
+//   admin
+// }
+
+model UserStatus {
+  id   String @id @default(uuid())
+  name String @unique
+  User User[]
+
+  @@map("user_statuses")
+}
+
+// enum UserStatus {
+//   active
+//   locked
+// }
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(user)
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  Profile   Profile?
-  Post      Post[]
+  id            String    @id @default(uuid())
+  roleId        String    @map("role_id")
+  statusId      String    @map("status_id")
+  email         String    @unique
+  walletAddress String?   @map("wallet_address") @db.VarChar(42)
+  publicKey     String    @map("public_key") @db.VarChar(66)
+  is2FAEnabled  Boolean   @default(false) @map("is_2fa_enabled")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastLoginAt   DateTime? @map("last_login_at")
+
+  role           UserRole       @relation(fields: [roleId], references: [id])
+  status         UserStatus     @relation(fields: [statusId], references: [id])
+  File           File[]         @relation("UserFiles")
+  sentEvents     SharingEvent[] @relation("SentEvents")
+  receivedEvents SharingEvent[] @relation("ReceivedEvents")
+  revokedEvents  SharingEvent[] @relation("RevokedEvents")
+  KeyStore       KeyStore[]     @relation("KeyStores")
 
   @@map("users")
 }
 
-model Profile {
-  id     String  @id @default(uuid())
-  avatar String?
-  bio    String?
-  age    Int?
-  userId String  @unique @map("user_id")
+model File {
+  id          String   @id @default(uuid())
+  owner_id    String   @map("owner_id")
+  name        String
+  sizeBytes   Int      @map("size_bytes")
+  mimeType    String   @map("mime_type")
+  sha256Hash  String   @map("sha256_hash")
+  storagePath String   @map("storage_path")
+  createdAt   DateTime @default(now()) @map("created_at")
+  isDeleted   Boolean  @default(false) @map("is_deleted")
 
-  user User @relation(fields: [userId], references: [id])
+  owner         User           @relation("UserFiles", fields: [owner_id], references: [id])
+  sharingEvents SharingEvent[]
+  KeyStore      KeyStore[]
 
-  @@map("profiles")
+  @@map("files")
 }
 
-model Post {
-  id        String   @id @default(uuid())
-  title     String
-  content   String?
-  authorId  String   @map("author_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+model SharingEvent {
+  id         String    @id @default(uuid())
+  fileId     String    @map("file_id")
+  senderId   String    @map("sender_id")
+  receiverId String    @map("receiver_id")
+  statusId   String    @map("status_id")
+  ledgerId   String    @map("ledger_id")
+  txHash     String    @map("tx_hash")
+  timestamp  DateTime  @default(now())
+  revokedAt  DateTime? @map("revoked_at")
+  revokedBy  String?   @map("revoked_by")
+  tag        String?
+  note       String?   @db.VarChar(500)
 
-  author User @relation(fields: [authorId], references: [id])
+  status   EventStatus @relation(fields: [statusId], references: [id])
+  ledger   LedgerType  @relation(fields: [ledgerId], references: [id])
+  file     File        @relation(fields: [fileId], references: [id])
+  sender   User        @relation("SentEvents", fields: [senderId], references: [id])
+  receiver User        @relation("ReceivedEvents", fields: [receiverId], references: [id])
+  revoker  User?       @relation("RevokedEvents", fields: [revokedBy], references: [id])
 
-  @@map("posts")
+  @@map("sharing_events")
+}
+
+model EventStatus {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  SharingEvent SharingEvent[]
+
+  @@map("event_statuses")
+}
+
+// enum EventStatus {
+//   active
+//   revoked
+// }
+
+model LedgerType {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  SharingEvent SharingEvent[]
+
+  @@map("ledger_types")
+}
+
+// enum LedgerType {
+//   sepolia_testnet
+//   amoy_testnet
+// }
+
+model KeyStore {
+  id           String   @id @default(uuid())
+  fileId       String   @map("file_id")
+  recipientId  String   @map("recipient_id")
+  encryptedKey String   @map("encrypted_key")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  file      File @relation(fields: [fileId], references: [id])
+  recipient User @relation("KeyStores", fields: [recipientId], references: [id])
+
+  @@map("key_stores")
 }
