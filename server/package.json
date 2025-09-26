@@ -11,6 +11,7 @@
     "reset:dev": "dotenv -e .env.development.local -- prisma migrate reset",
     "db:dev": "dotenv -e .env.development.local -- prisma migrate dev && prisma generate",
     "seed:dev": "dotenv -e .env.development.local -- ts-node -r tsconfig-paths/register ./src/console.ts seed-database",
+    "studio:dev": "dotenv -e .env.development.local -- prisma studio",
     "start": "nest start",
     "start:dev": "dotenv -e .env.development.local -- nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -44,7 +45,6 @@
     "nest-commander": "^3.19.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "passport-local": "^1.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -61,7 +61,6 @@
     "@types/jest": "^29.5.14",
     "@types/node": "^22.18.4",
     "@types/passport-jwt": "^4.0.1",
-    "@types/passport-local": "^1.0.38",
     "@types/supertest": "^6.0.3",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",

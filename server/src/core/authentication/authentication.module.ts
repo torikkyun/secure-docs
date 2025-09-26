@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthenticationService } from './authentication.service';
 import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaService } from '@core/prisma/prisma.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
+import { ConfigService } from '@nestjs/config/dist/config.service';
+import { ConfigModule } from '@nestjs/config/dist/config.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { LocalStrategy } from './strategies/local.strategy';
       }),
     }),
   ],
-  providers: [AuthService, PrismaService, JwtStrategy, LocalStrategy],
-  exports: [AuthService],
+  providers: [AuthenticationService, PrismaService, JwtStrategy],
+  exports: [AuthenticationService],
 })
-export class AuthModule {}
+export class AuthenticationModule {}

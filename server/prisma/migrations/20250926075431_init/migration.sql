@@ -20,8 +20,11 @@ CREATE TABLE "public"."users" (
     "role_id" TEXT NOT NULL,
     "status_id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
+    "google_id" TEXT,
+    "name" TEXT,
+    "avatar_url" TEXT,
     "wallet_address" VARCHAR(42),
-    "public_key" VARCHAR(66) NOT NULL,
+    "public_key" VARCHAR(66),
     "is_2fa_enabled" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_login_at" TIMESTAMP(3),
@@ -97,6 +100,9 @@ CREATE UNIQUE INDEX "user_statuses_name_key" ON "public"."user_statuses"("name")
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "public"."users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_google_id_key" ON "public"."users"("google_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "event_statuses_name_key" ON "public"."event_statuses"("name");

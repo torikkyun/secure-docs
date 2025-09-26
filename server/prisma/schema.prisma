@@ -29,8 +29,11 @@ model User {
   roleId        String    @map("role_id")
   statusId      String    @map("status_id")
   email         String    @unique
+  googleId      String?   @unique @map("google_id")
+  name          String?
+  avatarUrl     String?   @map("avatar_url")
   walletAddress String?   @map("wallet_address") @db.VarChar(42)
-  publicKey     String    @map("public_key") @db.VarChar(66)
+  publicKey     String?   @map("public_key") @db.VarChar(66)
   is2FAEnabled  Boolean   @default(false) @map("is_2fa_enabled")
   createdAt     DateTime  @default(now()) @map("created_at")
   lastLoginAt   DateTime? @map("last_login_at")
