@@ -3,7 +3,6 @@ import { AuthModule } from '@core/auth/auth.module';
 import { JwtGuard } from '@core/auth/guards/jwt.guard';
 import { RolesGuard } from '@core/auth/guards/roles.guard';
 import { PrismaService } from '@core/prisma/prisma.service';
-import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { UsersModule } from '@modules/users/users.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -18,7 +17,6 @@ import { RedisModule } from './core/redis/redis.module';
     }),
     AuthModule,
     UsersModule,
-    ProfilesModule,
     RedisModule,
   ],
   providers: [

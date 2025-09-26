@@ -1,7 +1,7 @@
 services:
   db:
-    image: postgres
-    container_name: postgres
+    image: postgres:18-alpine
+    container_name: db-postgres
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -10,24 +10,24 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     networks:
-      - nest-prisma-postgres
+      - secure-docs
     volumes:
       - ./postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d nest-prisma-postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d secure_docs"]
       interval: 5s
       timeout: 2s
       retries: 20
 
-  redis:
+  cache:
     image: redis:8-alpine
-    container_name: redis
+    container_name: cache-redis
     restart: always
     ports:
       - "${REDIS_PORT}:6379"
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     networks:
-      - nest-prisma-postgres
+      - secure-docs
     volumes:
       - ./redis:/data
       - ./src/core/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
@@ -36,12 +36,12 @@ services:
     build:
       context: .
       dockerfile: dockerfile
-    container_name: nest-prisma-postgres
+    container_name: server-nest
     restart: always
     ports:
       - "2412:2412"
     networks:
-      - nest-prisma-postgres
+      - secure-docs
     depends_on:
       db:
         condition: service_healthy
@@ -53,4 +53,4 @@ volumes:
   redis:
 
 networks:
-  nest-prisma-postgres:
+  secure-docs:

@@ -16,11 +16,6 @@ model UserRole {
   @@map("user_roles")
 }
 
-// enum UserRole {
-//   user
-//   admin
-// }
-
 model UserStatus {
   id   String @id @default(uuid())
   name String @unique
@@ -28,11 +23,6 @@ model UserStatus {
 
   @@map("user_statuses")
 }
-
-// enum UserStatus {
-//   active
-//   locked
-// }
 
 model User {
   id            String    @id @default(uuid())
@@ -106,11 +96,6 @@ model EventStatus {
   @@map("event_statuses")
 }
 
-// enum EventStatus {
-//   active
-//   revoked
-// }
-
 model LedgerType {
   id           String         @id @default(uuid())
   name         String         @unique
@@ -118,11 +103,6 @@ model LedgerType {
 
   @@map("ledger_types")
 }
-
-// enum LedgerType {
-//   sepolia_testnet
-//   amoy_testnet
-// }
 
 model KeyStore {
   id           String   @id @default(uuid())
