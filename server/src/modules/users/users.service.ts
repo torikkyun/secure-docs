@@ -47,4 +47,41 @@ export class UsersService {
   async findById(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
   }
+
+  async createOrFindUser({
+    email,
+    name,
+    googleId,
+    avatarUrl,
+  }: {
+    email: string;
+    name?: string;
+    googleId?: string;
+    avatarUrl?: string;
+  }) {
+    let user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          name,
+          googleId,
+          avatarUrl,
+          role: {
+            connect: { name: 'user' },
+          },
+          status: {
+            connect: { name: 'active' },
+          },
+          lastLoginAt: new Date(),
+        },
+      });
+    } else {
+      user = await this.prisma.user.update({
+        where: { email },
+        data: { lastLoginAt: new Date() },
+      });
+    }
+    return user;
+  }
 }

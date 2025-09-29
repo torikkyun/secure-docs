@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { User } from 'generated/prisma';
 
 @Injectable()
 export class AuthenticationService {
