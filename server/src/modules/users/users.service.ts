@@ -3,10 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Prisma } from 'generated/prisma';
 import { PaginatedResponseDto } from '@common/dtos/pagination.dto';
+import { AuthenticationService } from '@core/authentication/authentication.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthenticationService,
+  ) {}
 
   async findAll({
     email,
@@ -48,18 +52,24 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async createOrFindUser({
+  async login({
     email,
     name,
     googleId,
     avatarUrl,
   }: {
     email: string;
-    name?: string;
-    googleId?: string;
+    name: string;
+    googleId: string;
     avatarUrl?: string;
   }) {
-    let user = await this.prisma.user.findUnique({ where: { email } });
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        role: true,
+        status: true,
+      },
+    });
     if (!user) {
       user = await this.prisma.user.create({
         data: {
@@ -75,13 +85,37 @@ export class UsersService {
           },
           lastLoginAt: new Date(),
         },
+        include: {
+          role: true,
+          status: true,
+        },
       });
     } else {
       user = await this.prisma.user.update({
         where: { email },
         data: { lastLoginAt: new Date() },
+        include: {
+          role: true,
+          status: true,
+        },
       });
     }
-    return user;
+
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        lastLoginAt: user.lastLoginAt,
+        createdAt: user.createdAt,
+        role: { id: user.role.id, name: user.role.name },
+        status: { id: user.status.id, name: user.status.name },
+      },
+      accessToken,
+      refreshToken,
+    };
   }
 }

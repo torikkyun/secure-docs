@@ -5,6 +5,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '@common/dtos/pagination.dto';
 import { Prisma } from 'generated/prisma';
 import { Public } from '@common/decorators/public.decorator';
+import { LoginUserDto } from './dto/login-user.dto';
 
 @Controller('api/users')
 @ApiTags('users')
@@ -19,17 +20,12 @@ export class UsersController {
     return this.usersService.findAll(searchUserDto);
   }
 
-  @Post()
+  @Post('login')
   @Public()
-  async createOrFindUser(
+  async login(
     @Body()
-    body: {
-      email: string;
-      name?: string;
-      googleId?: string;
-      avatarUrl?: string;
-    },
+    loginUserDto: LoginUserDto,
   ) {
-    return this.usersService.createOrFindUser(body);
+    return this.usersService.login(loginUserDto);
   }
 }
