@@ -26,6 +26,21 @@ export class UsersService {
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarUrl: true,
+          createdAt: true,
+          lastLoginAt: true,
+          role: {
+            select: { id: true, name: true },
+          },
+          status: {
+            select: { id: true, name: true },
+          },
+          googleId: true,
+        },
         where,
         skip,
         take: limit,
@@ -34,7 +49,7 @@ export class UsersService {
       this.prisma.user.count({ where }),
     ]);
 
-    const result: PaginatedResponseDto<Prisma.UserGetPayload<object>> = {
+    const result: PaginatedResponseDto = {
       message: 'Lấy danh sách người dùng thành công',
       data: users,
       pagination: {
@@ -107,6 +122,7 @@ export class UsersService {
       user: {
         id: user.id,
         email: user.email,
+        googleId: user.googleId,
         name: user.name,
         avatarUrl: user.avatarUrl,
         lastLoginAt: user.lastLoginAt,

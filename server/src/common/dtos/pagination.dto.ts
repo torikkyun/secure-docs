@@ -23,7 +23,7 @@ export class PaginationDto {
   }
 }
 
-export class PaginatedResponseDto<T> {
+export class PaginatedResponseDto<T = any> {
   message: string;
   data: T[];
   pagination: {
