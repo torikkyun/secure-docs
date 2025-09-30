@@ -6,6 +6,7 @@ import { PaginatedResponseDto } from '@common/dtos/pagination.dto';
 import { Prisma } from 'generated/prisma';
 import { Public } from '@common/decorators/public.decorator';
 import { LoginUserDto } from './dto/login-user.dto';
+import { UserResponse } from './types/user-response.type';
 
 @Controller('api/users')
 @ApiTags('users')
@@ -16,8 +17,17 @@ export class UsersController {
   @ApiBearerAuth()
   async findAll(
     @Query() searchUserDto: SearchUserDto,
-  ): Promise<PaginatedResponseDto<Prisma.UserGetPayload<object>>> {
+  ): Promise<PaginatedResponseDto<UserResponse>> {
     return this.usersService.findAll(searchUserDto);
+  }
+
+  @Get(':id')
+  @ApiBearerAuth()
+  async findById(@Query('id') id: string): Promise<{
+    message: string;
+    user: UserResponse;
+  }> {
+    return this.usersService.findById(id);
   }
 
   @Post('login')
@@ -25,7 +35,12 @@ export class UsersController {
   async login(
     @Body()
     loginUserDto: LoginUserDto,
-  ) {
+  ): Promise<{
+    message: string;
+    user: UserResponse;
+    accessToken: string;
+    refreshToken: string;
+  }> {
     return this.usersService.login(loginUserDto);
   }
 }

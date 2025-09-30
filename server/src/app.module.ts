@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from '@core/redis/redis.module';
 import { RolesGuard } from '@core/authentication/guards/roles.guard';
 import { JwtGuard } from '@core/authentication/guards/jwt.guard';
+import { FilesModule } from './modules/files/files.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { JwtGuard } from '@core/authentication/guards/jwt.guard';
     AuthenticationModule,
     UsersModule,
     RedisModule,
+    FilesModule,
   ],
   providers: [
     SeedDatabaseCommand,
