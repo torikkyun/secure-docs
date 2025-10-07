@@ -23,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     id: string;
   }): Promise<{ id: string; role: string }> {
     const user = await this.prisma.user.findUnique({
-      select: { id: true, role: { select: { name: true } } },
+      select: { id: true, Role: { select: { name: true } } },
       where: { id },
     });
 
@@ -31,6 +31,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
     }
 
-    return { id, role: user.role.name };
+    return { id, role: user.Role.name };
   }
 }

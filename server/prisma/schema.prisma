@@ -9,113 +9,132 @@ datasource db {
 }
 
 model UserRole {
-  id   String @id @default(uuid())
-  name String @unique
-  User User[]
+  id    String @id @default(uuid())
+  name  String @unique
+  Users User[]
 
   @@map("user_roles")
 }
 
-model UserStatus {
-  id   String @id @default(uuid())
-  name String @unique
-  User User[]
+model DocumentClassification {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  Documents Document[]
 
-  @@map("user_statuses")
+  @@map("document_classifications")
+}
+
+model DocumentStatus {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  Documents Document[]
+
+  @@map("document_statuses")
+}
+
+model ShareStatus {
+  id     String  @id @default(uuid())
+  name   String  @unique
+  Shares Share[]
+
+  @@map("share_statuses")
+}
+
+model ActionType {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  AuditLogs AuditLog[]
+
+  @@map("action_types")
 }
 
 model User {
-  id            String    @id @default(uuid())
-  roleId        String    @map("role_id")
-  statusId      String    @map("status_id")
-  email         String    @unique
-  googleId      String    @unique @map("google_id")
-  name          String
-  avatarUrl     String?   @map("avatar_url")
-  walletAddress String?   @map("wallet_address") @db.VarChar(42)
-  publicKey     String?   @map("public_key") @db.VarChar(66)
-  is2FAEnabled  Boolean   @default(false) @map("is_2fa_enabled")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  lastLoginAt   DateTime? @map("last_login_at")
+  id         String   @id @default(uuid())
+  staffId    String   @unique @map("staff_id")
+  name       String
+  department String?
+  roleId     String   @map("role_id")
+  status     String   @default("active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+  managerId  String?  @map("manager_id")
 
-  role           UserRole       @relation(fields: [roleId], references: [id])
-  status         UserStatus     @relation(fields: [statusId], references: [id])
-  File           File[]         @relation("UserFiles")
-  sentEvents     SharingEvent[] @relation("SentEvents")
-  receivedEvents SharingEvent[] @relation("ReceivedEvents")
-  revokedEvents  SharingEvent[] @relation("RevokedEvents")
-  KeyStore       KeyStore[]     @relation("KeyStores")
+  Role           UserRole   @relation(fields: [roleId], references: [id])
+  Manager        User?      @relation("UserManager", fields: [managerId], references: [id])
+  Managed        User[]     @relation("UserManager")
+  Wallet         Wallet?
+  UploadedDocs   Document[] @relation("Uploader")
+  SharesGiven    Share[]    @relation("Sharer")
+  SharesReceived Share[]    @relation("Recipient")
+  AuditLogs      AuditLog[] @relation("Actor")
 
   @@map("users")
 }
 
-model File {
-  id          String   @id @default(uuid())
-  owner_id    String   @map("owner_id")
-  name        String
-  sizeBytes   Int      @map("size_bytes")
-  mimeType    String   @map("mime_type")
-  sha256Hash  String   @map("sha256_hash")
-  storagePath String   @map("storage_path")
-  createdAt   DateTime @default(now()) @map("created_at")
-  isDeleted   Boolean  @default(false) @map("is_deleted")
+model Wallet {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  blockchainAddr String   @unique @map("blockchain_addr")
+  publicKey      String   @map("public_key")
+  isInternal     Boolean  @default(false) @map("is_internal")
+  createdAt      DateTime @default(now()) @map("created_at")
 
-  owner         User           @relation("UserFiles", fields: [owner_id], references: [id])
-  sharingEvents SharingEvent[]
-  KeyStore      KeyStore[]
+  User User @relation(fields: [userId], references: [id])
 
-  @@map("files")
+  @@map("wallets")
 }
 
-model SharingEvent {
-  id         String    @id @default(uuid())
-  fileId     String    @map("file_id")
-  senderId   String    @map("sender_id")
-  receiverId String    @map("receiver_id")
-  statusId   String    @map("status_id")
-  ledgerId   String    @map("ledger_id")
-  txHash     String    @map("tx_hash")
-  timestamp  DateTime  @default(now())
-  revokedAt  DateTime? @map("revoked_at")
-  revokedBy  String?   @map("revoked_by")
-  tag        String?
-  note       String?   @db.VarChar(500)
+model Document {
+  id               String   @id @default(uuid())
+  fileName         String   @map("file_name")
+  mimeType         String   @map("mime_type")
+  classificationId String   @map("classification_id")
+  statusId         String   @map("status_id")
+  fileHash         String   @map("file_hash")
+  encryptedPath    String   @map("encrypted_path")
+  metadata         Json?
+  uploaderId       String   @map("uploader_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @map("updated_at")
 
-  status   EventStatus @relation(fields: [statusId], references: [id])
-  ledger   LedgerType  @relation(fields: [ledgerId], references: [id])
-  file     File        @relation(fields: [fileId], references: [id])
-  sender   User        @relation("SentEvents", fields: [senderId], references: [id])
-  receiver User        @relation("ReceivedEvents", fields: [receiverId], references: [id])
-  revoker  User?       @relation("RevokedEvents", fields: [revokedBy], references: [id])
+  Classification DocumentClassification @relation(fields: [classificationId], references: [id])
+  Status         DocumentStatus         @relation(fields: [statusId], references: [id])
+  Uploader       User                   @relation("Uploader", fields: [uploaderId], references: [id])
+  Shares         Share[]
 
-  @@map("sharing_events")
+  @@map("documents")
 }
 
-model EventStatus {
-  id           String         @id @default(uuid())
-  name         String         @unique
-  SharingEvent SharingEvent[]
+model Share {
+  id           String    @id @default(uuid())
+  documentId   String    @map("document_id")
+  sharerId     String    @map("sharer_id")
+  recipientId  String    @map("recipient_id")
+  wrappedKey   String    @map("wrapped_key")
+  statusId     String    @map("status_id")
+  expiresAt    DateTime? @map("expires_at")
+  blockchainTx String?   @map("blockchain_tx")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  @@map("event_statuses")
+  Document  Document    @relation(fields: [documentId], references: [id])
+  Sharer    User        @relation("Sharer", fields: [sharerId], references: [id])
+  Recipient User        @relation("Recipient", fields: [recipientId], references: [id])
+  Status    ShareStatus @relation(fields: [statusId], references: [id])
+
+  @@map("shares")
 }
 
-model LedgerType {
-  id           String         @id @default(uuid())
-  name         String         @unique
-  SharingEvent SharingEvent[]
-
-  @@map("ledger_types")
-}
-
-model KeyStore {
+model AuditLog {
   id           String   @id @default(uuid())
-  fileId       String   @map("file_id")
-  recipientId  String   @map("recipient_id")
-  encryptedKey String   @map("encrypted_key")
+  actionTypeId String   @map("action_type_id")
+  actorId      String   @map("actor_id")
+  targetId     String?  @map("target_id")
+  details      Json?    @map("details")
+  status       String   @default("success")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  file      File @relation(fields: [fileId], references: [id])
-  recipient User @relation("KeyStores", fields: [recipientId], references: [id])
+  ActionType ActionType @relation(fields: [actionTypeId], references: [id])
+  Actor      User       @relation("Actor", fields: [actorId], references: [id])
 
-  @@map("key_stores")
+  @@map("audit_logs")
 }
