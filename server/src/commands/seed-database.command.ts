@@ -1,6 +1,7 @@
 import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@core/prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Command({
   name: 'seed-database',
@@ -71,6 +72,22 @@ export class SeedDatabaseCommand extends CommandRunner {
         skipDuplicates: true,
       });
       console.log('✅ Seed action_types thành công');
+
+      // Seed a default admin user
+      const adminStaffId = '122001473';
+
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await this.prisma.user.create({
+        data: {
+          staffId: adminStaffId,
+          passwordHash: hashedPassword,
+          name: 'Administrator',
+          Role: { connect: { name: 'admin' } },
+        },
+      });
+      console.log(
+        `✅ Tạo người dùng quản trị viên mặc định với staffId '${adminStaffId}' và mật khẩu 'admin123'`,
+      );
 
       console.log('🎉 Quá trình seed enums đã hoàn tất!');
     } catch (error) {
