@@ -48,21 +48,30 @@ model ActionType {
   @@map("action_types")
 }
 
+model Department {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  User        User[]
+
+  @@map("departments")
+}
+
 model User {
   id           String   @id @default(uuid())
   staffId      String   @unique @map("staff_id")
   passwordHash String   @map("password_hash")
   name         String
-  department   String?
+  departmentId String   @map("department_id")
   roleId       String   @map("role_id")
   status       String   @default("active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @map("updated_at")
-  managerId    String?  @map("manager_id")
 
   Role           UserRole   @relation(fields: [roleId], references: [id])
-  Manager        User?      @relation("UserManager", fields: [managerId], references: [id])
-  Managed        User[]     @relation("UserManager")
+  Department     Department @relation(fields: [departmentId], references: [id])
   Wallet         Wallet?
   UploadedDocs   Document[] @relation("Uploader")
   SharesGiven    Share[]    @relation("Sharer")

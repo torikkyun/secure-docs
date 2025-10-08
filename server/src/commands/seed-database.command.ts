@@ -73,20 +73,29 @@ export class SeedDatabaseCommand extends CommandRunner {
       });
       console.log('✅ Seed action_types thành công');
 
+      await this.prisma.department.create({
+        data: {
+          code: 'CNTT',
+          name: 'Công Nghệ Thông Tin',
+          description: 'Phòng ban Công Nghệ Thông Tin',
+        },
+      });
+
       // Seed a default admin user
       const adminStaffId = '122001473';
-
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const adminPassword = 'thisisapassword123';
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
       await this.prisma.user.create({
         data: {
           staffId: adminStaffId,
           passwordHash: hashedPassword,
-          name: 'Administrator',
+          name: 'Quản trị viên CNTT',
           Role: { connect: { name: 'admin' } },
+          Department: { connect: { code: 'CNTT' } },
         },
       });
       console.log(
-        `✅ Tạo người dùng quản trị viên mặc định với staffId '${adminStaffId}' và mật khẩu 'admin123'`,
+        `✅ Tạo người dùng quản trị viên mặc định với staffId '${adminStaffId}' và mật khẩu '${adminPassword}'`,
       );
 
       console.log('🎉 Quá trình seed enums đã hoàn tất!');

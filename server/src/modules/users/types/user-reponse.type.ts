@@ -2,7 +2,9 @@ export type UserResponse = {
   id: string;
   staffId: string;
   name: string;
-  department: string | null;
+  department: {
+    code: string;
+    name: string;
+  };
   role: string;
-  manager: string | null;
 };

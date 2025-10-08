@@ -3,15 +3,16 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { Roles } from '@common/decorators/roles.decorator';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 
 @Controller('api/users')
 @ApiTags('users')
+@ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
+  @Get('me')
   getMe(@CurrentUser() { id }: { id: string }) {
     return this.usersService.getUser(id);
   }
