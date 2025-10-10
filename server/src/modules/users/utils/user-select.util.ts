@@ -13,4 +13,9 @@ export const UserSelect = {
       name: true,
     },
   },
+  Status: {
+    select: {
+      name: true,
+    },
+  },
 };

@@ -26,6 +26,7 @@ export class UsersService {
         code: user.Department.code,
         name: user.Department.name,
       },
+      status: user.Status.name,
     };
   }
 
@@ -57,6 +58,7 @@ export class UsersService {
             connect: { name: role },
           },
           Department: { connect: { code: departmentCode } },
+          Status: { connect: { name: 'active' } },
         },
         select: UserSelect,
       });

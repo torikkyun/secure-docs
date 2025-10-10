@@ -7,4 +7,5 @@ export type UserResponse = {
     name: string;
   };
   role: string;
+  status: string;
 };

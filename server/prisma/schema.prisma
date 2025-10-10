@@ -17,24 +17,27 @@ model UserRole {
 }
 
 model DocumentClassification {
-  id        String     @id @default(uuid())
-  name      String     @unique
+  id   String @id @default(uuid())
+  name String @unique
+
   Documents Document[]
 
   @@map("document_classifications")
 }
 
 model DocumentStatus {
-  id        String     @id @default(uuid())
-  name      String     @unique
+  id   String @id @default(uuid())
+  name String @unique
+
   Documents Document[]
 
   @@map("document_statuses")
 }
 
 model ShareStatus {
-  id     String  @id @default(uuid())
-  name   String  @unique
+  id   String @id @default(uuid())
+  name String @unique
+
   Shares Share[]
 
   @@map("share_statuses")
@@ -48,30 +51,51 @@ model ActionType {
   @@map("action_types")
 }
 
+model AuditStatus {
+  id   String @id @default(uuid())
+  name String @unique
+
+  AuditLogs AuditLog[]
+
+  @@map("audit_statuses")
+}
+
+model UserStatus {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  Users User[]
+
+  @@map("user_statuses")
+}
+
 model Department {
   id          String   @id @default(uuid())
   code        String   @unique
   name        String
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
-  User        User[]
+
+  Users User[]
 
   @@map("departments")
 }
 
 model User {
   id           String   @id @default(uuid())
-  staffId      String   @unique @map("staff_id")
-  passwordHash String   @map("password_hash")
   name         String
-  departmentId String   @map("department_id")
-  roleId       String   @map("role_id")
-  status       String   @default("active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @map("updated_at")
+  staffId      String   @unique @map("staff_id")
+  passwordHash String   @map("password_hash")
+  departmentId String   @map("department_id")
+  roleId       String   @map("role_id")
+  statusId     String   @map("status_id")
 
   Role           UserRole   @relation(fields: [roleId], references: [id])
   Department     Department @relation(fields: [departmentId], references: [id])
+  Status         UserStatus @relation(fields: [statusId], references: [id])
   Wallet         Wallet?
   UploadedDocs   Document[] @relation("Uploader")
   SharesGiven    Share[]    @relation("Sharer")
@@ -83,11 +107,11 @@ model User {
 
 model Wallet {
   id             String   @id @default(uuid())
-  userId         String   @unique @map("user_id")
   blockchainAddr String   @unique @map("blockchain_addr")
   publicKey      String   @map("public_key")
   isInternal     Boolean  @default(false) @map("is_internal")
   createdAt      DateTime @default(now()) @map("created_at")
+  userId         String   @unique @map("user_id")
 
   User User @relation(fields: [userId], references: [id])
 
@@ -95,17 +119,19 @@ model Wallet {
 }
 
 model Document {
-  id               String   @id @default(uuid())
-  fileName         String   @map("file_name")
-  mimeType         String   @map("mime_type")
-  classificationId String   @map("classification_id")
-  statusId         String   @map("status_id")
-  fileHash         String   @map("file_hash")
-  encryptedPath    String   @map("encrypted_path")
-  metadata         Json?
-  uploaderId       String   @map("uploader_id")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @default(now()) @map("updated_at")
+  id                String   @id @default(uuid())
+  fileName          String   @map("file_name")
+  mimeType          String   @map("mime_type")
+  fileHash          String   @map("file_hash")
+  filePath          String   @map("file_path")
+  isEncrypted       Boolean  @default(false) @map("is_encrypted")
+  metadata          Json?
+  uploaderSignature String   @map("uploader_signature")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @map("updated_at")
+  classificationId  String   @map("classification_id")
+  statusId          String   @map("status_id")
+  uploaderId        String   @map("uploader_id")
 
   Classification DocumentClassification @relation(fields: [classificationId], references: [id])
   Status         DocumentStatus         @relation(fields: [statusId], references: [id])
@@ -116,15 +142,16 @@ model Document {
 }
 
 model Share {
-  id           String    @id @default(uuid())
-  documentId   String    @map("document_id")
-  sharerId     String    @map("sharer_id")
-  recipientId  String    @map("recipient_id")
-  wrappedKey   String    @map("wrapped_key")
-  statusId     String    @map("status_id")
-  expiresAt    DateTime? @map("expires_at")
-  blockchainTx String?   @map("blockchain_tx")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id               String    @id @default(uuid())
+  wrappedKey       String?   @map("wrapped_key")
+  isEncryptedShare Boolean   @default(false) @map("is_encrypted_share")
+  expiresAt        DateTime? @map("expires_at")
+  blockchainTx     String?   @map("blockchain_tx")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  statusId         String    @map("status_id")
+  documentId       String    @map("document_id")
+  sharerId         String    @map("sharer_id")
+  recipientId      String    @map("recipient_id")
 
   Document  Document    @relation(fields: [documentId], references: [id])
   Sharer    User        @relation("Sharer", fields: [sharerId], references: [id])
@@ -136,15 +163,16 @@ model Share {
 
 model AuditLog {
   id           String   @id @default(uuid())
+  targetId     String?  @map("target_id")
+  targetType   String?  @map("target_type")
+  createdAt    DateTime @default(now()) @map("created_at")
+  statusId     String   @map("status_id")
   actionTypeId String   @map("action_type_id")
   actorId      String   @map("actor_id")
-  targetId     String?  @map("target_id")
-  details      Json?    @map("details")
-  status       String   @default("success")
-  createdAt    DateTime @default(now()) @map("created_at")
 
-  ActionType ActionType @relation(fields: [actionTypeId], references: [id])
-  Actor      User       @relation("Actor", fields: [actorId], references: [id])
+  Status     AuditStatus @relation(fields: [statusId], references: [id])
+  ActionType ActionType  @relation(fields: [actionTypeId], references: [id])
+  Actor      User        @relation("Actor", fields: [actorId], references: [id])
 
   @@map("audit_logs")
 }

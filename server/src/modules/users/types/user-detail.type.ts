@@ -4,4 +4,5 @@ export type UserDetail = {
   name: string;
   Role: { name: string };
   Department: { code: string; name: string };
+  Status: { name: string };
 };

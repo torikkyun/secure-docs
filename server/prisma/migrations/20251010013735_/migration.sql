@@ -39,17 +39,44 @@ CREATE TABLE "action_types" (
 );
 
 -- CreateTable
+CREATE TABLE "audit_statuses" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "audit_statuses_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "user_statuses" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "user_statuses_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "departments" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "departments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
-    "staff_id" TEXT NOT NULL,
-    "password_hash" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "department" TEXT,
-    "role_id" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "manager_id" TEXT,
+    "staff_id" TEXT NOT NULL,
+    "password_hash" TEXT NOT NULL,
+    "department_id" TEXT NOT NULL,
+    "role_id" TEXT NOT NULL,
+    "status_id" TEXT NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -57,11 +84,11 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "wallets" (
     "id" TEXT NOT NULL,
-    "user_id" TEXT NOT NULL,
     "blockchain_addr" TEXT NOT NULL,
     "public_key" TEXT NOT NULL,
     "is_internal" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "user_id" TEXT NOT NULL,
 
     CONSTRAINT "wallets_pkey" PRIMARY KEY ("id")
 );
@@ -71,14 +98,16 @@ CREATE TABLE "documents" (
     "id" TEXT NOT NULL,
     "file_name" TEXT NOT NULL,
     "mime_type" TEXT NOT NULL,
-    "classification_id" TEXT NOT NULL,
-    "status_id" TEXT NOT NULL,
     "file_hash" TEXT NOT NULL,
-    "encrypted_path" TEXT NOT NULL,
+    "file_path" TEXT NOT NULL,
+    "is_encrypted" BOOLEAN NOT NULL DEFAULT false,
     "metadata" JSONB,
-    "uploader_id" TEXT NOT NULL,
+    "uploader_signature" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "classification_id" TEXT NOT NULL,
+    "status_id" TEXT NOT NULL,
+    "uploader_id" TEXT NOT NULL,
 
     CONSTRAINT "documents_pkey" PRIMARY KEY ("id")
 );
@@ -86,14 +115,15 @@ CREATE TABLE "documents" (
 -- CreateTable
 CREATE TABLE "shares" (
     "id" TEXT NOT NULL,
-    "document_id" TEXT NOT NULL,
-    "sharer_id" TEXT NOT NULL,
-    "recipient_id" TEXT NOT NULL,
-    "wrapped_key" TEXT NOT NULL,
-    "status_id" TEXT NOT NULL,
+    "wrapped_key" TEXT,
+    "is_encrypted_share" BOOLEAN NOT NULL DEFAULT false,
     "expires_at" TIMESTAMP(3),
     "blockchain_tx" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "status_id" TEXT NOT NULL,
+    "document_id" TEXT NOT NULL,
+    "sharer_id" TEXT NOT NULL,
+    "recipient_id" TEXT NOT NULL,
 
     CONSTRAINT "shares_pkey" PRIMARY KEY ("id")
 );
@@ -101,12 +131,12 @@ CREATE TABLE "shares" (
 -- CreateTable
 CREATE TABLE "audit_logs" (
     "id" TEXT NOT NULL,
+    "target_id" TEXT,
+    "target_type" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "status_id" TEXT NOT NULL,
     "action_type_id" TEXT NOT NULL,
     "actor_id" TEXT NOT NULL,
-    "target_id" TEXT,
-    "details" JSONB,
-    "status" TEXT NOT NULL DEFAULT 'success',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
 );
@@ -127,19 +157,25 @@ CREATE UNIQUE INDEX "share_statuses_name_key" ON "share_statuses"("name");
 CREATE UNIQUE INDEX "action_types_name_key" ON "action_types"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "departments_code_key" ON "departments"("code");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_staff_id_key" ON "users"("staff_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "wallets_user_id_key" ON "wallets"("user_id");
+CREATE UNIQUE INDEX "wallets_blockchain_addr_key" ON "wallets"("blockchain_addr");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "wallets_blockchain_addr_key" ON "wallets"("blockchain_addr");
+CREATE UNIQUE INDEX "wallets_user_id_key" ON "wallets"("user_id");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "user_roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "users" ADD CONSTRAINT "users_manager_id_fkey" FOREIGN KEY ("manager_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "users" ADD CONSTRAINT "users_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_status_id_fkey" FOREIGN KEY ("status_id") REFERENCES "user_statuses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -164,6 +200,9 @@ ALTER TABLE "shares" ADD CONSTRAINT "shares_recipient_id_fkey" FOREIGN KEY ("rec
 
 -- AddForeignKey
 ALTER TABLE "shares" ADD CONSTRAINT "shares_status_id_fkey" FOREIGN KEY ("status_id") REFERENCES "share_statuses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_status_id_fkey" FOREIGN KEY ("status_id") REFERENCES "audit_statuses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_action_type_id_fkey" FOREIGN KEY ("action_type_id") REFERENCES "action_types"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -65,13 +65,31 @@ export class SeedDatabaseCommand extends CommandRunner {
           { name: 'share' },
           { name: 'download' },
           { name: 'revoke_access' },
-          { name: 'query_history' },
+          { name: 'query_audit_log' },
           { name: 'manage_account' },
           { name: 'export_report' },
+          { name: 'view_document' },
+          { name: 'blockchain_record' },
         ],
         skipDuplicates: true,
       });
       console.log('✅ Seed action_types thành công');
+
+      // Seed audit_statuses
+      await this.prisma.auditStatus.deleteMany();
+      await this.prisma.auditStatus.createMany({
+        data: [{ name: 'success' }, { name: 'failed' }, { name: 'revoked' }],
+        skipDuplicates: true,
+      });
+      console.log('✅ Seed audit_statuses thành công');
+
+      // Seed user_statuses
+      await this.prisma.userStatus.deleteMany();
+      await this.prisma.userStatus.createMany({
+        data: [{ name: 'active' }, { name: 'locked' }],
+        skipDuplicates: true,
+      });
+      console.log('✅ Seed user_statuses thành công');
 
       await this.prisma.department.create({
         data: {
@@ -92,6 +110,7 @@ export class SeedDatabaseCommand extends CommandRunner {
           name: 'Quản trị viên CNTT',
           Role: { connect: { name: 'admin' } },
           Department: { connect: { code: 'CNTT' } },
+          Status: { connect: { name: 'active' } },
         },
       });
       console.log(
