@@ -16,7 +16,6 @@ export class SeedDatabaseCommand extends CommandRunner {
   async run(): Promise<void> {
     try {
       // Seed user_roles
-      await this.prisma.userRole.deleteMany();
       await this.prisma.userRole.createMany({
         data: [{ name: 'staff' }, { name: 'admin' }, { name: 'auditor' }],
         skipDuplicates: true,
@@ -24,7 +23,6 @@ export class SeedDatabaseCommand extends CommandRunner {
       console.log('✅ Seed user_roles thành công');
 
       // Seed document_classifications
-      await this.prisma.documentClassification.deleteMany();
       await this.prisma.documentClassification.createMany({
         data: [
           { name: 'no_classification' },
@@ -36,7 +34,6 @@ export class SeedDatabaseCommand extends CommandRunner {
       console.log('✅ Seed document_classifications thành công');
 
       // Seed document_statuses
-      await this.prisma.documentStatus.deleteMany();
       await this.prisma.documentStatus.createMany({
         data: [
           { name: 'pending' },
@@ -48,7 +45,6 @@ export class SeedDatabaseCommand extends CommandRunner {
       console.log('✅ Seed document_statuses thành công');
 
       // Seed share_statuses
-      await this.prisma.shareStatus.deleteMany();
       await this.prisma.shareStatus.createMany({
         data: [{ name: 'active' }, { name: 'revoked' }, { name: 'expired' }],
         skipDuplicates: true,
@@ -56,7 +52,6 @@ export class SeedDatabaseCommand extends CommandRunner {
       console.log('✅ Seed share_statuses thành công');
 
       // Seed action_types
-      await this.prisma.actionType.deleteMany();
       await this.prisma.actionType.createMany({
         data: [
           { name: 'login' },
@@ -66,17 +61,19 @@ export class SeedDatabaseCommand extends CommandRunner {
           { name: 'download' },
           { name: 'revoke_access' },
           { name: 'query_audit_log' },
-          { name: 'manage_account' },
           { name: 'export_report' },
           { name: 'view_document' },
           { name: 'blockchain_record' },
+          { name: 'auth_login' },
+          { name: 'auth_logout' },
+          { name: 'user_create' },
+          { name: 'user_update' },
         ],
         skipDuplicates: true,
       });
       console.log('✅ Seed action_types thành công');
 
       // Seed audit_statuses
-      await this.prisma.auditStatus.deleteMany();
       await this.prisma.auditStatus.createMany({
         data: [{ name: 'success' }, { name: 'failed' }, { name: 'revoked' }],
         skipDuplicates: true,
@@ -84,7 +81,6 @@ export class SeedDatabaseCommand extends CommandRunner {
       console.log('✅ Seed audit_statuses thành công');
 
       // Seed user_statuses
-      await this.prisma.userStatus.deleteMany();
       await this.prisma.userStatus.createMany({
         data: [{ name: 'active' }, { name: 'locked' }],
         skipDuplicates: true,

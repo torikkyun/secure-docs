@@ -5,9 +5,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthenticationModule } from '@core/authentication/authentication.module';
 import { PrismaService } from '@core/prisma/prisma.service';
+import { AuditLogsModule } from '@modules/audit-logs/audit-logs.module';
 
 @Module({
-  imports: [AuthenticationModule],
+  imports: [AuthenticationModule, AuditLogsModule],
   controllers: [AuthController, UsersController],
   providers: [AuthService, UsersService, PrismaService],
 })

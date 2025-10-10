@@ -165,6 +165,7 @@ model AuditLog {
   id           String   @id @default(uuid())
   targetId     String?  @map("target_id")
   targetType   String?  @map("target_type")
+  details      Json?
   createdAt    DateTime @default(now()) @map("created_at")
   statusId     String   @map("status_id")
   actionTypeId String   @map("action_type_id")
