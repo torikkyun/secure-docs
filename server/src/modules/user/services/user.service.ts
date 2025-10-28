@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '../entities/user.entity';
-import { FindOptionsWhere, ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { QueryUserDto } from '../dto/query-user.dto';
 import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -36,6 +36,34 @@ export class UserService {
       user.role = adminRole!;
       await this.userRepository.save(user);
     }
+  }
+
+  async profile({ id, _role }: { id: string; _role: string }) {
+    return await this.userRepository
+      .find({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          publicKey: true,
+        },
+      })
+      .then((users) => users[0]);
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    return await this.userRepository
+      .find({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          publicKey: true,
+        },
+      })
+      .then((users) => users[0] || null);
   }
 
   async findAll({ page, limit, search }: QueryUserDto): Promise<{

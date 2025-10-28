@@ -12,7 +12,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies/snake-naming.stra
         entities: [__dirname + '/../../modules/**/entities/*.entity{.ts,.js}'],
         synchronize:
           configService.get('NODE_ENV') !== 'production' ? true : false,
-        logging: configService.get('NODE_ENV') !== 'production' ? true : false,
+        // logging: configService.get('NODE_ENV') !== 'production' ? true : false,
         namingStrategy: new SnakeNamingStrategy(),
       }),
       inject: [ConfigService],

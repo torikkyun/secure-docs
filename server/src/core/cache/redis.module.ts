@@ -1,8 +1,9 @@
-import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { createKeyv } from '@keyv/redis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { UserAwareCacheInterceptor } from './user-aware-cache.interceptor';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
         stores: [
           createKeyv(configService.get<string>('REDIS_URL'), {
             namespace: 'nest',
-            keyPrefixSeparator: '::',
+            keyPrefixSeparator: ':',
           }),
         ],
         ttl: configService.get<number>('CACHE_TTL'),
@@ -24,7 +25,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
   providers: [
     {
       provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor,
+      useClass: UserAwareCacheInterceptor,
     },
   ],
 })
