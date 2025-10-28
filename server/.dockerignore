@@ -29,12 +29,6 @@ dockerfile
 compose*.yml
 compose*.yaml
 
-# Prisma
-prisma/dev.db
-prisma/*.sqlite
-prisma/generated/
-generated/
-
 # Docs & Misc
 *.md
 LICENSE
