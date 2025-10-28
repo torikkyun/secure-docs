@@ -1,6 +1,6 @@
 import { BaseEntity } from '@core/database/base.entity';
-import { Entity } from 'typeorm';
-import { Column } from 'typeorm/decorator/columns/Column';
+import { Column, Entity, OneToMany } from 'typeorm';
+import { Document } from '@modules/document/entities/document.entity';
 
 @Entity('document_statuses')
 export class DocumentStatus extends BaseEntity {
@@ -9,4 +9,7 @@ export class DocumentStatus extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   description?: string;
+
+  @OneToMany(() => Document, (document) => document.status)
+  documents?: Document[];
 }

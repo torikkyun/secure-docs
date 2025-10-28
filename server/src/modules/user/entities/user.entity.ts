@@ -1,6 +1,7 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { BaseEntity } from '@core/database/base.entity';
 import { UserRole } from '@modules/user-role/entities/user-role.entity';
+import { Document } from '@modules/document/entities/document.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -29,4 +30,7 @@ export class User extends BaseEntity {
   })
   @JoinColumn({ name: 'role_id' })
   role: UserRole;
+
+  @OneToMany(() => Document, (document) => document.user)
+  documents?: Document[];
 }

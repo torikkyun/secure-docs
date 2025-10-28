@@ -23,7 +23,7 @@ export class UserController {
   }
 
   @Get()
-  @Roles('admin')
+  @Roles('admin', 'staff')
   @ApiBearerAuth()
   async findAll(@Query() query: QueryUserDto) {
     return this.userService.findAll(query);
