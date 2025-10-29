@@ -18,6 +18,9 @@ export class Document extends BaseEntity {
   @Column('varchar', { name: 'file_hash', length: 64 })
   fileHash: string;
 
+  @Column('varchar', { name: 'encrypted_file_hash', length: 64 })
+  encryptedFileHash: string;
+
   @Column('text', { name: 'encrypted_file_path', nullable: true })
   encryptedFilePath?: string;
 

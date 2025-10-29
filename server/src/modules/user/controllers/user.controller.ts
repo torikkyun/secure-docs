@@ -4,6 +4,7 @@ import { UserService } from '../services/user.service';
 import { QueryUserDto } from '../dto/query-user.dto';
 import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { IdParamDto } from '@common/dto/id-param.dto';
 
 @Controller('api/users')
 @ApiTags('users')
@@ -16,10 +17,10 @@ export class UserController {
     return this.userService.profile(user);
   }
 
-  @Get(':userId')
+  @Get(':id')
   @ApiBearerAuth()
-  async getUserById(@Param('userId') userId: string) {
-    return this.userService.getUserById(userId);
+  async getUserById(@Param() { id }: IdParamDto) {
+    return this.userService.getUserById(id);
   }
 
   @Get()

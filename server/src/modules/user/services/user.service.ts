@@ -53,17 +53,15 @@ export class UserService {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    return await this.userRepository
-      .find({
-        where: { id },
-        select: {
-          id: true,
-          email: true,
-          fullName: true,
-          publicKey: true,
-        },
-      })
-      .then((users) => users[0] || null);
+    return await this.userRepository.findOne({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        publicKey: true,
+      },
+    });
   }
 
   async findAll({ page, limit, search }: QueryUserDto): Promise<{
