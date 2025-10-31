@@ -1,20 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from './entities/document.entity';
-import { DlpRuleService } from '@modules/dlp-rule/dlp-rule.service';
 import { DocumentStatus } from '@modules/document-status/entities/document-status.entity';
 import { User } from '@modules/user/entities/user.entity';
 import * as crypto from 'crypto';
 import { StorageService } from '@core/storage/storage.service';
 import { QueryDocumentDto } from './dto/query-document.dto';
-
-interface UploadedFile {
-  buffer: Buffer;
-  originalname: string;
-  mimetype: string;
-  size: number;
-}
+import { UploadDocumentDto } from './dto/upload-document.dto';
 
 @Injectable()
 export class DocumentService {
@@ -23,71 +20,85 @@ export class DocumentService {
     private readonly documentRepository: Repository<Document>,
     @InjectRepository(DocumentStatus)
     private readonly documentStatusRepository: Repository<DocumentStatus>,
-    private readonly dlpRuleService: DlpRuleService,
     private readonly storageService: StorageService,
   ) {}
 
   async uploadDocument(
-    file: UploadedFile,
-    filename: string,
-    originalFileHash: string | undefined,
+    encryptedFile: {
+      buffer: Buffer;
+      originalname: string;
+      mimetype: string;
+      size: number;
+    },
+    {
+      filename,
+      originalFileHash,
+      isSensitive,
+      sensitiveKeywords,
+    }: UploadDocumentDto,
     user: User,
   ): Promise<{
     documentId: string;
+    originalFileHash: string;
+    encryptedFilePath: string;
   }> {
     const encryptedFileHash = crypto
       .createHash('sha256')
-      .update(file.buffer)
+      .update(encryptedFile.buffer)
       .digest('hex');
 
-    const fileExtension = filename.substring(filename.lastIndexOf('.'));
-    const savedFilename = `${crypto.randomUUID()}${fileExtension}`;
+    const savedFilename = `${crypto.randomUUID()}.enc`;
     const bucket = 'secure-docs';
     const storage = this.storageService.getClient();
+
     const { error: uploadError } = (await storage.storage
       .from(bucket)
-      .upload(savedFilename, file.buffer, {
-        contentType: file.mimetype,
+      .upload(savedFilename, encryptedFile.buffer, {
+        contentType: 'application/octet-stream',
         upsert: false,
       })) as { error: { message: string } | null };
+
     if (uploadError) {
-      throw new Error('Lỗi khi tải tệp lên Supabase: ' + uploadError.message);
+      throw new BadGatewayException(
+        'Lỗi khi tải tệp lên storage: ' + uploadError.message,
+      );
     }
+
     const { data: publicUrlData } = this.storageService
       .getClient()
       .storage.from(bucket)
       .getPublicUrl(savedFilename);
-    const filePath = publicUrlData?.publicUrl || '';
+    const encryptedFilePath = publicUrlData.publicUrl;
 
     const status = await this.documentStatusRepository.findOne({
       where: { name: 'uploaded' },
     });
 
-    if (!status) {
-      throw new NotFoundException(
-        'Không tìm thấy trạng thái tài liệu mặc định',
-      );
-    }
-
-    const document = this.documentRepository.create({
-      user,
-      filename,
-      fileHash: originalFileHash || encryptedFileHash,
-      encryptedFileHash,
-      encryptedFilePath: filePath,
-      encryptionKeyHash: encryptedFileHash,
-      status,
-    });
+    const document = new Document();
+    document.user = user;
+    document.filename = filename;
+    document.fileHash = originalFileHash;
+    document.encryptedFilePath = encryptedFilePath;
+    document.encryptedFileHash = encryptedFileHash;
+    document.encryptionKeyHash = undefined;
+    document.isSensitive = isSensitive ?? false;
+    document.sensitiveKeywords =
+      sensitiveKeywords && sensitiveKeywords.length > 0
+        ? sensitiveKeywords
+        : undefined;
+    document.status = status!;
 
     const savedDocument = await this.documentRepository.save(document);
 
     return {
       documentId: savedDocument.id,
+      originalFileHash,
+      encryptedFilePath,
     };
   }
 
   async findAll(
-    { id, role }: { id: string; role: string },
+    { id, role }: User,
     { page, limit, search }: QueryDocumentDto,
   ): Promise<{
     data: Document[];
@@ -121,7 +132,7 @@ export class DocumentService {
       .skip(skip)
       .take(take);
 
-    if (role === 'staff') {
+    if (role.name === 'staff') {
       query.andWhere('user.id = :userId', { userId: id });
     }
 

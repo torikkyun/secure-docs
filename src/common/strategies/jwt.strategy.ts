@@ -32,6 +32,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
     }
 
-    return { id: user.id, role: user.role.name };
+    return { id: user.id, role: { name: user.role.name } };
   }
 }

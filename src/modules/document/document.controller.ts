@@ -27,7 +27,7 @@ export class DocumentController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
-        fileSize: 10 * 1024 * 1024,
+        fileSize: 100 * 1024 * 1024,
       },
     }),
   )
@@ -38,26 +38,12 @@ export class DocumentController {
     @Body() uploadDto: UploadDocumentDto,
     @CurrentUser() user: User,
   ) {
-    try {
-      return await this.documentService.uploadDocument(
-        file,
-        uploadDto.filename,
-        uploadDto.originalFileHash,
-        user,
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Lỗi không xác định';
-      throw new BadRequestException(`Lỗi: ${message}`);
-    }
+    return this.documentService.uploadDocument(file, uploadDto, user);
   }
 
   @Get()
   @ApiBearerAuth()
-  async findAll(
-    @CurrentUser() user: { id: string; role: string },
-    @Query() query: QueryDocumentDto,
-  ) {
+  async findAll(@CurrentUser() user: User, @Query() query: QueryDocumentDto) {
     return this.documentService.findAll(user, query);
   }
 

@@ -15,18 +15,17 @@ export class Document extends BaseEntity {
   @Column('varchar', { name: 'filename', length: 255 })
   filename: string;
 
-  @Column('varchar', { name: 'file_hash', length: 64 })
+  @Column('text', { name: 'file_hash' })
   fileHash: string;
 
-  @Column('varchar', { name: 'encrypted_file_hash', length: 64 })
+  @Column('text', { name: 'encrypted_file_hash' })
   encryptedFileHash: string;
 
-  @Column('text', { name: 'encrypted_file_path', nullable: true })
-  encryptedFilePath?: string;
+  @Column('text', { name: 'encrypted_file_path' })
+  encryptedFilePath: string;
 
-  @Column('varchar', {
+  @Column('text', {
     name: 'encryption_key_hash',
-    length: 64,
     nullable: true,
   })
   encryptionKeyHash?: string;
