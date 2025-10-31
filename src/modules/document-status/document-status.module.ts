@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { DocumentStatusService } from './document-status.service';
-import { DocumentStatusController } from './document-status.controller';
-import { DocumentStatus } from './entities/document-status.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { DocumentStatusController } from "./document-status.controller";
+import { DocumentStatusService } from "./document-status.service";
+import { DocumentStatus } from "./entities/document-status.entity";
 
 @Module({
   imports: [TypeOrmModule.forFeature([DocumentStatus])],

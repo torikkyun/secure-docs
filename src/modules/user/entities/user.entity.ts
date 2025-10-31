@@ -1,36 +1,43 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { BaseEntity } from '@core/database/base.entity';
-import { UserRole } from '@modules/user-role/entities/user-role.entity';
-import { Document } from '@modules/document/entities/document.entity';
+import { BaseEntity } from "@core/database/base.entity";
+import { Document } from "@modules/document/entities/document.entity";
+import { UserRole } from "@modules/user-role/entities/user-role.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 
-@Entity('users')
+@Entity("users")
 export class User extends BaseEntity {
-  @Column({ type: 'varchar', length: 100, name: 'full_name' })
+  @Column({ type: "varchar", length: 100, name: "full_name" })
   fullName: string;
 
   @Column({
-    type: 'varchar',
+    type: "varchar",
     length: 100,
     unique: true,
   })
   email: string;
 
-  @Column({ type: 'text', nullable: false })
+  @Column({ type: "text", nullable: false })
   password: string;
 
-  @Column({ type: 'text', nullable: true, name: 'public_key' })
+  @Column({ type: "text", nullable: true, name: "public_key" })
   publicKey?: string;
 
-  @Column({ type: 'text', nullable: true, name: 'private_key_encrypted' })
+  @Column({ type: "text", nullable: true, name: "private_key_encrypted" })
   privateKeyEncrypted?: string;
 
-  @ManyToOne(() => UserRole, (role) => role.users, {
-    nullable: false,
-    onDelete: 'RESTRICT',
-  })
-  @JoinColumn({ name: 'role_id' })
+  @ManyToOne(
+    () => UserRole,
+    (role) => role.users,
+    {
+      nullable: false,
+      onDelete: "RESTRICT",
+    }
+  )
+  @JoinColumn({ name: "role_id" })
   role: UserRole;
 
-  @OneToMany(() => Document, (document) => document.user)
+  @OneToMany(
+    () => Document,
+    (document) => document.user
+  )
   documents?: Document[];
 }

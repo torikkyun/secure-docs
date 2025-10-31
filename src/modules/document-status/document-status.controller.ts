@@ -1,7 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { DocumentStatusService } from './document-status.service';
+import { Controller } from "@nestjs/common";
 
-@Controller('document-status')
-export class DocumentStatusController {
-  constructor(private readonly documentStatusService: DocumentStatusService) {}
-}
+@Controller("document-status")
+export class DocumentStatusController {}

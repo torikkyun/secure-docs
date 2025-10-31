@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { DocumentService } from './document.service';
-import { DocumentController } from './document.controller';
-import { Document } from './entities/document.entity';
-import { DocumentStatus } from '@modules/document-status/entities/document-status.entity';
-import { StorageModule } from '@core/storage/storage.module';
+import { StorageModule } from "@core/storage/storage.module";
+import { DocumentStatus } from "@modules/document-status/entities/document-status.entity";
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { DocumentController } from "./document.controller";
+import { DocumentService } from "./document.service";
+import { Document } from "./entities/document.entity";
 
 @Module({
   imports: [

@@ -1,7 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { DlpRuleService } from './dlp-rule.service';
+import { Controller } from "@nestjs/common";
 
-@Controller('dlp-rule')
-export class DlpRuleController {
-  constructor(private readonly dlpRuleService: DlpRuleService) {}
-}
+@Controller("dlp-rule")
+export class DlpRuleController {}

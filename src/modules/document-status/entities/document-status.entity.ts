@@ -1,15 +1,18 @@
-import { BaseEntity } from '@core/database/base.entity';
-import { Column, Entity, OneToMany } from 'typeorm';
-import { Document } from '@modules/document/entities/document.entity';
+import { BaseEntity } from "@core/database/base.entity";
+import { Document } from "@modules/document/entities/document.entity";
+import { Column, Entity, OneToMany } from "typeorm";
 
-@Entity('document_statuses')
+@Entity("document_statuses")
 export class DocumentStatus extends BaseEntity {
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @Column({ type: "varchar", length: 50, unique: true })
   name: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description?: string;
 
-  @OneToMany(() => Document, (document) => document.status)
+  @OneToMany(
+    () => Document,
+    (document) => document.status
+  )
   documents?: Document[];
 }

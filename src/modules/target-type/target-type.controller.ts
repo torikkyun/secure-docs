@@ -1,7 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { TargetTypeService } from './target-type.service';
+import { Controller } from "@nestjs/common";
 
-@Controller('target-type')
-export class TargetTypeController {
-  constructor(private readonly targetTypeService: TargetTypeService) {}
-}
+@Controller("target-type")
+export class TargetTypeController {}

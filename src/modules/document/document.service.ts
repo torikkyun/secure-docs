@@ -1,27 +1,36 @@
+import * as crypto from "node:crypto";
+import { StorageService } from "@core/storage/storage.service";
+import { DocumentStatus } from "@modules/document-status/entities/document-status.entity";
+import { User } from "@modules/user/entities/user.entity";
 import {
   BadGatewayException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Document } from './entities/document.entity';
-import { DocumentStatus } from '@modules/document-status/entities/document-status.entity';
-import { User } from '@modules/user/entities/user.entity';
-import * as crypto from 'crypto';
-import { StorageService } from '@core/storage/storage.service';
-import { QueryDocumentDto } from './dto/query-document.dto';
-import { UploadDocumentDto } from './dto/upload-document.dto';
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { QueryDocumentDto } from "./dto/query-document.dto";
+import { UploadDocumentDto } from "./dto/upload-document.dto";
+import { Document } from "./entities/document.entity";
+
+const MAX_LIMIT = 100;
 
 @Injectable()
 export class DocumentService {
+  private readonly documentRepository: Repository<Document>;
+  private readonly documentStatusRepository: Repository<DocumentStatus>;
+  private readonly storageService: StorageService;
+
   constructor(
-    @InjectRepository(Document)
-    private readonly documentRepository: Repository<Document>,
+    @InjectRepository(Document) documentRepository: Repository<Document>,
     @InjectRepository(DocumentStatus)
-    private readonly documentStatusRepository: Repository<DocumentStatus>,
-    private readonly storageService: StorageService,
-  ) {}
+    documentStatusRepository: Repository<DocumentStatus>,
+    storageService: StorageService
+  ) {
+    this.documentRepository = documentRepository;
+    this.documentStatusRepository = documentStatusRepository;
+    this.storageService = storageService;
+  }
 
   async uploadDocument(
     encryptedFile: {
@@ -30,37 +39,32 @@ export class DocumentService {
       mimetype: string;
       size: number;
     },
-    {
-      filename,
-      originalFileHash,
-      isSensitive,
-      sensitiveKeywords,
-    }: UploadDocumentDto,
-    user: User,
+    { originalFileHash, isSensitive, sensitiveKeywords }: UploadDocumentDto,
+    user: User
   ): Promise<{
     documentId: string;
     originalFileHash: string;
     encryptedFilePath: string;
   }> {
     const encryptedFileHash = crypto
-      .createHash('sha256')
+      .createHash("sha256")
       .update(encryptedFile.buffer)
-      .digest('hex');
+      .digest("hex");
 
     const savedFilename = `${crypto.randomUUID()}.enc`;
-    const bucket = 'secure-docs';
+    const bucket = "secure-docs";
     const storage = this.storageService.getClient();
 
     const { error: uploadError } = (await storage.storage
       .from(bucket)
       .upload(savedFilename, encryptedFile.buffer, {
-        contentType: 'application/octet-stream',
+        contentType: "application/octet-stream",
         upsert: false,
       })) as { error: { message: string } | null };
 
     if (uploadError) {
       throw new BadGatewayException(
-        'Lỗi khi tải tệp lên storage: ' + uploadError.message,
+        `Lỗi khi tải tệp lên storage: ${uploadError.message}`
       );
     }
 
@@ -71,12 +75,16 @@ export class DocumentService {
     const encryptedFilePath = publicUrlData.publicUrl;
 
     const status = await this.documentStatusRepository.findOne({
-      where: { name: 'uploaded' },
+      where: { name: "uploaded" },
     });
+
+    if (!status) {
+      throw new NotFoundException('Không tìm thấy trạng thái "uploaded"');
+    }
 
     const document = new Document();
     document.user = user;
-    document.filename = filename;
+    document.filename = encryptedFile.originalname;
     document.fileHash = originalFileHash;
     document.encryptedFilePath = encryptedFilePath;
     document.encryptedFileHash = encryptedFileHash;
@@ -86,7 +94,7 @@ export class DocumentService {
       sensitiveKeywords && sensitiveKeywords.length > 0
         ? sensitiveKeywords
         : undefined;
-    document.status = status!;
+    document.status = status;
 
     const savedDocument = await this.documentRepository.save(document);
 
@@ -99,7 +107,7 @@ export class DocumentService {
 
   async findAll(
     { id, role }: User,
-    { page, limit, search }: QueryDocumentDto,
+    { page, limit, search }: QueryDocumentDto
   ): Promise<{
     data: Document[];
     total: number;
@@ -107,39 +115,39 @@ export class DocumentService {
     limit: number;
   }> {
     const pageNum = Math.max(1, Number(page) || 1);
-    const take = Math.min(Math.max(1, Number(limit) || 10), 100);
+    const take = Math.min(Math.max(1, Number(limit) || 10), MAX_LIMIT);
     const skip = (pageNum - 1) * take;
 
     const query = this.documentRepository
-      .createQueryBuilder('document')
-      .leftJoinAndSelect('document.user', 'user')
-      .leftJoinAndSelect('document.status', 'status')
+      .createQueryBuilder("document")
+      .leftJoinAndSelect("document.user", "user")
+      .leftJoinAndSelect("document.status", "status")
       .select([
-        'document.id',
-        'document.filename',
-        'document.encryptedFilePath',
-        'document.isSensitive',
-        'document.sensitiveKeywords',
-        'document.createdAt',
-        'document.updatedAt',
-        'user.id',
-        'user.fullName',
-        'user.email',
-        'status.id',
-        'status.name',
+        "document.id",
+        "document.filename",
+        "document.encryptedFilePath",
+        "document.isSensitive",
+        "document.sensitiveKeywords",
+        "document.createdAt",
+        "document.updatedAt",
+        "user.id",
+        "user.fullName",
+        "user.email",
+        "status.id",
+        "status.name",
       ])
-      .orderBy('document.createdAt', 'DESC')
+      .orderBy("document.createdAt", "DESC")
       .skip(skip)
       .take(take);
 
-    if (role.name === 'staff') {
-      query.andWhere('user.id = :userId', { userId: id });
+    if (role.name === "staff") {
+      query.andWhere("user.id = :userId", { userId: id });
     }
 
     if (search) {
       query.andWhere(
-        '(document.filename ILIKE :search OR user.fullName ILIKE :search OR user.email ILIKE :search)',
-        { search: `%${search}%` },
+        "(document.filename ILIKE :search OR user.fullName ILIKE :search OR user.email ILIKE :search)",
+        { search: `%${search}%` }
       );
     }
 
@@ -151,7 +159,7 @@ export class DocumentService {
   async findOne(id: string): Promise<Document> {
     const document = await this.documentRepository.findOne({
       where: { id },
-      relations: ['user', 'status'],
+      relations: ["user", "status"],
       select: {
         id: true,
         filename: true,

@@ -1,6 +1,6 @@
-import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { PaginationQueryDto } from "@common/dto/pagination-query.dto";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsOptional, IsString } from "class-validator";
 
 export class QueryDocumentDto extends PaginationQueryDto {
   @IsOptional()

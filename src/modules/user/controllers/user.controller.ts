@@ -1,32 +1,36 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { UserService } from '../services/user.service';
-import { QueryUserDto } from '../dto/query-user.dto';
-import { Roles } from '@common/decorators/roles.decorator';
-import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { IdParamDto } from '@common/dto/id-param.dto';
+import { CurrentUser } from "@common/decorators/current-user.decorator";
+import { Roles } from "@common/decorators/roles.decorator";
+import { IdParamDto } from "@common/dto/id-param.dto";
+import { Controller, Get, Param, Query } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { QueryUserDto } from "../dto/query-user.dto";
+import { User } from "../entities/user.entity";
+import { UserService } from "../services/user.service";
 
-@Controller('api/users')
-@ApiTags('users')
+@Controller("api/users")
+@ApiTags("users")
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  private readonly userService: UserService;
+  constructor(userService: UserService) {
+    this.userService = userService;
+  }
 
-  @Get('profile')
+  @Get("profile")
   @ApiBearerAuth()
-  async getProfile(@CurrentUser() user: { id: string; _role: string }) {
+  getProfile(@CurrentUser() user: User) {
     return this.userService.profile(user);
   }
 
-  @Get(':id')
+  @Get(":id")
   @ApiBearerAuth()
-  async getUserById(@Param() { id }: IdParamDto) {
+  getUserById(@Param() { id }: IdParamDto) {
     return this.userService.getUserById(id);
   }
 
   @Get()
-  @Roles('admin', 'staff')
+  @Roles("admin", "staff")
   @ApiBearerAuth()
-  async findAll(@Query() query: QueryUserDto) {
+  findAll(@Query() query: QueryUserDto) {
     return this.userService.findAll(query);
   }
 }

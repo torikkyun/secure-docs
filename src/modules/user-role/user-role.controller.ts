@@ -1,7 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { UserRoleService } from './user-role.service';
+import { Controller } from "@nestjs/common";
 
-@Controller('user-role')
-export class UserRoleController {
-  constructor(private readonly userRoleService: UserRoleService) {}
-}
+@Controller("user-role")
+export class UserRoleController {}

@@ -1,7 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { ShareService } from './share.service';
+import { Controller } from "@nestjs/common";
 
-@Controller('share')
-export class ShareController {
-  constructor(private readonly shareService: ShareService) {}
-}
+@Controller("share")
+export class ShareController {}

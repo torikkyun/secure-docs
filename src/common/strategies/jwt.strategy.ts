@@ -1,23 +1,32 @@
-import { User } from '@modules/user/entities/user.entity';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PassportStrategy } from '@nestjs/passport';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Repository } from 'typeorm/repository/Repository';
+import { User } from "@modules/user/entities/user.entity";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PassportStrategy } from "@nestjs/passport";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { Repository } from "typeorm/repository/Repository";
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
+  // private readonly configService: ConfigService;
+  private readonly userRepository: Repository<User>;
+
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    userRepository: Repository<User>
   ) {
+    const jwtSecret = configService.get<string>("JWT_SECRET");
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET chưa được cấu hình trong biến môi trường");
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET')!,
+      secretOrKey: jwtSecret,
     });
+    // this.configService = configService;
+    this.userRepository = userRepository;
   }
 
   async validate({ id }: { id: string }) {
@@ -29,7 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
+      throw new UnauthorizedException("Token không hợp lệ hoặc đã hết hạn");
     }
 
     return { id: user.id, role: { name: user.role.name } };
