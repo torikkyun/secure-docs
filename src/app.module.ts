@@ -1,6 +1,6 @@
 import { JwtGuard } from "@common/guards/jwt.guard";
 import { RolesGuard } from "@common/guards/roles.guard";
-import { RedisModule } from "@core/cache/redis.module";
+// import { RedisModule } from "@core/cache/redis.module";
 import { DatabaseModule } from "@core/database/database.module";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
@@ -21,7 +21,7 @@ import { UserRoleModule } from "./modules/user-role/user-role.module";
       load: [configuration],
     }),
     DatabaseModule,
-    RedisModule,
+    // RedisModule,
     UserRoleModule,
     DocumentStatusModule,
     TargetTypeModule,
