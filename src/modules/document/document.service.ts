@@ -10,6 +10,10 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { QueryDocumentDto } from "./dto/query-document.dto";
+import {
+  UpdateStatusDocumentDto,
+  UpdateStatusDocumentResponseDto,
+} from "./dto/update-status-document.dto";
 import { UploadDocumentDto } from "./dto/upload-document.dto";
 import { Document } from "./entities/document.entity";
 
@@ -21,6 +25,8 @@ export class DocumentService {
   private readonly documentStatusRepository: Repository<DocumentStatus>;
   private readonly storageService: StorageService;
 
+  private uploadedStatus: DocumentStatus | null = null;
+
   constructor(
     @InjectRepository(Document) documentRepository: Repository<Document>,
     @InjectRepository(DocumentStatus)
@@ -30,6 +36,16 @@ export class DocumentService {
     this.documentRepository = documentRepository;
     this.documentStatusRepository = documentStatusRepository;
     this.storageService = storageService;
+    this.initUploadedStatus();
+  }
+
+  private async initUploadedStatus() {
+    this.uploadedStatus = await this.documentStatusRepository.findOne({
+      where: { name: "uploaded" },
+    });
+    if (!this.uploadedStatus) {
+      throw new NotFoundException('Không tìm thấy trạng thái "uploaded"');
+    }
   }
 
   async uploadDocument(
@@ -74,10 +90,7 @@ export class DocumentService {
       .getPublicUrl(savedFilename);
     const encryptedFilePath = publicUrlData.publicUrl;
 
-    const status = await this.documentStatusRepository.findOne({
-      where: { name: "uploaded" },
-    });
-
+    const status = this.uploadedStatus;
     if (!status) {
       throw new NotFoundException('Không tìm thấy trạng thái "uploaded"');
     }
@@ -185,5 +198,45 @@ export class DocumentService {
     }
 
     return document;
+  }
+
+  async updateStatus(
+    documentId: string,
+    updateStatusDto: UpdateStatusDocumentDto
+  ): Promise<UpdateStatusDocumentResponseDto> {
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+      relations: ["status"],
+    });
+
+    if (!document) {
+      throw new NotFoundException(
+        `Không tìm thấy tài liệu với ID ${documentId}`
+      );
+    }
+
+    const newStatus = await this.documentStatusRepository.findOne({
+      where: { id: updateStatusDto.statusId },
+    });
+
+    if (!newStatus) {
+      throw new NotFoundException(
+        `Không tìm thấy trạng thái với ID ${updateStatusDto.statusId}`
+      );
+    }
+
+    document.status = newStatus;
+    await this.documentRepository.save(document);
+
+    return {
+      id: document.id,
+      filename: document.filename,
+      encryptedFilePath: document.encryptedFilePath,
+      status: {
+        id: newStatus.id,
+        name: newStatus.name,
+      },
+      updatedAt: document.updatedAt,
+    };
   }
 }

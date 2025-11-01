@@ -1,4 +1,19 @@
-import { Controller } from "@nestjs/common";
+import { Controller, Get } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { DocumentStatusService } from "./document-status.service";
 
-@Controller("document-status")
-export class DocumentStatusController {}
+@Controller("api/document-status")
+@ApiTags("document-status")
+export class DocumentStatusController {
+  private readonly documentStatusService: DocumentStatusService;
+
+  constructor(documentStatusService: DocumentStatusService) {
+    this.documentStatusService = documentStatusService;
+  }
+
+  @Get()
+  @ApiBearerAuth()
+  findAll() {
+    return this.documentStatusService.findAll();
+  }
+}

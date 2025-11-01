@@ -6,6 +6,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -16,6 +17,7 @@ import { ApiBearerAuth, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import { DocumentService } from "./document.service";
 import { QueryDocumentDto } from "./dto/query-document.dto";
 import { UploadDocumentDto } from "./dto/upload-document.dto";
+import { UpdateStatusDocumentDto } from "./dto/update-status-document.dto";
 
 const MAX_FILE_SIZE_MB = 100;
 const BYTES_IN_KB = 1024;
@@ -59,5 +61,14 @@ export class DocumentController {
   @ApiBearerAuth()
   findOne(@Param() { id }: IdParamDto) {
     return this.documentService.findOne(id);
+  }
+
+  @Patch(":id/status")
+  @ApiBearerAuth()
+  updateStatus(
+    @Param() { id }: IdParamDto,
+    @Body() updateStatusDto: UpdateStatusDocumentDto
+  ) {
+    return this.documentService.updateStatus(id, updateStatusDto);
   }
 }

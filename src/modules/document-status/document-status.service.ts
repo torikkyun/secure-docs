@@ -5,18 +5,18 @@ import { DocumentStatus } from "./entities/document-status.entity";
 
 @Injectable()
 export class DocumentStatusService {
-  private readonly documentStatusRepo: Repository<DocumentStatus>;
+  private readonly documentStatusRepository: Repository<DocumentStatus>;
 
   constructor(
     @InjectRepository(DocumentStatus)
-    documentStatusRepo: Repository<DocumentStatus>
+    documentStatusRepository: Repository<DocumentStatus>
   ) {
-    this.documentStatusRepo = documentStatusRepo;
+    this.documentStatusRepository = documentStatusRepository;
   }
 
   async onModuleInit() {
     const statuses = ["uploaded", "shared", "archived"];
-    const existingStatuses = await this.documentStatusRepo.find({
+    const existingStatuses = await this.documentStatusRepository.find({
       where: { name: In(statuses) },
     });
     const existingNames = new Set(existingStatuses.map((r) => r.name));
@@ -24,6 +24,10 @@ export class DocumentStatusService {
     if (missing.length === 0) {
       return;
     }
-    await this.documentStatusRepo.save(missing.map((name) => ({ name })));
+    await this.documentStatusRepository.save(missing.map((name) => ({ name })));
+  }
+
+  findAll(): Promise<DocumentStatus[]> {
+    return this.documentStatusRepository.find();
   }
 }
