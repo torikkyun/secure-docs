@@ -10,10 +10,7 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { QueryDocumentDto } from "./dto/query-document.dto";
-import {
-  UpdateStatusDocumentDto,
-  UpdateStatusDocumentResponseDto,
-} from "./dto/update-status-document.dto";
+import { UpdateStatusDocumentDto } from "./dto/update-status-document.dto";
 import { UploadDocumentDto } from "./dto/upload-document.dto";
 import { Document } from "./entities/document.entity";
 
@@ -203,7 +200,7 @@ export class DocumentService {
   async updateStatus(
     documentId: string,
     updateStatusDto: UpdateStatusDocumentDto
-  ): Promise<UpdateStatusDocumentResponseDto> {
+  ) {
     const document = await this.documentRepository.findOne({
       where: { id: documentId },
       relations: ["status"],
@@ -238,5 +235,20 @@ export class DocumentService {
       },
       updatedAt: document.updatedAt,
     };
+  }
+
+  async hardDelete(documentId: string) {
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+    });
+
+    if (!document) {
+      throw new NotFoundException(
+        `Không tìm thấy tài liệu với ID ${documentId}`
+      );
+    }
+
+    await this.documentRepository.delete({ id: documentId });
+    return { message: `Đã xóa tài liệu với ID ${documentId}` };
   }
 }

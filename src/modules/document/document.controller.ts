@@ -4,6 +4,7 @@ import { User } from "@modules/user/entities/user.entity";
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -16,13 +17,10 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import { DocumentService } from "./document.service";
 import { QueryDocumentDto } from "./dto/query-document.dto";
-import { UploadDocumentDto } from "./dto/upload-document.dto";
 import { UpdateStatusDocumentDto } from "./dto/update-status-document.dto";
+import { UploadDocumentDto } from "./dto/upload-document.dto";
 
-const MAX_FILE_SIZE_MB = 100;
-const BYTES_IN_KB = 1024;
-const BYTES_IN_MB = BYTES_IN_KB * BYTES_IN_KB;
-const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * BYTES_IN_MB;
+const MAX_FILE_SIZE = 10_485_760;
 
 @Controller("api/documents")
 @ApiTags("documents")
@@ -70,5 +68,11 @@ export class DocumentController {
     @Body() updateStatusDto: UpdateStatusDocumentDto
   ) {
     return this.documentService.updateStatus(id, updateStatusDto);
+  }
+
+  @Delete(":id")
+  @ApiBearerAuth()
+  hardDelete(@Param() { id }: IdParamDto) {
+    return this.documentService.hardDelete(id);
   }
 }
