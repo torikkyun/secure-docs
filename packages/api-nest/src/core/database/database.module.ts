@@ -2,9 +2,11 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
+import { SupabaseService } from "./supabase.service";
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         type: "postgres",
@@ -17,5 +19,7 @@ import { SnakeNamingStrategy } from "typeorm-naming-strategies";
       imports: [ConfigModule],
     }),
   ],
+  providers: [SupabaseService],
+  exports: [SupabaseService],
 })
 export class DatabaseModule {}

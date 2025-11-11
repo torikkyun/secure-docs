@@ -11,8 +11,8 @@ export class User extends BaseEntity {
   @Column({ unique: true, nullable: false, length: 255 })
   email: string;
 
-  @Column({ type: "text", nullable: false })
-  publicKey: string;
+  @Column({ type: "text", nullable: true })
+  publicKey?: string;
 
   @ManyToOne(() => UserRole, { nullable: false })
   @JoinColumn({ name: "role_id" })

@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "ultracite/core"
-  ],
+  "extends": ["ultracite/core"],
   "assist": {
     "actions": {
       "source": {
@@ -21,6 +19,9 @@
       },
       "style": {
         "useImportType": "off"
+      },
+      "nursery": {
+        "useMaxParams": "off"
       }
     }
   },

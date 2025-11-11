@@ -1,89 +1,114 @@
-// import { ConflictException, Injectable } from "@nestjs/common";
-// import { JwtService } from "@nestjs/jwt";
-// import { InjectRepository } from "@nestjs/typeorm";
-// import * as bcrypt from "bcrypt";
-// import { Repository } from "typeorm";
-// import { LoginDto } from "../dto/login-user.dto";
-// import { RegisterDto } from "../dto/register-user.dto";
-// import { User } from "../entities/user.entity";
-// import { UserRole } from "@modules/user-role/entities/user-role.entity";
+import { SupabaseService } from "@core/database/supabase.service";
+import { UserRole } from "@modules/user-role/entities/user-role.entity";
+import { UserStatus } from "@modules/user-status/entities/user-status.entity";
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { Repository } from "typeorm";
+import { LoginUserDto } from "../dto/login-user.dto";
+import { RegisterUserDto } from "../dto/register-user.dto";
+import { User } from "../entities/user.entity";
 
-// const SALT = 12;
+@Injectable()
+export class AuthService {
+  private readonly userRepository: Repository<User>;
+  private readonly userRoleRepository: Repository<UserRole>;
+  private readonly userStatusRepository: Repository<UserStatus>;
+  private readonly supabase: SupabaseClient;
+  private readonly jwtService: JwtService;
 
-// @Injectable()
-// export class AuthService {
-//   private readonly jwtService: JwtService;
-//   private readonly userRepository: Repository<User>;
-//   private readonly userRoleRepository: Repository<UserRole>;
-//   private defaultRole: UserRole;
+  constructor(
+    @InjectRepository(User)
+    userRepository: Repository<User>,
+    @InjectRepository(UserRole)
+    userRoleRepository: Repository<UserRole>,
+    @InjectRepository(UserStatus)
+    userStatusRepository: Repository<UserStatus>,
+    supabaseService: SupabaseService,
+    jwtService: JwtService
+  ) {
+    this.userRepository = userRepository;
+    this.userRoleRepository = userRoleRepository;
+    this.userStatusRepository = userStatusRepository;
+    this.supabase = supabaseService.getClient();
+    this.jwtService = jwtService;
+  }
 
-//   constructor(
-//     jwtService: JwtService,
-//     @InjectRepository(User)
-//     userRepository: Repository<User>,
-//     @InjectRepository(UserRole)
-//     userRoleRepository: Repository<UserRole>
-//   ) {
-//     this.jwtService = jwtService;
-//     this.userRepository = userRepository;
-//     this.userRoleRepository = userRoleRepository;
-//   }
+  async register({ email, password, username }: RegisterUserDto) {
+    const { error } = await this.supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
 
-//   async onModuleInit() {
-//     const foundRole = await this.userRoleRepository.findOne({
-//       where: { name: "user" },
-//     });
-//     if (!foundRole) {
-//       throw new Error(
-//         "Role 'user' không tồn tại. Vui lòng khởi tạo role trước khi đăng ký người dùng."
-//       );
-//     }
-//     this.defaultRole = foundRole;
-//   }
+    if (error && !error.message.includes("already registered")) {
+      throw new ConflictException(error.message);
+    }
 
-//   async register({ email, password, ...rest }: RegisterDto) {
-//     const existingUser = await this.userRepository.findOne({
-//       where: { email },
-//     });
+    let user = await this.userRepository.findOne({ where: { email } });
+    if (user) {
+      throw new ConflictException("Email đã được đăng ký");
+    }
 
-//     if (existingUser) {
-//       throw new ConflictException("Email đã được đăng ký");
-//     }
+    const role = await this.userRoleRepository.findOne({
+      where: { name: "owner" },
+    });
+    const status = await this.userStatusRepository.findOne({
+      where: { name: "active" },
+    });
 
-//     const hashedPassword = await bcrypt.hash(password, SALT);
-//     const user = new User();
-//     user.email = email;
-//     user.password = hashedPassword;
-//     user.role = this.defaultRole;
-//     Object.assign(user, rest);
+    if (!(role && status)) {
+      throw new ConflictException("Role hoặc Status mặc định không tồn tại");
+    }
 
-//     await this.userRepository.save(user);
+    user = new User();
+    user.email = email;
+    user.username = username;
+    user.role = role;
+    user.status = status;
+    user.metadata = {};
 
-//     return {
-//       message: "Đăng ký thành công",
-//       user: { id: user.id, email: user.email },
-//     };
-//   }
+    await this.userRepository.save(user);
 
-//   async login({ email, password }: LoginDto) {
-//     const user = await this.userRepository.findOne({
-//       where: { email },
-//       relations: ["role"],
-//     });
-//     if (!user) {
-//       throw new ConflictException("Email hoặc mật khẩu không đúng");
-//     }
+    return {
+      message: "Đăng ký thành công",
+      user: { id: user.id, email: user.email },
+    };
+  }
 
-//     const isPasswordValid = await bcrypt.compare(password, user.password);
-//     if (!isPasswordValid) {
-//       throw new ConflictException("Email hoặc mật khẩu không đúng");
-//     }
+  async login({ email, password }: LoginUserDto) {
+    const { error } = await this.supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-//     const token = this.jwtService.sign({ id: user.id, role: user.role.name });
+    if (error) {
+      throw new UnauthorizedException("Email hoặc mật khẩu không đúng");
+    }
 
-//     return {
-//       message: "Đăng nhập thành công",
-//       token,
-//     };
-//   }
-// }
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ["role", "status"],
+    });
+    if (!user) {
+      throw new UnauthorizedException(
+        "Tài khoản chưa được đăng ký trong hệ thống"
+      );
+    }
+
+    const accessToken = this.jwtService.sign({
+      id: user.id,
+      role: { name: user.role.name },
+    });
+
+    return {
+      message: "Đăng nhập thành công",
+      accessToken,
+    };
+  }
+}
