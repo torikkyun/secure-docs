@@ -9,12 +9,12 @@ export abstract class BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  @CreateDateColumn({ type: "timestamptz", default: () => "now()" })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  @UpdateDateColumn({ type: "timestamptz", default: () => "now()" })
   updatedAt: Date;
 
-  @DeleteDateColumn({ type: "timestamp", nullable: true })
+  @DeleteDateColumn({ type: "timestamptz", nullable: true })
   deletedAt?: Date;
 }

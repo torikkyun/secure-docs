@@ -1,9 +1,9 @@
 import { BaseEntity } from "@core/database/base.entity";
 import { Column, Entity } from "typeorm";
 
-@Entity("roles")
-export class Role extends BaseEntity {
-  @Column({ unique: true })
+@Entity("user_statuses")
+export class UserStatus extends BaseEntity {
+  @Column({ unique: true, nullable: false, type: "varchar", length: 50 })
   name: string;
 
   @Column({ nullable: true })

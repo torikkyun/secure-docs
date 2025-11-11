@@ -6,8 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "start:dev": "pnpm --filter api-nest start:dev",
-    "dev": "pnpm --filter web-next dev"
+    "be:dev": "pnpm --filter api-nest start:dev",
+    "fe:dev": "pnpm --filter web-next dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.4",
