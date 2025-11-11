@@ -1,9 +1,16 @@
+"use client";
+
 import Image from "next/image";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 
 export default function Home() {
+  const { address, isConnected } = useAccount();
+  const { connectors, connect, error } = useConnect();
+  const { disconnect } = useDisconnect();
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-center bg-white px-16 py-32 sm:items-start dark:bg-black">
         <Image
           alt="Next.js logo"
           className="dark:invert"
@@ -58,6 +65,36 @@ export default function Home() {
           >
             Documentation
           </a>
+        </div>
+        <div className="mt-8 flex flex-col items-center gap-4 text-center">
+          <h2 className="font-semibold text-2xl text-black dark:text-zinc-50">
+            Kết nối ví MetaMask
+          </h2>
+          {isConnected ? (
+            <div className="mt-4 font-mono text-green-600">
+              Đã kết nối: {address}
+              <button
+                className="mt-4 rounded-full bg-red-600 px-6 py-2 text-white hover:bg-red-700"
+                onClick={() => disconnect()}
+                type="button"
+              >
+                Ngắt kết nối
+              </button>
+            </div>
+          ) : (
+            connectors.map((connector) => (
+              <button
+                className="mb-4 rounded-full bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700"
+                disabled={!connector.ready}
+                key={connector.id}
+                onClick={() => connect({ connector })}
+                type="button"
+              >
+                {`Kết nối với ${connector.name}`}
+              </button>
+            ))
+          )}
+          {error && <div className="mt-4 text-red-600">{error.message}</div>}
         </div>
       </main>
     </div>
