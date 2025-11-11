@@ -1,8 +1,7 @@
 import { Public } from "@common/decorators/public.decorator";
 import { Body, Controller, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { LoginUserDto } from "../dto/login-user.dto";
-import { RegisterUserDto } from "../dto/register-user.dto";
+import { LoginGoogleUserDto } from "../dto/login-google-user.dto";
 import { AuthService } from "../services/auth.service";
 
 @Controller("api/auth")
@@ -14,13 +13,8 @@ export class AuthController {
     this.authService = authService;
   }
 
-  @Post("register")
-  register(@Body() registerDto: RegisterUserDto) {
-    return this.authService.register(registerDto);
-  }
-
-  @Post("login")
-  login(@Body() loginDto: LoginUserDto) {
-    return this.authService.login(loginDto);
+  @Post("login-google")
+  loginGoogle(@Body() body: LoginGoogleUserDto) {
+    return this.authService.loginGoogle(body);
   }
 }

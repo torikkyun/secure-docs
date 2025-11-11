@@ -5,7 +5,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 
 @Entity("users")
 export class User extends BaseEntity {
-  @Column({ unique: true, length: 100 })
+  @Column({ length: 100 })
   username: string;
 
   @Column({ unique: true, nullable: false, length: 255 })
