@@ -16,26 +16,6 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
-    "paths": {
-      "@commands/*": [
-        "src/commands/*"
-      ],
-      "@common/*": [
-        "src/common/*"
-      ],
-      "@core/*": [
-        "src/core/*"
-      ],
-      "@events/*": [
-        "src/events/*"
-      ],
-      "@integrations/*": [
-        "src/integrations/*"
-      ],
-      "@modules/*": [
-        "src/modules/*"
-      ]
-    }
+    "noFallthroughCasesInSwitch": false
   }
 }

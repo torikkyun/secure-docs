@@ -1,12 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": [
-    "node_modules",
-    "test",
-    "dist",
-    "**/*spec.ts"
-  ],
-  "compilerOptions": {
-    "strictNullChecks": true
-  }
+  "include": ["src", "generated", "prisma/seeds"],
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
