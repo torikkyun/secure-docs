@@ -1,5 +1,4 @@
 import { parseArgs } from "node:util";
-import * as bcrypt from "bcrypt";
 import { PrismaClient } from "generated/prisma/client";
 
 const prisma = new PrismaClient();
@@ -28,16 +27,16 @@ async function main() {
       });
 
       // Seed users
-      await prisma.user.upsert({
-        where: { email: "admin@example.com" },
-        update: {},
-        create: {
-          email: "admin@gmail.com",
-          password: await bcrypt.hash("Thisisapassword123", 10),
-          name: "Admin",
-          roleId: adminRole.id,
-        },
-      });
+      // await prisma.user.upsert({
+      //   where: { email: "admin@example.com" },
+      //   update: {},
+      //   create: {
+      //     email: "admin@gmail.com",
+      //     password: await bcrypt.hash("Thisisapassword123", 10),
+      //     name: "Admin",
+      //     roleId: adminRole.id,
+      //   },
+      // });
 
       break;
     }

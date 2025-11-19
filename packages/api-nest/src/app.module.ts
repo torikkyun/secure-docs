@@ -11,8 +11,6 @@ import { PrismaModule } from "./database/prisma.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { AuthModule } from "./modules/auth/auth.module";
-import { RoleModule } from "./modules/role/role.module";
-import { UserModule } from "./modules/user/user.module";
 
 const guards = [JwtGuard, RolesGuard];
 
@@ -26,8 +24,8 @@ const guards = [JwtGuard, RolesGuard];
     LoggerModule,
     HealthModule,
     AuthModule,
-    RoleModule,
-    UserModule,
+    // RoleModule,
+    // UserModule,
   ],
   providers: [
     ...guards.map((Guard) => ({
