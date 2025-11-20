@@ -20,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     this.prisma = prisma;
   }
 
-  async validate({ id }: { id: string }) {
+  async validate({ id, sessionId }: { id: string; sessionId: string }) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -32,6 +32,24 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
       throw new UnauthorizedException("Token không hợp lệ hoặc đã hết hạn");
     }
 
-    return { id: user.id, role: { name: user.role.name } };
+    if (!sessionId) {
+      throw new UnauthorizedException(
+        "Session không được tìm thấy trong token"
+      );
+    }
+
+    const session = await this.prisma.userSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException("Phiên làm việc không tồn tại");
+    }
+
+    if (!session.isActive) {
+      throw new UnauthorizedException("Phiên làm việc đã bị thu hồi");
+    }
+
+    return { id: user.id, role: { name: user.role.name }, sessionId };
   }
 }

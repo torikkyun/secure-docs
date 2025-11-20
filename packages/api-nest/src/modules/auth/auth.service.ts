@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { KeyManagementServiceClient, protos } from "@google-cloud/kms";
 import {
   BadGatewayException,
@@ -19,9 +20,10 @@ import { NonceService } from "./nonce.service";
 export class AuthService {
   private readonly prisma: PrismaService;
   private readonly config: ConfigService;
-  private cachedRole: Role | null = null;
   private readonly nonceService: NonceService;
   private readonly jwtService: JwtService;
+  private cachedRole: Role | null = null;
+  private static readonly EXPIRATION_RE = /^(\d+)(s|m|h|d)?$/;
   constructor(
     prisma: PrismaService,
     config: ConfigService,
@@ -102,18 +104,39 @@ export class AuthService {
     if (!user) {
       throw new ConflictException("Địa chỉ ví chưa được đăng ký");
     }
-    const token = this.jwtService.sign({
-      id: user.id,
-      role: { name: user.role.name },
-    });
+    const jwtConfig = this.config.get("jwt");
+    const expiresIn = jwtConfig.expiration;
+    const expiresMs = this.parseExpirationToMs(String(expiresIn));
+    const expiresAt = new Date(Date.now() + expiresMs);
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
+    });
+    const tempToken = randomUUID();
+    const session = await this.prisma.userSession.create({
+      data: {
+        userId: user.id,
+        sessionToken: tempToken,
+        walletAddress: user.walletAddress,
+        createdAt: new Date(),
+        expiresAt,
+        isActive: true,
+      },
+    });
+    const token = this.jwtService.sign({
+      id: user.id,
+      role: { name: user.role.name },
+      sessionId: session.id,
+    });
+    await this.prisma.userSession.update({
+      where: { id: session.id },
+      data: { sessionToken: token },
     });
     return {
       success: true,
       message: "Đăng nhập thành công",
       token,
+      expiresAt: expiresAt.toISOString(),
       user: {
         id: user.id,
         walletAddress: user.walletAddress,
@@ -121,6 +144,27 @@ export class AuthService {
         email: user.email,
       },
     };
+  }
+
+  private parseExpirationToMs(exp: string): number {
+    const m = String(exp).trim().toLowerCase().match(AuthService.EXPIRATION_RE);
+    if (!m) {
+      return 60 * 60 * 1000;
+    }
+    const value = Number(m[1]);
+    const unit = m[2] || "s";
+    switch (unit) {
+      case "s":
+        return value * 1000;
+      case "m":
+        return value * 60 * 1000;
+      case "h":
+        return value * 60 * 60 * 1000;
+      case "d":
+        return value * 24 * 60 * 60 * 1000;
+      default:
+        return value * 1000;
+    }
   }
 
   private async verifySiweMessage(
@@ -253,5 +297,27 @@ export class AuthService {
       },
     });
     return createdKey.name;
+  }
+
+  async logout(sessionToken: string) {
+    await this.prisma.userSession.updateMany({
+      where: { sessionToken, isActive: true },
+      data: {
+        isActive: false,
+        lastActivityAt: new Date(),
+        expiresAt: new Date(),
+      },
+    });
+  }
+
+  async logoutBySessionId(sessionId: string) {
+    await this.prisma.userSession.updateMany({
+      where: { id: sessionId, isActive: true },
+      data: {
+        isActive: false,
+        lastActivityAt: new Date(),
+        expiresAt: new Date(),
+      },
+    });
   }
 }
