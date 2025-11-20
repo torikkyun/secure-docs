@@ -127,7 +127,7 @@ export class AuthService {
         };
         const createRes: any = await (client as any).createCryptoKey(createReq);
         const createdKey = Array.isArray(createRes) ? createRes[0] : createRes;
-        kmsKeyName = createdKey?.name ?? null;
+        kmsKeyName = createdKey.name;
       }
     } catch (err) {
       // Do not block registration if KMS fails — log if you have a logger.
@@ -137,7 +137,11 @@ export class AuthService {
         "KMS key creation skipped or failed:",
         err instanceof Error ? err.message : String(err)
       );
-      kmsKeyName = null;
+      throw new ConflictException("KMS_KEY_CREATION_FAILED");
+    }
+
+    if (!kmsKeyName) {
+      kmsKeyName = "KMS_NOT_CONFIGURED";
     }
 
     // Tạo user mới
@@ -147,6 +151,7 @@ export class AuthService {
         username,
         email,
         roleId: role.id,
+        kmsKeyName,
       },
     });
 

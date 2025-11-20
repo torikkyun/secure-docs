@@ -11,16 +11,15 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
   id                   String          @id @default(uuid()) @map("id") @db.Uuid
   roleId               String          @map("role_id") @db.Uuid
   walletAddress        String          @unique @map("wallet_address") @db.VarChar(42)
-  username             String?         @map("username") @db.VarChar(100)
-  email                String?         @unique @map("email") @db.VarChar(255)
-  kmsKeyName           String?         @map("kms_key_name") @db.Text
+  username             String          @map("username") @db.VarChar(100)
+  email                String          @unique @map("email") @db.VarChar(255)
+  kmsKeyName           String          @unique @map("kms_key_name") @db.Text
   storageUsed          BigInt          @default(0) @map("storage_used")
   storageLimit         BigInt          @default(1073741824) @map("storage_limit")
   isActive             Boolean         @default(true) @map("is_active")

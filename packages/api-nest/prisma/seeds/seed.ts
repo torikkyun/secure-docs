@@ -1,7 +1,9 @@
 import { parseArgs } from "node:util";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "generated/prisma/client";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const {
@@ -15,7 +17,7 @@ async function main() {
   switch (environment) {
     case "development": {
       // Seed roles
-      const adminRole = await prisma.role.upsert({
+      await prisma.role.upsert({
         where: { name: "admin" },
         update: {},
         create: { name: "admin" },
