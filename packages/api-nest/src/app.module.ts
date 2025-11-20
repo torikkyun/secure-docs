@@ -14,6 +14,7 @@ import { RedisModule } from "./infrastructure/cache/redis.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { UserModule } from "./modules/user/user.module";
 
 const guards = [JwtGuard, RolesGuard];
 
@@ -34,7 +35,7 @@ const guards = [JwtGuard, RolesGuard];
     LoggerModule,
     HealthModule,
     AuthModule,
-    // UserModule,
+    UserModule,
   ],
   providers: [
     ...guards.map((Guard) => ({

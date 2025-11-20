@@ -1,5 +1,9 @@
-import { Controller } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { Roles } from "src/common/decorators/roles.decorator";
+import { QueryUserDto } from "./dto/query-user.dto";
+import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import { UserService } from "./user.service";
 
 @Controller("api/users")
@@ -11,21 +15,27 @@ export class UserController {
     this.userService = userService;
   }
 
-  // @Get()
-  // @Roles("admin")
-  // async findAll(@Query() query: QueryUserDto) {
-  //   const result = await this.userService.findAll(query);
-  // return {
-  //   ...result,
-  //   users: result.users.map((user) => new UserEntity(user)),
-  // };
-  // return { result };
-  // }
+  @Get("/profile")
+  async getProfile(@CurrentUser() user: { id: string }) {
+    return await this.userService.getProfile(user.id);
+  }
 
-  // @Get(":uuid")
-  // @Roles("admin")
-  // async findById(@Param("uuid", new ParseUUIDPipe()) uuid: string) {
-  //   const user = await this.userService.findById(uuid);
-  //   return user;
-  // }
+  @Patch("/profile")
+  async updateProfile(
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateUserProfileDto
+  ) {
+    return await this.userService.updateProfile(user.id, dto);
+  }
+
+  @Get("/storage")
+  async getStorage(@CurrentUser() user: { id: string }) {
+    return await this.userService.getStorageInfo(user.id);
+  }
+
+  @Get()
+  @Roles("admin")
+  async findAll(@Query() dto: QueryUserDto) {
+    return await this.userService.findAll(dto);
+  }
 }
