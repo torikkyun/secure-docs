@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { Public } from "src/common/decorators/public.decorator";
 import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
+import { LoginWalletDto } from "./dto/login-wallet.dto";
 import { NonceService } from "./nonce.service";
 
 @Controller("api/auth")
@@ -17,8 +18,13 @@ export class AuthController {
   }
 
   @Post("register")
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Post("login")
+  login(@Body() dto: LoginWalletDto) {
+    return this.authService.loginWithWallet(dto);
   }
 
   @Get("nonce/:wallet")
@@ -30,9 +36,4 @@ export class AuthController {
       expiresAt: new Date(expiresAt).toISOString(),
     };
   }
-
-  // @Post("login")
-  // login(@Body() loginDto: LoginDto) {
-  //   return this.authService.login(loginDto);
-  // }
 }

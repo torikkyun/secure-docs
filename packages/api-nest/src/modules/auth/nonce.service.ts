@@ -15,10 +15,6 @@ export class NonceService {
   }
 
   async createNonceFor(walletAddress: string, ttlSeconds = 3600) {
-    // Use a SIWE-compatible nonce (short alphanumeric), not a UUID.
-    // The SIWE library expects a nonce of a specific format and will
-    // generate its own if the provided nonce doesn't match. Using
-    // `generateNonce` keeps client and server in sync.
     const nonce = generateNonce();
     const expiresAt = Date.now() + ttlSeconds * 1000;
     const key = this.keyFor(walletAddress);

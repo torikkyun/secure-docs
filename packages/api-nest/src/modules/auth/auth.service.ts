@@ -6,10 +6,12 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { JwtService } from "@nestjs/jwt";
 import { ethers } from "ethers";
 import { Role } from "generated/prisma/client";
 import { SiweMessage } from "siwe";
 import { PrismaService } from "src/database/prisma.service";
+import { LoginWalletDto } from "./dto/login-wallet.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { NonceService } from "./nonce.service";
 
@@ -19,14 +21,17 @@ export class AuthService {
   private readonly config: ConfigService;
   private cachedRole: Role | null = null;
   private readonly nonceService: NonceService;
+  private readonly jwtService: JwtService;
   constructor(
     prisma: PrismaService,
     config: ConfigService,
-    nonceService: NonceService
+    nonceService: NonceService,
+    jwtService: JwtService
   ) {
     this.prisma = prisma;
     this.config = config;
     this.nonceService = nonceService;
+    this.jwtService = jwtService;
   }
 
   private async getDefaultRole() {
@@ -83,6 +88,41 @@ export class AuthService {
     };
   }
 
+  async loginWithWallet({
+    walletAddress: rawWallet,
+    message,
+    signature,
+  }: LoginWalletDto) {
+    const walletAddress = this.normalizeWallet(rawWallet);
+    await this.verifySiweMessage(message, signature, walletAddress);
+    const user = await this.prisma.user.findUnique({
+      where: { walletAddress },
+      include: { role: true },
+    });
+    if (!user) {
+      throw new ConflictException("Địa chỉ ví chưa được đăng ký");
+    }
+    const token = this.jwtService.sign({
+      id: user.id,
+      role: { name: user.role.name },
+    });
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+    return {
+      success: true,
+      message: "Đăng nhập thành công",
+      token,
+      user: {
+        id: user.id,
+        walletAddress: user.walletAddress,
+        username: user.username,
+        email: user.email,
+      },
+    };
+  }
+
   private async verifySiweMessage(
     message: string,
     signature: string,
@@ -108,9 +148,7 @@ export class AuthService {
 
     await this.performSiweVerification(
       siwe,
-      message,
       signature,
-      expectedWalletAddress,
       allowedDomain,
       entry.nonce
     );
@@ -128,29 +166,17 @@ export class AuthService {
   }
 
   private getAllowedDomain(): string {
-    const siweConfig = (this.config.get("siwe") || {}) as Record<
-      string,
-      unknown
-    >;
-    const domainFromConfig =
-      (siweConfig.registerDomain as string) ||
-      this.config.get<string>("REGISTER_DOMAIN");
-    return (
-      domainFromConfig ||
-      this.config.get<string>("domain") ||
-      "secure-docs.example.com"
-    );
+    const siweConfig = this.config.get("siwe");
+    const domainFromConfig = siweConfig.registerDomain as string;
+    return domainFromConfig;
   }
 
   private async performSiweVerification(
     siwe: SiweMessage,
-    message: string,
     signature: string,
-    expectedWalletAddress: string,
     allowedDomain: string,
     entryNonce: string
   ) {
-    // Use siwe.verify if available, otherwise fallback to ethers
     const siweWithVerify = siwe as unknown as {
       verify?: (opts: {
         signature: string;
@@ -169,17 +195,6 @@ export class AuthService {
         throw new BadRequestException("Chữ ký SIWE không hợp lệ");
       }
       return;
-    }
-
-    // fallback
-    let recovered: string;
-    try {
-      recovered = ethers.verifyMessage(message, signature);
-    } catch {
-      throw new BadRequestException("Chữ ký không hợp lệ");
-    }
-    if (recovered.toLowerCase() !== expectedWalletAddress.toLowerCase()) {
-      throw new BadRequestException("Chữ ký không khớp với địa chỉ ví");
     }
   }
 
@@ -218,18 +233,13 @@ export class AuthService {
     const keyRingId = kmsConfig.gcpKmsKeyRing;
     const client = new KeyManagementServiceClient();
     const keyRingName = client.keyRingPath(projectId, locationId, keyRingId);
-    await client.getKeyRing({ name: keyRingName }).catch(() =>
-      client.createKeyRing({
-        parent: client.locationPath(projectId, locationId),
-        keyRingId,
-      })
-    );
+    await client.getKeyRing({ name: keyRingName });
     const cryptoKeyId = `user_${Date.now()}_${walletAddress.slice(2, 10)}`;
     const algorithm =
       protos.google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
         .EC_SIGN_P256_SHA256;
     const protectionLevel = protos.google.cloud.kms.v1.ProtectionLevel.SOFTWARE;
-    const createReq: protos.google.cloud.kms.v1.ICreateCryptoKeyRequest = {
+    const [createdKey] = await client.createCryptoKey({
       parent: keyRingName,
       cryptoKeyId,
       cryptoKey: {
@@ -241,33 +251,7 @@ export class AuthService {
         },
         labels: { wallet: walletAddress.toLowerCase() },
       },
-    };
-    const [createdKey] = await client.createCryptoKey(createReq);
+    });
     return createdKey.name;
   }
-
-  // async login({ email, password }: LoginDto) {
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { email },
-  //     include: { role: true },
-  //   });
-  //   if (!user) {
-  //     throw new ConflictException("Email hoặc mật khẩu không đúng");
-  //   }
-
-  //   const isPasswordValid = comparePassword(password, user.password);
-  //   if (!isPasswordValid) {
-  //     throw new ConflictException("Email hoặc mật khẩu không đúng");
-  //   }
-
-  //   const token = this.jwtService.sign({
-  //     id: user.id,
-  //     role: { name: user.role.name },
-  //   });
-
-  //   return {
-  //     message: "Đăng nhập thành công",
-  //     token,
-  //   };
-  // }
 }
