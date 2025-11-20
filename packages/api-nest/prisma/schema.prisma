@@ -232,7 +232,7 @@ model IpfsPin {
 model UserSession {
   id             String   @id @default(uuid()) @map("id") @db.Uuid
   userId         String   @map("user_id") @db.Uuid
-  sessionToken   String   @unique @map("session_token") @db.VarChar(255)
+  sessionToken   String   @unique @map("session_token") @db.Text
   walletAddress  String   @map("wallet_address") @db.VarChar(42)
   ipAddress      String?  @map("ip_address") @db.VarChar(45)
   userAgent      String?  @map("user_agent") @db.Text
