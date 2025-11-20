@@ -1,5 +1,7 @@
 "use client";
+import { ethers } from "ethers";
 import React, { useState } from "react";
+import { SiweMessage } from "siwe";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -8,8 +10,6 @@ export default function RegisterPage() {
     email: "",
     message: "",
     signature: "",
-    publicKey:
-      "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----",
   });
   const [loading, setLoading] = useState(false);
   type Result = { status?: number; body?: unknown; error?: string } | null;
@@ -27,12 +27,20 @@ export default function RegisterPage() {
     setLoading(true);
     setResult(null);
     try {
+      const payload = {
+        walletAddress: form.walletAddress,
+        username: form.username,
+        email: form.email,
+        message: form.message,
+        signature: form.signature,
+      };
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         }
       );
       const data = await res.json().catch(() => ({}) as unknown);
@@ -59,13 +67,72 @@ export default function RegisterPage() {
       const accountsRaw = await eth.request({ method: "eth_requestAccounts" });
       const accounts = accountsRaw as string[];
       if (accounts && accounts.length > 0) {
-        setForm((s) => ({ ...s, walletAddress: accounts[0] }));
+        try {
+          const account = ethers.getAddress(accounts[0]);
+          setForm((s) => ({ ...s, walletAddress: account }));
+          prefillSiweMessage(account);
+        } catch (err) {
+          setResult({
+            error: "Connected account is not a valid Ethereum address",
+          });
+        }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setResult({ error: message });
     }
   };
+
+  async function prefillSiweMessage(account: string) {
+    try {
+      const checksummed = (() => {
+        try {
+          return ethers.getAddress(account);
+        } catch {
+          return account;
+        }
+      })();
+      const nonceRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/nonce/${checksummed}`
+      );
+      if (!nonceRes.ok) {
+        return;
+      }
+      const nonceBody = (await nonceRes.json()) as any;
+      const nonce =
+        nonceBody?.nonce ??
+        nonceBody?.value?.nonce ??
+        nonceBody?.data?.nonce ??
+        null;
+      if (!nonce) return; // nothing we can do here
+      const issuedAt =
+        nonceBody?.issuedAt ??
+        nonceBody?.value?.issuedAt ??
+        new Date().toISOString();
+      const expiresAt =
+        nonceBody?.expiresAt ??
+        nonceBody?.value?.expiresAt ??
+        new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      const siweMessage = new SiweMessage({
+        domain: window.location.hostname || "secure-docs.example.com",
+        address: checksummed,
+        statement: "Register wallet for Secure Docs",
+        uri: window.location.origin,
+        version: "1",
+        chainId: 1,
+        nonce,
+        issuedAt,
+        expirationTime: expiresAt,
+      });
+      const messageToSign = siweMessage.prepareMessage();
+      setForm((s) => ({ ...s, message: messageToSign }));
+    } catch (err) {
+      // ignore errors here; user can still click Sign Message
+      /* eslint-disable no-console */
+      console.debug(err);
+      /* eslint-enable no-console */
+    }
+  }
 
   const signMessage = async () => {
     try {
@@ -83,17 +150,61 @@ export default function RegisterPage() {
         setResult({ error: "Wallet address not set — connect wallet first" });
         return;
       }
-      if (!form.message) {
-        setResult({ error: "Message is empty — fill message to sign" });
+      // normalize/checksum address then fetch nonce from backend
+      const checksummed = (() => {
+        try {
+          return ethers.getAddress(account);
+        } catch {
+          return account;
+        }
+      })();
+      const nonceRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/nonce/${checksummed}`
+      );
+      if (!nonceRes.ok) {
+        setResult({ error: `Failed to get nonce: ${nonceRes.status}` });
         return;
       }
+      const nonceBody = await nonceRes.json();
+      const nonce =
+        nonceBody?.nonce ??
+        nonceBody?.value?.nonce ??
+        nonceBody?.data?.nonce ??
+        null;
+      if (!nonce) {
+        setResult({ error: `Failed to get nonce: ${nonceRes.status}` });
+        return;
+      }
+      const issuedAt =
+        nonceBody?.issuedAt ??
+        nonceBody?.value?.issuedAt ??
+        new Date().toISOString();
+      const expiresAt =
+        nonceBody?.expiresAt ??
+        nonceBody?.value?.expiresAt ??
+        new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+      const siweMessage = new SiweMessage({
+        domain: window.location.hostname || "secure-docs.example.com",
+        address: checksummed,
+        statement: "Register wallet for Secure Docs",
+        uri: window.location.origin,
+        version: "1",
+        chainId: 1,
+        nonce,
+        issuedAt,
+        expirationTime: expiresAt,
+      });
+
+      const messageToSign = siweMessage.prepareMessage();
+
       // personal_sign params: [message, account]
       const sigRaw = await eth.request({
         method: "personal_sign",
-        params: [form.message, account],
+        params: [messageToSign, account],
       });
       const signature = String(sigRaw);
-      setForm((s) => ({ ...s, signature }));
+      setForm((s) => ({ ...s, message: messageToSign, signature }));
       setResult({ status: 200, body: { signature } });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -159,15 +270,7 @@ export default function RegisterPage() {
           />
         </label>
 
-        <label>
-          Public Key (PEM)
-          <textarea
-            name="publicKey"
-            onChange={onChange}
-            style={{ width: "100%", minHeight: 120 }}
-            value={form.publicKey}
-          />
-        </label>
+        {/* publicKey removed — SIWE message + signature are used */}
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button disabled={loading} type="submit">
@@ -187,8 +290,6 @@ export default function RegisterPage() {
                 email: "",
                 message: "",
                 signature: "",
-                publicKey:
-                  "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----",
               });
               setResult(null);
             }}

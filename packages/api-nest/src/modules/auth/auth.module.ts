@@ -3,8 +3,10 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { JwtStrategy } from "src/common/strategies/jwt.strategy";
+import { RedisModule } from "src/infrastructure/cache/redis.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
+import { NonceService } from "./nonce.service";
 
 @Module({
   imports: [
@@ -23,8 +25,10 @@ import { AuthService } from "./auth.service";
       },
     }),
     PassportModule.register({ defaultStrategy: "jwt" }),
+    RedisModule,
   ],
   controllers: [AuthController],
-  providers: [JwtStrategy, AuthService],
+  providers: [JwtStrategy, AuthService, NonceService],
+  exports: [NonceService],
 })
 export class AuthModule {}

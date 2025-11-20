@@ -2,11 +2,11 @@ import { createKeyv } from "@keyv/redis";
 import { CacheModule } from "@nestjs/cache-manager";
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { APP_INTERCEPTOR } from "@nestjs/core";
-import { UserAwareCacheInterceptor } from "./user-aware-cache.interceptor";
+import { RedisService } from "./redis.service";
 
 @Module({
   imports: [
+    ConfigModule,
     CacheModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -26,10 +26,12 @@ import { UserAwareCacheInterceptor } from "./user-aware-cache.interceptor";
     }),
   ],
   providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: UserAwareCacheInterceptor,
-    },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: UserAwareCacheInterceptor,
+    // },
+    RedisService,
   ],
+  exports: [RedisService],
 })
 export class RedisModule {}

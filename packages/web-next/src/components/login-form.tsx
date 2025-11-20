@@ -31,7 +31,7 @@ export function LoginForm({
       },
     });
     if (error) {
-      console.error("Error during Google login:", error.message);
+      /* ignore for now */
     }
   };
 
@@ -43,8 +43,6 @@ export function LoginForm({
       } = await supabase.auth.getSession();
       if (session?.user) {
         const user = session.user;
-        console.log("API URL:", process.env.NEXT_PUBLIC_API_URL); // Debug API URL
-        console.log("User data:", user); // Debug user data
 
         try {
           const response = await fetch(
@@ -59,17 +57,13 @@ export function LoginForm({
             }
           );
 
-          console.log("Response status:", response.status); // Debug response status
-
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-
-          const result = await response.json();
-          console.log("Login result from API:", result);
+          await response.json();
           // router.push("/");
-        } catch (error) {
-          console.error("Error calling login API:", error); // Debug API call error
+        } catch {
+          /* ignore for now */
         }
       }
     };
@@ -78,11 +72,8 @@ export function LoginForm({
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state change:", event); // Debug auth events
         if (event === "SIGNED_IN" && session?.user) {
           const user = session.user;
-          console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-          console.log("User data:", user);
 
           try {
             const response = await fetch(
@@ -97,17 +88,14 @@ export function LoginForm({
               }
             );
 
-            console.log("Response status:", response.status);
-
             if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.json();
-            console.log("Login result from API:", result);
+            await response.json();
             // router.push("/");
-          } catch (error) {
-            console.error("Error calling login API:", error);
+          } catch {
+            /* ignore for now */
           }
         }
       }
@@ -143,7 +131,7 @@ export function LoginForm({
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <a
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                    href="#"
+                    href="/forgot-password"
                   >
                     Forgot your password?
                   </a>
@@ -160,7 +148,7 @@ export function LoginForm({
                   Login with Google
                 </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="#">Sign up</a>
+                  Don&apos;t have an account? <a href="/signup">Sign up</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>
