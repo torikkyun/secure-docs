@@ -15,6 +15,7 @@ import { HealthModule } from "./infrastructure/health/health.module";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { UserModule } from "./modules/user/user.module";
+import { FilesModule } from "./modules/files/files.module";
 
 const guards = [JwtGuard, RolesGuard];
 
@@ -36,6 +37,7 @@ const guards = [JwtGuard, RolesGuard];
     HealthModule,
     AuthModule,
     UserModule,
+    FilesModule,
   ],
   providers: [
     ...guards.map((Guard) => ({
