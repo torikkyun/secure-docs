@@ -17,7 +17,7 @@ export class UploadFileDto {
   @IsString()
   fileName: string;
 
-  @ApiProperty({ example: 10485760 })
+  @ApiProperty({ example: 10_485_760 })
   @IsNotEmpty()
   @IsNumber()
   fileSize: number;
@@ -31,16 +31,6 @@ export class UploadFileDto {
   @IsNotEmpty()
   @IsString()
   encryptedKeyOwner: string;
-
-  @ApiPropertyOptional({ example: "0xabcdef1234567890..." })
-  @IsOptional()
-  @IsString()
-  txHash?: string;
-
-  @ApiPropertyOptional({ example: 12345 })
-  @IsOptional()
-  @IsNumber()
-  blockchainFileId?: number;
 
   @ApiPropertyOptional({ example: { description: "Important document" } })
   @IsOptional()

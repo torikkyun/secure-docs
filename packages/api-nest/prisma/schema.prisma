@@ -20,7 +20,6 @@ model User {
   username             String          @map("username") @db.VarChar(100)
   email                String          @unique @map("email") @db.VarChar(255)
   publicKey            String          @map("public_key") @db.Text
-  // kmsKeyName           String          @unique @map("kms_key_name") @db.Text
   storageUsed          BigInt          @default(0) @map("storage_used")
   storageLimit         BigInt          @default(1073741824) @map("storage_limit")
   isActive             Boolean         @default(true) @map("is_active")
@@ -64,10 +63,7 @@ model File {
   fileSize          BigInt             @map("file_size")
   fileType          String?            @map("file_type") @db.VarChar(100)
   encryptedKeyOwner String             @map("encrypted_key_owner") @db.Text
-  kmsEncryptedKey   String?            @map("kms_encrypted_key") @db.Text
   uploadTimestamp   DateTime           @default(now()) @map("upload_timestamp")
-  txHash            String?            @map("tx_hash") @db.VarChar(66)
-  blockchainFileId  BigInt?            @map("blockchain_file_id")
   status            String             @default("active") @map("status") @db.VarChar(20)
   metadata          Json?              @map("metadata")
   // Relations
@@ -90,7 +86,8 @@ model AccessGrant {
   granteeId           String     @map("grantee_id") @db.Uuid
   encryptedKeyGrantee String     @map("encrypted_key_grantee") @db.Text
   grantMessage        Json       @map("grant_message")
-  signature           String     @map("signature") @db.Text
+  signature           String?    @map("signature") @db.Text
+  txHash              String?    @map("tx_hash") @db.VarChar(66)
   grantedAt           DateTime   @default(now()) @map("granted_at")
   expiresAt           DateTime?  @map("expires_at")
   status              String     @default("active") @map("status") @db.VarChar(20)

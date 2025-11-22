@@ -32,7 +32,7 @@ export class FilesController {
     };
   }
 
-  @Post()
+  @Post("upload")
   async uploadFile(
     @CurrentUser() user: { id: string },
     @Body() dto: UploadFileDto

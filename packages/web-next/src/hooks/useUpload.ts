@@ -40,6 +40,13 @@ export const useUpload = () => {
 
       // 3. Encrypt File Content
       const fileArrayBuffer = await file.arrayBuffer();
+
+      // Calculate SHA-256 hash of original file
+      const hashBuffer = await subtle.digest("SHA-256", fileArrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const fileHash =
+        "0x" + hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
       const iv = window.crypto.getRandomValues(new Uint8Array(12));
       const cipherBuffer = await subtle.encrypt(
         { name: "AES-GCM", iv },
@@ -95,19 +102,16 @@ export const useUpload = () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2412";
 
       const payload = {
-        fileHash: `0x${cid.slice(0, 10)}`, // Mock hash if needed, or use CID
+        fileHash,
         cid,
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type || null,
         encryptedKeyOwner, // This is now the TweetNaCl encrypted box
-        kmsEncryptedKey: null,
-        txHash: null,
-        blockchainFileId: null,
         metadata: { pinnedFrom: "pinata", originalName: file.name },
       };
 
-      const backendRes = await fetch(`${apiUrl}/api/files`, {
+      const backendRes = await fetch(`${apiUrl}/api/files/upload`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
