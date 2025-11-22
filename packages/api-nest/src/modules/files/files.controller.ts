@@ -1,7 +1,16 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { PrepareUploadDto } from "./dto/prepare-upload.dto";
+import { QueryFileDto } from "./dto/query-file.dto";
 import { UploadFileDto } from "./dto/upload-file.dto";
 import { FilesService } from "./files.service";
 
@@ -44,5 +53,20 @@ export class FilesController {
       file,
       message: "Upload thành công",
     };
+  }
+
+  @Get()
+  findAll(@CurrentUser() user: { id: string }, @Query() dto: QueryFileDto) {
+    return this.filesService.findAll(user.id, dto);
+  }
+
+  @Get(":id")
+  findOne(@CurrentUser() user: { id: string }, @Param("id") id: string) {
+    return this.filesService.findOne(user.id, id);
+  }
+
+  @Delete(":id")
+  remove(@CurrentUser() user: { id: string }, @Param("id") id: string) {
+    return this.filesService.remove(user.id, id);
   }
 }
