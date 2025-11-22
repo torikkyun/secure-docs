@@ -2,6 +2,7 @@
 import { ethers } from "ethers";
 import React, { useState } from "react";
 import { SiweMessage } from "siwe";
+import { Identity, KeyManager } from "@/lib/crypto/key-manager";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -10,8 +11,12 @@ export default function RegisterPage() {
     email: "",
     message: "",
     signature: "",
+    publicKey: "",
   });
   const [loading, setLoading] = useState(false);
+  const [identity, setIdentity] = useState<Identity | null>(null);
+  const [savedKeys, setSavedKeys] = useState(false);
+
   type Result = { status?: number; body?: unknown; error?: string } | null;
   const [result, setResult] = useState<Result>(null);
 
@@ -33,6 +38,7 @@ export default function RegisterPage() {
         email: form.email,
         message: form.message,
         signature: form.signature,
+        publicKey: form.publicKey,
       };
 
       const res = await fetch(
@@ -212,6 +218,30 @@ export default function RegisterPage() {
     }
   };
 
+  const generateKeys = async () => {
+    try {
+      const id = await KeyManager.generateIdentity();
+      setIdentity(id);
+      setForm((s) => ({ ...s, publicKey: id.publicKey }));
+      setSavedKeys(false);
+    } catch (err) {
+      console.error(err);
+      setResult({ error: "Failed to generate keys" });
+    }
+  };
+
+  const saveKeys = async () => {
+    if (!identity) return;
+    try {
+      await KeyManager.saveIdentity(identity);
+      setSavedKeys(true);
+      alert("Keys saved to device securely!");
+    } catch (err) {
+      console.error(err);
+      setResult({ error: "Failed to save keys" });
+    }
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
       <h1>Test: Register User</h1>
@@ -250,6 +280,42 @@ export default function RegisterPage() {
           />
         </label>
 
+        {/* Encryption Section */}
+        <div style={{ border: "1px solid #ccc", padding: 12, borderRadius: 4 }}>
+          <h3>Encryption Setup</h3>
+          {identity ? (
+            <div>
+              <p style={{ color: "red", fontWeight: "bold" }}>
+                SAVE THIS RECOVERY PHRASE! You will lose access to your files if
+                you lose this.
+              </p>
+              <pre
+                style={{
+                  background: "#eee",
+                  padding: 8,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {identity.mnemonic}
+              </pre>
+              <p>Public Key: {identity.publicKey.substring(0, 20)}...</p>
+
+              {savedKeys ? (
+                <p style={{ color: "green" }}>✓ Keys saved to device</p>
+              ) : (
+                <button onClick={saveKeys} type="button">
+                  I have saved my phrase (Save to Device)
+                </button>
+              )}
+            </div>
+          ) : (
+            <button onClick={generateKeys} type="button">
+              Generate Encryption Keys
+            </button>
+          )}
+          <input name="publicKey" type="hidden" value={form.publicKey} />
+        </div>
+
         <label>
           Message
           <textarea
@@ -270,11 +336,9 @@ export default function RegisterPage() {
           />
         </label>
 
-        {/* publicKey removed — SIWE message + signature are used */}
-
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button disabled={loading} type="submit">
-            {loading ? "Sending…" : "Send"}
+          <button disabled={loading || !savedKeys} type="submit">
+            {loading ? "Sending…" : "Register"}
           </button>
           <button onClick={connectWallet} type="button">
             Connect Wallet
@@ -290,7 +354,10 @@ export default function RegisterPage() {
                 email: "",
                 message: "",
                 signature: "",
+                publicKey: "",
               });
+              setIdentity(null);
+              setSavedKeys(false);
               setResult(null);
             }}
             type="button"

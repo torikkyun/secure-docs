@@ -24,4 +24,11 @@ export class RegisterDto {
       "Welcome to Secure Docs!\n\nDomain: secure-docs.example.com  \nPurpose: Register wallet for Secure Docs  \nVersion: 1  \nNonce: 8f3d2a1b-5c6e-4f2d-bc89-123456abcdef  \nIssued At: 2025-11-20T08:30:00Z  \nExpires At: 2025-11-20T09:30:00Z",
   })
   message: string;
+
+  @IsNotEmpty()
+  @ApiProperty({
+    example:
+      "B64 or hex public key used to encrypt AES keys (e.g. eth_getEncryptionPublicKey output)",
+  })
+  publicKey: string;
 }

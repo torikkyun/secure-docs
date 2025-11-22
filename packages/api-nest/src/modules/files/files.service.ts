@@ -40,7 +40,6 @@ export class FilesService {
         fileSize: BigInt(dto.fileSize),
         fileType: dto.fileType ?? null,
         encryptedKeyOwner: dto.encryptedKeyOwner,
-        kmsEncryptedKey: dto.kmsEncryptedKey ?? null,
         txHash: dto.txHash ?? null,
         blockchainFileId: dto.blockchainFileId ?? null,
         metadata: dto.metadata ?? null,

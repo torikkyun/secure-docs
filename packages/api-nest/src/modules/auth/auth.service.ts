@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { KeyManagementServiceClient, protos } from "@google-cloud/kms";
 import {
   BadGatewayException,
   BadRequestException,
@@ -56,31 +55,34 @@ export class AuthService {
     email,
     signature,
     message,
+    publicKey,
   }: RegisterDto) {
     const walletAddress = this.normalizeWallet(rawWallet);
     await this.verifySiweMessage(message, signature, walletAddress);
     await this.ensureUnique(walletAddress, email);
-    const [role, kmsKeyName] = await Promise.all([
-      this.getDefaultRole(),
-      this.createKmsKey(walletAddress),
-    ]);
-    if (!kmsKeyName) {
-      throw new BadGatewayException("KMS service không được cấu hình đúng");
-    }
+    // const [role, kmsKeyName] = await Promise.all([
+    //   this.getDefaultRole(),
+    //   this.createKmsKey(walletAddress),
+    // ]);
+    // if (!kmsKeyName) {
+    //   throw new BadGatewayException("KMS service không được cấu hình đúng");
+    // }
+    const role = await this.getDefaultRole();
     const user = await this.prisma.user.create({
       data: {
         walletAddress,
         username,
         email,
+        publicKey,
         roleId: role.id,
-        kmsKeyName,
+        // kmsKeyName,
       },
       select: {
         id: true,
         walletAddress: true,
         username: true,
         email: true,
-        kmsKeyName: true,
+        // kmsKeyName: true,
       },
     });
     return {
@@ -268,36 +270,36 @@ export class AuthService {
     }
   }
 
-  private async createKmsKey(
-    walletAddress: string
-  ): Promise<string | null | undefined> {
-    const kmsConfig = this.config.get("kms");
-    const projectId = kmsConfig.gcpProjectId;
-    const locationId = kmsConfig.gcpKmsLocation;
-    const keyRingId = kmsConfig.gcpKmsKeyRing;
-    const client = new KeyManagementServiceClient();
-    const keyRingName = client.keyRingPath(projectId, locationId, keyRingId);
-    await client.getKeyRing({ name: keyRingName });
-    const cryptoKeyId = `user_${Date.now()}_${walletAddress.slice(2, 10)}`;
-    const algorithm =
-      protos.google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
-        .EC_SIGN_P256_SHA256;
-    const protectionLevel = protos.google.cloud.kms.v1.ProtectionLevel.SOFTWARE;
-    const [createdKey] = await client.createCryptoKey({
-      parent: keyRingName,
-      cryptoKeyId,
-      cryptoKey: {
-        purpose:
-          protos.google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ASYMMETRIC_SIGN,
-        versionTemplate: {
-          algorithm,
-          protectionLevel,
-        },
-        labels: { wallet: walletAddress.toLowerCase() },
-      },
-    });
-    return createdKey.name;
-  }
+  // private async createKmsKey(
+  //   walletAddress: string
+  // ): Promise<string | null | undefined> {
+  //   const kmsConfig = this.config.get("kms");
+  //   const projectId = kmsConfig.gcpProjectId;
+  //   const locationId = kmsConfig.gcpKmsLocation;
+  //   const keyRingId = kmsConfig.gcpKmsKeyRing;
+  //   const client = new KeyManagementServiceClient();
+  //   const keyRingName = client.keyRingPath(projectId, locationId, keyRingId);
+  //   await client.getKeyRing({ name: keyRingName });
+  //   const cryptoKeyId = `user_${Date.now()}_${walletAddress.slice(2, 10)}`;
+  //   const algorithm =
+  //     protos.google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
+  //       .EC_SIGN_P256_SHA256;
+  //   const protectionLevel = protos.google.cloud.kms.v1.ProtectionLevel.SOFTWARE;
+  //   const [createdKey] = await client.createCryptoKey({
+  //     parent: keyRingName,
+  //     cryptoKeyId,
+  //     cryptoKey: {
+  //       purpose:
+  //         protos.google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ASYMMETRIC_SIGN,
+  //       versionTemplate: {
+  //         algorithm,
+  //         protectionLevel,
+  //       },
+  //       labels: { wallet: walletAddress.toLowerCase() },
+  //     },
+  //   });
+  //   return createdKey.name;
+  // }
 
   async logout(sessionToken: string) {
     await this.prisma.userSession.updateMany({

@@ -32,11 +32,6 @@ export class UploadFileDto {
   @IsString()
   encryptedKeyOwner: string;
 
-  @ApiPropertyOptional({ example: "kms_encrypted_key_base64" })
-  @IsOptional()
-  @IsString()
-  kmsEncryptedKey?: string;
-
   @ApiPropertyOptional({ example: "0xabcdef1234567890..." })
   @IsOptional()
   @IsString()
