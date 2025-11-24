@@ -34,7 +34,7 @@ async function main() {
   // Estimate shareFile
   const fileShare = await viem.deployContract("FileShare");
   const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-  const fileHash = "Qm123456789abcdef";
+  const cid = "Qm123456789abcdef";
 
   console.log("FileShare deployed at:", fileShare.address);
   console.log("FileShare keys:", Object.keys(fileShare));
@@ -44,7 +44,7 @@ async function main() {
       address: fileShare.address,
       abi: fileShare.abi,
       functionName: "shareFile",
-      args: [receiver, fileHash],
+      args: [receiver, cid],
       account: deployer.account,
     });
     const shareCostWei = shareGas * gasPrice;

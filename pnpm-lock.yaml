@@ -187,6 +187,9 @@ importers:
       '@nomicfoundation/hardhat-toolbox-viem':
         specifier: ^5.0.1
         version: 5.0.1(5d9815c6e444ee2e35b90676bc2d25ed)
+      '@nomicfoundation/hardhat-verify':
+        specifier: ^3.0.7
+        version: 3.0.7(hardhat@3.0.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       '@nomicfoundation/hardhat-viem':
         specifier: ^3.0.1
         version: 3.0.1(hardhat@3.0.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(viem@2.38.6(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))

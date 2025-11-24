@@ -10,7 +10,7 @@ contract FileShareTest is Test {
     event FileShared(
         address indexed sender,
         address indexed receiver,
-        string fileHash,
+        string cid,
         uint256 timestamp
     );
 
@@ -20,13 +20,13 @@ contract FileShareTest is Test {
 
     function test_ShareFile() public {
         address receiver = address(0x123);
-        string memory fileHash = "QmTestHash";
+        string memory cid = "QmTestHash";
 
         vm.warp(1234567890);
 
         vm.expectEmit(true, true, false, true);
-        emit FileShared(address(this), receiver, fileHash, 1234567890);
+        emit FileShared(address(this), receiver, cid, 1234567890);
 
-        fileShare.shareFile(receiver, fileHash);
+        fileShare.shareFile(receiver, cid);
     }
 }

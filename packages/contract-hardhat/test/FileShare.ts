@@ -22,9 +22,9 @@ describe("FileShare", () => {
     const { fileShare, owner, publicClient } = await deployFileShareFixture();
 
     const receiver = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-    const fileHash = "Qm123456789abcdef";
+    const cid = "Qm123456789abcdef";
 
-    const hash = await fileShare.write.shareFile([receiver, fileHash]);
+    const hash = await fileShare.write.shareFile([receiver, cid]);
     await publicClient.waitForTransactionReceipt({ hash });
 
     const fileSharedEvents = await publicClient.getContractEvents({
@@ -39,22 +39,22 @@ describe("FileShare", () => {
       getAddress(owner.account.address)
     );
     assert.strictEqual(fileSharedEvents[0].args.receiver, getAddress(receiver));
-    assert.strictEqual(fileSharedEvents[0].args.fileHash, fileHash);
+    assert.strictEqual(fileSharedEvents[0].args.cid, cid);
   });
 
   it("Should allow multiple shares", async () => {
     const { fileShare, publicClient } = await deployFileShareFixture();
 
     const receiver = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
-    const fileHash1 = "QmHash1";
-    const fileHash2 = "QmHash2";
+    const cid1 = "QmHash1";
+    const cid2 = "QmHash2";
 
-    const hash1 = await fileShare.write.shareFile([receiver, fileHash1]);
+    const hash1 = await fileShare.write.shareFile([receiver, cid1]);
     await publicClient.waitForTransactionReceipt({
       hash: hash1,
     });
 
-    const hash2 = await fileShare.write.shareFile([receiver, fileHash2]);
+    const hash2 = await fileShare.write.shareFile([receiver, cid2]);
     await publicClient.waitForTransactionReceipt({
       hash: hash2,
     });
@@ -66,7 +66,7 @@ describe("FileShare", () => {
       fromBlock: 0n,
     });
     assert.strictEqual(fileSharedEvents.length, 2);
-    assert.strictEqual(fileSharedEvents[0].args.fileHash, fileHash1);
-    assert.strictEqual(fileSharedEvents[1].args.fileHash, fileHash2);
+    assert.strictEqual(fileSharedEvents[0].args.cid, cid1);
+    assert.strictEqual(fileSharedEvents[1].args.cid, cid2);
   });
 });
