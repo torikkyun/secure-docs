@@ -28,17 +28,7 @@ export class FileController {
     @CurrentUser() user: { id: string },
     @Body() dto: PrepareUploadDto
   ) {
-    const result = await this.filesService.prepareUpload(user.id, dto.fileSize);
-    return {
-      uploadId: result.uploadId,
-      canUpload: result.canUpload,
-      remainingStorage: result.remainingStorage,
-      metadata: {
-        fileName: dto.fileName,
-        fileSize: dto.fileSize,
-        fileType: dto.fileType,
-      },
-    };
+    return await this.filesService.prepareUpload(user.id, dto.fileSize);
   }
 
   @Post("upload")
@@ -46,13 +36,7 @@ export class FileController {
     @CurrentUser() user: { id: string },
     @Body() dto: UploadFileDto
   ) {
-    const file = await this.filesService.createFile(user.id, dto);
-
-    return {
-      fileId: (file as { id: string }).id,
-      file,
-      message: "Upload thành công",
-    };
+    return await this.filesService.createFile(user.id, dto);
   }
 
   @Get()

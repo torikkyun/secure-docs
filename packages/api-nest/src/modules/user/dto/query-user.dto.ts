@@ -1,10 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
 import { OffsetPaginationQueryDto } from "src/common/dto/offset-pagination-query.dto";
 
 export class QueryUserDto extends OffsetPaginationQueryDto {
   @IsOptional()
   @IsString()
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   search?: string;
 }

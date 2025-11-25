@@ -6,8 +6,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "generated/prisma/client";
+import { serializeBigInt } from "src/common/utils/bigint.util";
 import { PrismaService } from "src/database/prisma.service";
 import { CreateAccessGrantDto } from "./dto/create-access-grant.dto";
+import { QueryAccessGrantDto } from "./dto/query-access-grant.dto";
 import { RevokeAccessGrantDto } from "./dto/revoke-access-grant.dto";
 
 @Injectable()
@@ -18,42 +20,43 @@ export class AccessGrantService {
     this.prisma = prisma;
   }
 
-  async create(userId: string, createAccessGrantDto: CreateAccessGrantDto) {
-    const {
+  async create(
+    userId: string,
+    {
       fileId,
       granteeWalletAddress,
       encryptedKeyGrantee,
       txHash,
       expiresAt,
-    } = createAccessGrantDto;
-
+    }: CreateAccessGrantDto
+  ) {
     // 1. Verify file exists and user is owner
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
 
     if (!file) {
-      throw new NotFoundException("File not found");
+      throw new NotFoundException("Không tìm thấy file");
     }
 
     if (file.ownerId !== userId) {
-      throw new ForbiddenException("You are not the owner of this file");
+      throw new ForbiddenException("Bạn không phải chủ sở hữu file");
     }
 
-    // 2. Find grantee by wallet address
     const grantee = await this.prisma.user.findUnique({
       where: { walletAddress: granteeWalletAddress },
     });
 
     if (!grantee) {
-      throw new NotFoundException("Grantee not found");
+      throw new NotFoundException("Không tìm thấy người nhận quyền truy cập");
     }
 
     if (grantee.id === userId) {
-      throw new BadRequestException("Cannot grant access to yourself");
+      throw new BadRequestException(
+        "Không thể cấp quyền truy cập cho chính bạn"
+      );
     }
 
-    // 3. Check if grant already exists
     const existingGrant = await this.prisma.accessGrant.findUnique({
       where: {
         idx_unique_grant: {
@@ -64,13 +67,8 @@ export class AccessGrantService {
     });
 
     if (existingGrant && existingGrant.status === "active") {
-      throw new ConflictException("Access grant already exists for this user");
+      throw new ConflictException("Quyền truy cập đã tồn tại");
     }
-
-    // 4. Create grant
-    // Note: grantMessage is optional now, and we don't have it in DTO based on API docs.
-    // If it was required, we would need to construct it or ask for it.
-    // Since we made it optional in schema, we can skip it.
 
     const grant = await this.prisma.accessGrant.create({
       data: {
@@ -81,7 +79,6 @@ export class AccessGrantService {
         txHash,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         status: "active",
-        // grantMessage is optional
       },
       include: {
         file: true,
@@ -102,20 +99,13 @@ export class AccessGrantService {
       },
     });
 
-    return this.serializeBigInt(grant);
+    return serializeBigInt(grant);
   }
 
   async findAll(
     userId: string,
-    query: {
-      fileId?: string;
-      granteeId?: string;
-      status?: string;
-      page?: number;
-      limit?: number;
-    }
+    { fileId, granteeId, status, page = 1, limit = 20 }: QueryAccessGrantDto
   ) {
-    const { fileId, granteeId, status, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
     const where: Prisma.AccessGrantWhereInput = {
@@ -163,7 +153,7 @@ export class AccessGrantService {
       this.prisma.accessGrant.count({ where }),
     ]);
 
-    return this.serializeBigInt({
+    return serializeBigInt({
       grants,
       pagination: {
         page: +page,
@@ -196,7 +186,7 @@ export class AccessGrantService {
       );
     }
 
-    return this.serializeBigInt(grant);
+    return serializeBigInt(grant);
   }
 
   async revoke(
@@ -285,13 +275,5 @@ export class AccessGrantService {
         granteeMatches: true, // Placeholder
       },
     };
-  }
-
-  private serializeBigInt<T>(data: T): T {
-    return JSON.parse(
-      JSON.stringify(data, (_key, value) =>
-        typeof value === "bigint" ? value.toString() : value
-      )
-    );
   }
 }

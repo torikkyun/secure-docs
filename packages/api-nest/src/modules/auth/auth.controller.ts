@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Public } from "src/common/decorators/public.decorator";
 import { AuthService } from "./auth.service";
@@ -25,8 +26,8 @@ export class AuthController {
 
   @Post("login")
   @Public()
-  login(@Body() dto: LoginWalletDto) {
-    return this.authService.loginWithWallet(dto);
+  login(@Body() dto: LoginWalletDto, @Req() req: Request) {
+    return this.authService.loginWithWallet(dto, req);
   }
 
   @Get("nonce/:wallet")

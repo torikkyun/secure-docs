@@ -8,19 +8,19 @@ import {
 } from "class-validator";
 
 export class PrepareUploadDto {
-  @ApiProperty({ example: "document.pdf" })
   @IsNotEmpty()
   @IsString()
+  @ApiProperty({ example: "document.pdf" })
   fileName: string;
 
-  @ApiProperty({ example: 10_485_760 })
   @IsNotEmpty()
   @IsNumber()
   @Min(1)
+  @ApiProperty({ example: 10_485_760 })
   fileSize: number;
 
-  @ApiPropertyOptional({ example: "application/pdf" })
   @IsOptional()
   @IsString()
+  @ApiPropertyOptional({ example: "application/pdf" })
   fileType?: string;
 }

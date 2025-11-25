@@ -8,30 +8,28 @@ import {
 } from "class-validator";
 
 export class CreateAccessGrantDto {
-  @ApiProperty({ description: "ID of the file to share" })
   @IsUUID()
   @IsNotEmpty()
+  @ApiProperty()
   fileId: string;
 
-  @ApiProperty({ description: "Wallet address of the recipient" })
   @IsString()
   @IsNotEmpty()
+  @ApiProperty()
   granteeWalletAddress: string;
 
-  @ApiProperty({ description: "Encrypted AES key for the grantee" })
   @IsString()
   @IsNotEmpty()
+  @ApiProperty()
   encryptedKeyGrantee: string;
 
-  @ApiPropertyOptional({
-    description: "Transaction hash of the grant event on blockchain",
-  })
   @IsString()
   @IsOptional()
+  @ApiPropertyOptional()
   txHash?: string;
 
-  @ApiPropertyOptional({ description: "Expiration date of the grant" })
   @IsDateString()
   @IsOptional()
+  @ApiPropertyOptional()
   expiresAt?: string;
 }

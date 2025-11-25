@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "generated/prisma/client";
+import { serializeBigInt } from "src/common/utils/bigint.util";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { PrismaService } from "src/database/prisma.service";
 import { QueryUserDto } from "./dto/query-user.dto";
@@ -38,19 +39,7 @@ export class UserService {
       throw new NotFoundException("Không tìm thấy người dùng");
     }
 
-    return {
-      id: user.id,
-      walletAddress: user.walletAddress,
-      username: user.username,
-      email: user.email,
-      storageUsed: user.storageUsed.toString(),
-      storageLimit: user.storageLimit.toString(),
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
-      roleName: user.role.name,
-    };
+    return serializeBigInt(user);
   }
 
   async updateProfile(
@@ -60,9 +49,7 @@ export class UserService {
     if (email) {
       const existing = await this.prisma.user.findUnique({ where: { email } });
       if (existing && existing.id !== userId) {
-        throw new ConflictException(
-          "Email đã được sử dụng bởi người dùng khác"
-        );
+        throw new ConflictException("Email đã được sử dụng bởi tài khoản khác");
       }
     }
 
@@ -87,19 +74,7 @@ export class UserService {
       },
     });
 
-    return {
-      id: user.id,
-      walletAddress: user.walletAddress,
-      username: user.username,
-      email: user.email,
-      storageUsed: user.storageUsed.toString(),
-      storageLimit: user.storageLimit.toString(),
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
-      roleName: user.role.name,
-    };
+    return serializeBigInt(user);
   }
 
   async getStorageInfo(userId: string) {
@@ -116,11 +91,11 @@ export class UserService {
     const limit = BigInt(user.storageLimit);
     const remaining = limit - used;
 
-    return {
-      storageUsed: used.toString(),
-      storageLimit: limit.toString(),
-      storageRemaining: (remaining < 0n ? 0n : remaining).toString(),
-    };
+    return serializeBigInt({
+      storageUsed: used,
+      storageLimit: limit,
+      storageRemaining: remaining < 0n ? 0n : remaining,
+    });
   }
 
   async findAll({ page = 1, limit = 10, search }: QueryUserDto) {
@@ -173,8 +148,14 @@ export class UserService {
         id: true,
         walletAddress: true,
         username: true,
-        publicKey: true,
+        email: true,
+        storageUsed: true,
+        storageLimit: true,
         isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
+        role: { select: { name: true } },
       },
     });
 
@@ -182,12 +163,6 @@ export class UserService {
       throw new NotFoundException("User not found");
     }
 
-    return {
-      id: user.id,
-      walletAddress: user.walletAddress,
-      username: user.username,
-      publicKey: user.publicKey,
-      isActive: user.isActive,
-    };
+    return serializeBigInt(user);
   }
 }

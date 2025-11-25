@@ -8,6 +8,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { ethers } from "ethers";
+import { Request } from "express";
 import { Role } from "generated/prisma/client";
 import { SiweMessage } from "siwe";
 import { PrismaService } from "src/database/prisma.service";
@@ -60,13 +61,6 @@ export class AuthService {
     const walletAddress = this.normalizeWallet(rawWallet);
     await this.verifySiweMessage(message, signature, walletAddress);
     await this.ensureUnique(walletAddress, email);
-    // const [role, kmsKeyName] = await Promise.all([
-    //   this.getDefaultRole(),
-    //   this.createKmsKey(walletAddress),
-    // ]);
-    // if (!kmsKeyName) {
-    //   throw new BadGatewayException("KMS service không được cấu hình đúng");
-    // }
     const role = await this.getDefaultRole();
     const user = await this.prisma.user.create({
       data: {
@@ -75,14 +69,12 @@ export class AuthService {
         email,
         publicKey,
         roleId: role.id,
-        // kmsKeyName,
       },
       select: {
         id: true,
         walletAddress: true,
         username: true,
         email: true,
-        // kmsKeyName: true,
       },
     });
     return {
@@ -92,11 +84,10 @@ export class AuthService {
     };
   }
 
-  async loginWithWallet({
-    walletAddress: rawWallet,
-    message,
-    signature,
-  }: LoginWalletDto) {
+  async loginWithWallet(
+    { walletAddress: rawWallet, message, signature }: LoginWalletDto,
+    req: Request
+  ) {
     const walletAddress = this.normalizeWallet(rawWallet);
     await this.verifySiweMessage(message, signature, walletAddress);
     const user = await this.prisma.user.findUnique({
@@ -115,6 +106,12 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
     const tempToken = randomUUID();
+    const ipAddress =
+      (req.headers["x-forwarded-for"] as string) ||
+      req.ip ||
+      req.socket?.remoteAddress;
+    const userAgent = req.headers["user-agent"] as string;
+
     const session = await this.prisma.userSession.create({
       data: {
         userId: user.id,
@@ -123,6 +120,8 @@ export class AuthService {
         createdAt: new Date(),
         expiresAt,
         isActive: true,
+        ipAddress,
+        userAgent,
       },
     });
     const token = this.jwtService.sign({
@@ -269,37 +268,6 @@ export class AuthService {
       throw new ConflictException("Email đã được sử dụng");
     }
   }
-
-  // private async createKmsKey(
-  //   walletAddress: string
-  // ): Promise<string | null | undefined> {
-  //   const kmsConfig = this.config.get("kms");
-  //   const projectId = kmsConfig.gcpProjectId;
-  //   const locationId = kmsConfig.gcpKmsLocation;
-  //   const keyRingId = kmsConfig.gcpKmsKeyRing;
-  //   const client = new KeyManagementServiceClient();
-  //   const keyRingName = client.keyRingPath(projectId, locationId, keyRingId);
-  //   await client.getKeyRing({ name: keyRingName });
-  //   const cryptoKeyId = `user_${Date.now()}_${walletAddress.slice(2, 10)}`;
-  //   const algorithm =
-  //     protos.google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
-  //       .EC_SIGN_P256_SHA256;
-  //   const protectionLevel = protos.google.cloud.kms.v1.ProtectionLevel.SOFTWARE;
-  //   const [createdKey] = await client.createCryptoKey({
-  //     parent: keyRingName,
-  //     cryptoKeyId,
-  //     cryptoKey: {
-  //       purpose:
-  //         protos.google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ASYMMETRIC_SIGN,
-  //       versionTemplate: {
-  //         algorithm,
-  //         protectionLevel,
-  //       },
-  //       labels: { wallet: walletAddress.toLowerCase() },
-  //     },
-  //   });
-  //   return createdKey.name;
-  // }
 
   async logout(sessionToken: string) {
     await this.prisma.userSession.updateMany({

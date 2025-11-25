@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsInt, IsOptional, Min } from "class-validator";
 
@@ -7,13 +7,13 @@ export class OffsetPaginationQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @ApiProperty({ default: 1, required: false })
+  @ApiPropertyOptional({ default: 1 })
   page?: number = 1;
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @ApiProperty({ default: 10, required: false })
+  @ApiPropertyOptional({ default: 10 })
   limit?: number = 10;
 }

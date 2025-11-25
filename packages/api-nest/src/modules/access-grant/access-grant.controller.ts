@@ -25,24 +25,19 @@ export class AccessGrantController {
     return {
       grantId: grant.id,
       grant,
-      message: "Access granted successfully",
+      message: "Cấp quyền truy cập thành công",
     };
   }
 
   @Get()
   async findAll(
     @CurrentUser() user: { id: string },
-    @Query() query: QueryAccessGrantDto
+    @Query() dto: QueryAccessGrantDto
   ) {
-    const result = await this.accessGrantService.findAll(user.id, {
-      fileId: query.fileId,
-      granteeId: query.granteeId,
-      status: query.status,
-      page: query.page,
-      limit: query.limit,
-    });
+    const result = await this.accessGrantService.findAll(user.id, dto);
     return {
       result,
+      message: "Lấy danh sách quyền truy cập thành công",
     };
   }
 
@@ -63,7 +58,7 @@ export class AccessGrantController {
     const result = await this.accessGrantService.revoke(user.id, id, dto);
     return {
       result,
-      message: "Access revoked successfully",
+      message: "Hủy quyền truy cập thành công",
     };
   }
 

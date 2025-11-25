@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "generated/prisma/client";
+import { serializeBigInt } from "src/common/utils/bigint.util";
 import { PrismaService } from "src/database/prisma.service";
 import { QueryFileDto } from "./dto/query-file.dto";
 import type { UploadFileDto } from "./dto/upload-file.dto";
@@ -17,7 +18,21 @@ export class FileService {
     this.prisma = prisma;
   }
 
-  async prepareUpload(userId: string, fileSize: number) {
+  async prepareUpload(
+    userId: string,
+    fileSize: number
+  ): Promise<
+    | {
+        canUpload: boolean;
+        remainingStorage: bigint;
+        uploadId?: undefined;
+      }
+    | {
+        canUpload: boolean;
+        remainingStorage: bigint;
+        uploadId: `${string}-${string}-${string}-${string}-${string}`;
+      }
+  > {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { storageUsed: true, storageLimit: true },
@@ -25,38 +40,54 @@ export class FileService {
     if (!user) {
       throw new BadRequestException("Người dùng không tồn tại");
     }
-    const remaining = Number(user.storageLimit) - Number(user.storageUsed);
-    if (fileSize > remaining) {
-      return { canUpload: false, remainingStorage: remaining };
+    const remaining = BigInt(user.storageLimit) - BigInt(user.storageUsed);
+    const fileSizeBigInt = BigInt(fileSize);
+    if (fileSizeBigInt > remaining) {
+      return { canUpload: false, remainingStorage: serializeBigInt(remaining) };
     }
     const uploadId = randomUUID();
     return {
       canUpload: true,
-      remainingStorage: remaining - fileSize,
+      remainingStorage: serializeBigInt(remaining - fileSizeBigInt),
       uploadId,
     };
   }
 
-  async createFile(ownerId: string, dto: UploadFileDto) {
+  async createFile(
+    ownerId: string,
+    {
+      fileHash,
+      cid,
+      fileName,
+      fileSize,
+      fileType,
+      encryptedKeyOwner,
+      metadata,
+    }: UploadFileDto
+  ) {
     const file = await this.prisma.file.create({
       data: {
         ownerId,
-        fileHash: dto.fileHash,
-        cid: dto.cid,
-        fileName: dto.fileName,
-        fileSize: BigInt(dto.fileSize),
-        fileType: dto.fileType ?? null,
-        encryptedKeyOwner: dto.encryptedKeyOwner,
-        metadata: dto.metadata ?? null,
+        fileHash,
+        cid,
+        fileName,
+        fileSize: BigInt(fileSize),
+        fileType: fileType ?? null,
+        encryptedKeyOwner,
+        metadata:
+          metadata ??
+          (null as unknown as
+            | Prisma.NullableJsonNullValueInput
+            | Prisma.InputJsonValue),
       },
     });
 
     await this.prisma.user.update({
       where: { id: ownerId },
-      data: { storageUsed: { increment: BigInt(dto.fileSize) } },
+      data: { storageUsed: { increment: BigInt(fileSize) } },
     });
 
-    return { ...file, fileSize: file.fileSize.toString() };
+    return file;
   }
 
   async findAll(
@@ -98,6 +129,7 @@ export class FileService {
           owner: { select: { id: true, username: true, walletAddress: true } },
           _count: { select: { grants: true, downloads: true } },
         },
+        omit: { ownerId: true, encryptedKeyOwner: true },
       }),
       this.prisma.file.count({ where }),
     ]);
@@ -106,8 +138,6 @@ export class FileService {
       files: files.map((f) => ({
         ...f,
         fileSize: f.fileSize.toString(),
-        shares: f._count.grants,
-        downloads: f._count.downloads,
       })),
       pagination: {
         page,
@@ -146,8 +176,7 @@ export class FileService {
     }
 
     return {
-      ...file,
-      fileSize: file.fileSize.toString(),
+      file: serializeBigInt(file),
       isOwner,
     };
   }

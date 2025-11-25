@@ -2,37 +2,37 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class UploadFileDto {
-  @ApiProperty({ example: "0x1234567890abcdef..." })
   @IsNotEmpty()
   @IsString()
+  @ApiProperty({ example: "0x1234567890abcdef..." })
   fileHash: string;
 
-  @ApiProperty({ example: "QmX4k3qVvQ7ZJqPZ..." })
   @IsNotEmpty()
   @IsString()
+  @ApiProperty({ example: "QmX4k3qVvQ7ZJqPZ..." })
   cid: string;
 
-  @ApiProperty({ example: "document.pdf" })
   @IsNotEmpty()
   @IsString()
+  @ApiProperty({ example: "document.pdf" })
   fileName: string;
 
-  @ApiProperty({ example: 10_485_760 })
   @IsNotEmpty()
   @IsNumber()
+  @ApiProperty({ example: 10_485_760 })
   fileSize: number;
 
-  @ApiPropertyOptional({ example: "application/pdf" })
   @IsOptional()
   @IsString()
+  @ApiPropertyOptional({ example: "application/pdf" })
   fileType?: string;
 
-  @ApiProperty({ example: "encrypted_aes_key_base64" })
   @IsNotEmpty()
   @IsString()
+  @ApiProperty({ example: "encrypted_aes_key_base64" })
   encryptedKeyOwner: string;
 
-  @ApiPropertyOptional({ example: { description: "Important document" } })
   @IsOptional()
-  metadata?: any;
+  @ApiPropertyOptional()
+  metadata?: unknown;
 }
