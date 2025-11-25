@@ -36,9 +36,76 @@ async function main() {
       //     email: "admin@gmail.com",
       //     password: await bcrypt.hash("Thisisapassword123", 10),
       //     name: "Admin",
-      //     roleId: adminRole.id,
+      //     rolename: adminRole.name,
       //   },
       // });
+
+      // Seed FileStatus
+      await prisma.fileStatus.upsert({
+        where: { name: "active" },
+        update: {},
+        create: { name: "active", description: "File is active" },
+      });
+      await prisma.fileStatus.upsert({
+        where: { name: "deleted" },
+        update: {},
+        create: { name: "deleted", description: "File is deleted" },
+      });
+
+      // Seed AccessGrantStatus
+      await prisma.accessGrantStatus.upsert({
+        where: { name: "active" },
+        update: {},
+        create: { name: "active", description: "Grant is active" },
+      });
+      await prisma.accessGrantStatus.upsert({
+        where: { name: "revoked" },
+        update: {},
+        create: { name: "revoked", description: "Grant is revoked" },
+      });
+      await prisma.accessGrantStatus.upsert({
+        where: { name: "expired" },
+        update: {},
+        create: { name: "expired", description: "Grant is expired" },
+      });
+
+      // Seed DownloadStatus
+      await prisma.downloadStatus.upsert({
+        where: { name: "success" },
+        update: {},
+        create: { name: "success", description: "Download successful" },
+      });
+      await prisma.downloadStatus.upsert({
+        where: { name: "failed" },
+        update: {},
+        create: { name: "failed", description: "Download failed" },
+      });
+
+      // Seed ReceiptStatus
+      await prisma.receiptStatus.upsert({
+        where: { name: "confirmed" },
+        update: {},
+        create: { name: "confirmed", description: "Receipt confirmed" },
+      });
+
+      // Seed BlockchainSyncStatus
+      await prisma.blockchainSyncStatus.upsert({
+        where: { name: "confirmed" },
+        update: {},
+        create: { name: "confirmed", description: "Sync confirmed" },
+      });
+
+      // Seed IpfsPinStatus
+      await prisma.ipfsPinStatus.upsert({
+        where: { name: "pinned" },
+        update: {},
+        create: { name: "pinned", description: "File is pinned" },
+      });
+      await prisma.ipfsPinStatus.upsert({
+        where: { name: "unpinned" },
+        update: {},
+        create: { name: "unpinned", description: "File is unpinned" },
+      });
 
       break;
     }

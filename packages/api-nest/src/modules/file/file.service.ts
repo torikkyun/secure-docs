@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Prisma } from "generated/prisma/client";
 import { serializeBigInt } from "src/common/utils/bigint.util";
+import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { PrismaService } from "src/database/prisma.service";
 import { QueryFileDto } from "./dto/query-file.dto";
 import type { UploadFileDto } from "./dto/upload-file.dto";
@@ -18,21 +19,7 @@ export class FileService {
     this.prisma = prisma;
   }
 
-  async prepareUpload(
-    userId: string,
-    fileSize: number
-  ): Promise<
-    | {
-        canUpload: boolean;
-        remainingStorage: bigint;
-        uploadId?: undefined;
-      }
-    | {
-        canUpload: boolean;
-        remainingStorage: bigint;
-        uploadId: `${string}-${string}-${string}-${string}-${string}`;
-      }
-  > {
+  async prepareUpload(userId: string, fileSize: number) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { storageUsed: true, storageLimit: true },
@@ -79,14 +66,17 @@ export class FileService {
           (null as unknown as
             | Prisma.NullableJsonNullValueInput
             | Prisma.InputJsonValue),
+        ipfsPins: {
+          create: {
+            pinStatusId: "pinned",
+          },
+        },
       },
     });
-
     await this.prisma.user.update({
       where: { id: ownerId },
       data: { storageUsed: { increment: BigInt(fileSize) } },
     });
-
     return file;
   }
 
@@ -101,9 +91,9 @@ export class FileService {
       order = "desc",
     }: QueryFileDto
   ) {
-    const skip = (page - 1) * limit;
+    const { take, skip } = getOffsetPagination(page, limit);
     const where: Prisma.FileWhereInput = {
-      status: { not: "deleted" },
+      statusId: { not: "deleted" },
     };
     if (search) {
       where.fileName = { contains: search, mode: "insensitive" };
@@ -114,16 +104,15 @@ export class FileService {
       where.grants = {
         some: {
           granteeId: userId,
-          status: "active",
+          statusId: "active",
         },
       };
     }
-
     const [files, total] = await Promise.all([
       this.prisma.file.findMany({
         where,
         skip,
-        take: limit,
+        take,
         orderBy: { [sortBy]: order },
         include: {
           owner: { select: { id: true, username: true, walletAddress: true } },
@@ -133,12 +122,8 @@ export class FileService {
       }),
       this.prisma.file.count({ where }),
     ]);
-
     return {
-      files: files.map((f) => ({
-        ...f,
-        fileSize: f.fileSize.toString(),
-      })),
+      files: serializeBigInt(files),
       pagination: {
         page,
         limit,
@@ -154,7 +139,7 @@ export class FileService {
       include: {
         owner: { select: { id: true, username: true, walletAddress: true } },
         grants: {
-          where: { status: "active" },
+          where: { statusId: "active" },
           include: {
             grantee: {
               select: { id: true, username: true, walletAddress: true },
@@ -163,18 +148,14 @@ export class FileService {
         },
       },
     });
-
     if (!file) {
       throw new NotFoundException("File không tồn tại");
     }
-
     const isOwner = file.ownerId === userId;
     const hasGrant = file.grants.some((g) => g.granteeId === userId);
-
     if (!(isOwner || hasGrant)) {
       throw new ForbiddenException("Bạn không có quyền truy cập file này");
     }
-
     return {
       file: serializeBigInt(file),
       isOwner,
@@ -185,20 +166,16 @@ export class FileService {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
-
     if (!file) {
       throw new NotFoundException("File không tồn tại");
     }
-
     if (file.ownerId !== userId) {
       throw new ForbiddenException("Bạn không phải chủ sở hữu file");
     }
-
     await this.prisma.file.update({
       where: { id: fileId },
-      data: { status: "deleted" },
+      data: { statusId: "deleted" },
     });
-
     return { message: "Xóa file thành công" };
   }
 }

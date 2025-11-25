@@ -14,44 +14,34 @@ datasource db {
 }
 
 model User {
-  id                   String          @id @default(uuid()) @map("id") @db.Uuid
-  roleId               String          @map("role_id") @db.Uuid
-  walletAddress        String          @unique @map("wallet_address") @db.VarChar(42)
-  username             String          @map("username") @db.VarChar(100)
-  email                String          @unique @map("email") @db.VarChar(255)
-  publicKey            String          @map("public_key") @db.Text
-  storageUsed          BigInt          @default(0) @map("storage_used")
-  storageLimit         BigInt          @default(1073741824) @map("storage_limit")
-  isActive             Boolean         @default(true) @map("is_active")
-  createdAt            DateTime        @default(now()) @map("created_at")
-  updatedAt            DateTime        @updatedAt @map("updated_at")
-  lastLoginAt          DateTime?       @map("last_login_at")
+  id               String          @id @default(uuid()) @map("id") @db.Uuid
+  roleId           String          @map("role_id") @db.Uuid
+  walletAddress    String          @unique @map("wallet_address") @db.VarChar(42)
+  username         String          @map("username") @db.VarChar(100)
+  email            String          @unique @map("email") @db.VarChar(255)
+  publicKey        String          @map("public_key") @db.Text
+  storageUsed      BigInt          @default(0) @map("storage_used")
+  storageLimit     BigInt          @default(1073741824) @map("storage_limit")
+  isActive         Boolean         @default(true) @map("is_active")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  lastLoginAt      DateTime        @map("last_login_at")
   // Relations
-  role                 Role            @relation("UserRoles", fields: [roleId], references: [id])
-  files                File[]          @relation("UserFiles")
-  grantsGiven          AccessGrant[]   @relation("Grantor")
-  grantsReceived       AccessGrant[]   @relation("Grantee")
-  downloads            Download[]
-  receiptsSent         Receipt[]       @relation("Sender")
-  receiptsReceived     Receipt[]       @relation("Recipient")
-  notifications        Notification[]  @relation("NotificationUser")
-  notificationsRelated Notification[]  @relation("NotificationRelatedUser")
-  auditLogs            AuditLog[]      @relation("AuditLogUser")
-  auditLogsTarget      AuditLog[]      @relation("AuditLogTargetUser")
-  sessions             UserSession[]
-  settingsUpdated      SystemSetting[] @relation("UpdatedBy")
+  role             Role            @relation("UserRoles", fields: [roleId], references: [id])
+  files            File[]          @relation("UserFiles")
+  grantsGiven      AccessGrant[]   @relation("Grantor")
+  grantsReceived   AccessGrant[]   @relation("Grantee")
+  downloads        Download[]
+  receiptsSent     Receipt[]       @relation("Sender")
+  receiptsReceived Receipt[]       @relation("Recipient")
+  // notifications        Notification[]  @relation("NotificationUser")
+  // notificationsRelated Notification[]  @relation("NotificationRelatedUser")
+  auditLogs        AuditLog[]      @relation("AuditLogUser")
+  auditLogsTarget  AuditLog[]      @relation("AuditLogTargetUser")
+  sessions         UserSession[]
+  settingsUpdated  SystemSetting[] @relation("UpdatedBy")
 
   @@map("users")
-}
-
-model Role {
-  id        String   @id @default(uuid()) @map("id") @db.Uuid
-  name      String   @unique @map("name")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  users     User[]   @relation("UserRoles")
-
-  @@map("roles")
 }
 
 model File {
@@ -61,17 +51,18 @@ model File {
   cid               String             @map("cid") @db.VarChar(100)
   fileName          String             @map("file_name") @db.VarChar(255)
   fileSize          BigInt             @map("file_size")
-  fileType          String?            @map("file_type") @db.VarChar(100)
+  fileType          String             @map("file_type") @db.VarChar(100)
   encryptedKeyOwner String             @map("encrypted_key_owner") @db.Text
   uploadTimestamp   DateTime           @default(now()) @map("upload_timestamp")
-  status            String             @default("active") @map("status") @db.VarChar(20)
+  statusId          String             @map("status_id") @db.Uuid
   metadata          Json?              @map("metadata")
   // Relations
   owner             User               @relation("UserFiles", fields: [ownerId], references: [id])
+  status            FileStatus         @relation(fields: [statusId], references: [id])
   grants            AccessGrant[]
   downloads         Download[]
   receipts          Receipt[]
-  notifications     Notification[]
+  // notifications     Notification[]
   auditLogs         AuditLog[]
   ipfsPins          IpfsPin[]
   sharesSummary     FileSharesSummary?
@@ -80,24 +71,25 @@ model File {
 }
 
 model AccessGrant {
-  id                  String     @id @default(uuid()) @map("id") @db.Uuid
-  fileId              String     @map("file_id") @db.Uuid
-  grantorId           String     @map("grantor_id") @db.Uuid
-  granteeId           String     @map("grantee_id") @db.Uuid
-  encryptedKeyGrantee String     @map("encrypted_key_grantee") @db.Text
-  grantMessage        Json?      @map("grant_message")
-  signature           String?    @map("signature") @db.Text
-  txHash              String?    @map("tx_hash") @db.VarChar(66)
-  grantedAt           DateTime   @default(now()) @map("granted_at")
-  expiresAt           DateTime?  @map("expires_at")
-  status              String     @default("active") @map("status") @db.VarChar(20)
-  revokedAt           DateTime?  @map("revoked_at")
-  revokeReason        String?    @map("revoke_reason")
-  revokeSignature     String?    @map("revoke_signature") @db.Text
+  id                  String            @id @default(uuid()) @map("id") @db.Uuid
+  fileId              String            @map("file_id") @db.Uuid
+  grantorId           String            @map("grantor_id") @db.Uuid
+  granteeId           String            @map("grantee_id") @db.Uuid
+  encryptedKeyGrantee String            @map("encrypted_key_grantee") @db.Text
+  grantMessage        Json?             @map("grant_message")
+  signature           String?           @map("signature") @db.Text
+  txHash              String?           @map("tx_hash") @db.VarChar(66)
+  grantedAt           DateTime          @default(now()) @map("granted_at")
+  expiresAt           DateTime?         @map("expires_at")
+  statusId            String            @map("status_id") @db.Uuid
+  revokedAt           DateTime?         @map("revoked_at")
+  revokeReason        String?           @map("revoke_reason")
+  revokeSignature     String?           @map("revoke_signature") @db.Text
   // Relations
-  file                File       @relation(fields: [fileId], references: [id])
-  grantor             User       @relation("Grantor", fields: [grantorId], references: [id])
-  grantee             User       @relation("Grantee", fields: [granteeId], references: [id])
+  file                File              @relation(fields: [fileId], references: [id])
+  grantor             User              @relation("Grantor", fields: [grantorId], references: [id])
+  grantee             User              @relation("Grantee", fields: [granteeId], references: [id])
+  status              AccessGrantStatus @relation(fields: [statusId], references: [id])
   downloads           Download[]
   receipts            Receipt[]
 
@@ -106,65 +98,67 @@ model AccessGrant {
 }
 
 model Download {
-  id                 String       @id @default(uuid()) @map("id") @db.Uuid
-  fileId             String       @map("file_id") @db.Uuid
-  userId             String       @map("user_id") @db.Uuid
-  accessGrantId      String?      @map("access_grant_id") @db.Uuid
-  downloadTimestamp  DateTime     @default(now()) @map("download_timestamp")
-  ipAddress          String?      @map("ip_address") @db.VarChar(45)
-  userAgent          String?      @map("user_agent") @db.Text
-  status             String       @default("success") @map("status") @db.VarChar(20)
-  errorMessage       String?      @map("error_message")
-  fileSizeDownloaded BigInt?      @map("file_size_downloaded")
+  id                 String         @id @default(uuid()) @map("id") @db.Uuid
+  fileId             String         @map("file_id") @db.Uuid
+  userId             String         @map("user_id") @db.Uuid
+  accessGrantId      String         @map("access_grant_id") @db.Uuid
+  downloadTimestamp  DateTime       @default(now()) @map("download_timestamp")
+  ipAddress          String         @map("ip_address") @db.VarChar(45)
+  userAgent          String         @map("user_agent") @db.Text
+  statusId           String         @map("status_id") @db.Uuid
+  errorMessage       String?        @map("error_message")
+  fileSizeDownloaded BigInt?        @map("file_size_downloaded")
   // Relations
-  file               File         @relation(fields: [fileId], references: [id])
-  user               User         @relation(fields: [userId], references: [id])
-  accessGrant        AccessGrant? @relation(fields: [accessGrantId], references: [id])
+  file               File           @relation(fields: [fileId], references: [id])
+  user               User           @relation(fields: [userId], references: [id])
+  accessGrant        AccessGrant?   @relation(fields: [accessGrantId], references: [id])
+  status             DownloadStatus @relation(fields: [statusId], references: [id])
 
   @@map("downloads")
 }
 
 model Receipt {
-  id               String      @id @default(uuid()) @map("id") @db.Uuid
-  fileId           String      @map("file_id") @db.Uuid
-  senderId         String      @map("sender_id") @db.Uuid
-  recipientId      String      @map("recipient_id") @db.Uuid
-  accessGrantId    String      @map("access_grant_id") @db.Uuid
-  receiptMessage   Json        @map("receipt_message")
-  signature        String      @map("signature") @db.Text
-  receivedAt       DateTime    @default(now()) @map("received_at")
-  status           String      @default("confirmed") @map("status") @db.VarChar(20)
-  blockchainTxHash String?     @map("blockchain_tx_hash") @db.VarChar(66)
+  id               String        @id @default(uuid()) @map("id") @db.Uuid
+  fileId           String        @map("file_id") @db.Uuid
+  senderId         String        @map("sender_id") @db.Uuid
+  recipientId      String        @map("recipient_id") @db.Uuid
+  accessGrantId    String        @map("access_grant_id") @db.Uuid
+  receiptMessage   Json          @map("receipt_message")
+  signature        String        @map("signature") @db.Text
+  receivedAt       DateTime      @default(now()) @map("received_at")
+  statusId         String        @map("status_id") @db.Uuid
+  blockchainTxHash String?       @map("blockchain_tx_hash") @db.VarChar(66)
   // Relations
-  file             File        @relation(fields: [fileId], references: [id])
-  sender           User        @relation("Sender", fields: [senderId], references: [id])
-  recipient        User        @relation("Recipient", fields: [recipientId], references: [id])
-  accessGrant      AccessGrant @relation(fields: [accessGrantId], references: [id])
+  file             File          @relation(fields: [fileId], references: [id])
+  sender           User          @relation("Sender", fields: [senderId], references: [id])
+  recipient        User          @relation("Recipient", fields: [recipientId], references: [id])
+  accessGrant      AccessGrant   @relation(fields: [accessGrantId], references: [id])
+  status           ReceiptStatus @relation(fields: [statusId], references: [id])
 
   @@unique([fileId, recipientId], name: "idx_unique_receipt")
   @@map("receipts")
 }
 
-model Notification {
-  id               String    @id @default(uuid()) @map("id") @db.Uuid
-  userId           String    @map("user_id") @db.Uuid
-  notificationType String    @map("notification_type") @db.VarChar(50)
-  title            String    @map("title") @db.VarChar(255)
-  message          String    @map("message") @db.Text
-  relatedFileId    String?   @map("related_file_id") @db.Uuid
-  relatedUserId    String?   @map("related_user_id") @db.Uuid
-  metadata         Json?     @map("metadata")
-  isRead           Boolean   @default(false) @map("is_read")
-  sentViaEmail     Boolean   @default(false) @map("sent_via_email")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  readAt           DateTime? @map("read_at")
-  // Relations
-  user             User      @relation("NotificationUser", fields: [userId], references: [id])
-  relatedFile      File?     @relation(fields: [relatedFileId], references: [id])
-  relatedUser      User?     @relation("NotificationRelatedUser", fields: [relatedUserId], references: [id])
+// model Notification {
+//   id               String    @id @default(uuid()) @map("id") @db.Uuid
+//   userId           String    @map("user_id") @db.Uuid
+//   notificationType String    @map("notification_type") @db.VarChar(50)
+//   title            String    @map("title") @db.VarChar(255)
+//   message          String    @map("message") @db.Text
+//   relatedFileId    String?   @map("related_file_id") @db.Uuid
+//   relatedUserId    String?   @map("related_user_id") @db.Uuid
+//   metadata         Json?     @map("metadata")
+//   isRead           Boolean   @default(false) @map("is_read")
+//   sentViaEmail     Boolean   @default(false) @map("sent_via_email")
+//   createdAt        DateTime  @default(now()) @map("created_at")
+//   readAt           DateTime? @map("read_at")
+//   // Relations
+//   user             User      @relation("NotificationUser", fields: [userId], references: [id])
+//   relatedFile      File?     @relation(fields: [relatedFileId], references: [id])
+//   relatedUser      User?     @relation("NotificationRelatedUser", fields: [relatedUserId], references: [id])
 
-  @@map("notifications")
-}
+//   @@map("notifications")
+// }
 
 model AuditLog {
   id               String   @id @default(uuid()) @map("id") @db.Uuid
@@ -175,8 +169,8 @@ model AuditLog {
   eventData        Json     @map("event_data")
   signature        String?  @map("signature") @db.Text
   blockchainTxHash String?  @map("blockchain_tx_hash") @db.VarChar(66)
-  ipAddress        String?  @map("ip_address") @db.VarChar(45)
-  userAgent        String?  @map("user_agent") @db.Text
+  ipAddress        String   @map("ip_address") @db.VarChar(45)
+  userAgent        String   @map("user_agent") @db.Text
   timestamp        DateTime @default(now()) @map("timestamp")
   // Relations
   user             User     @relation("AuditLogUser", fields: [userId], references: [id])
@@ -200,29 +194,31 @@ model SystemSetting {
 }
 
 model BlockchainSync {
-  id              String   @id @default(uuid()) @map("id") @db.Uuid
-  txHash          String   @unique @map("tx_hash") @db.VarChar(66)
-  blockNumber     BigInt?  @map("block_number")
-  eventType       String?  @map("event_type") @db.VarChar(50)
-  contractAddress String   @map("contract_address") @db.VarChar(42)
-  eventData       Json?    @map("event_data")
-  syncedAt        DateTime @default(now()) @map("synced_at")
-  status          String   @default("confirmed") @map("status") @db.VarChar(20)
+  id              String               @id @default(uuid()) @map("id") @db.Uuid
+  txHash          String               @unique @map("tx_hash") @db.VarChar(66)
+  blockNumber     BigInt?              @map("block_number")
+  eventType       String?              @map("event_type") @db.VarChar(50)
+  contractAddress String               @map("contract_address") @db.VarChar(42)
+  eventData       Json?                @map("event_data")
+  syncedAt        DateTime             @default(now()) @map("synced_at")
+  statusId        String               @map("status_id") @db.Uuid
+  status          BlockchainSyncStatus @relation(fields: [statusId], references: [id])
 
   @@map("blockchain_sync")
 }
 
 model IpfsPin {
-  id         String    @id @default(uuid()) @map("id") @db.Uuid
-  fileId     String    @map("file_id") @db.Uuid
-  pinService String?   @map("pin_service") @db.VarChar(50)
-  pinStatus  String    @default("pinned") @map("pin_status") @db.VarChar(20)
-  pinSize    BigInt?   @map("pin_size")
-  pinnedAt   DateTime  @default(now()) @map("pinned_at")
-  unpinnedAt DateTime? @map("unpinned_at")
-  metadata   Json?     @map("metadata")
+  id          String        @id @default(uuid()) @map("id") @db.Uuid
+  fileId      String        @map("file_id") @db.Uuid
+  pinService  String?       @map("pin_service") @db.VarChar(50)
+  pinStatusId String        @map("pin_status_id") @db.Uuid
+  pinStatus   IpfsPinStatus @relation(fields: [pinStatusId], references: [id])
+  pinSize     BigInt?       @map("pin_size")
+  pinnedAt    DateTime      @default(now()) @map("pinned_at")
+  unpinnedAt  DateTime?     @map("unpinned_at")
+  metadata    Json?         @map("metadata")
   // Relations
-  file       File      @relation(fields: [fileId], references: [id])
+  file        File          @relation(fields: [fileId], references: [id])
 
   @@map("ipfs_pins")
 }
@@ -258,4 +254,68 @@ model FileSharesSummary {
   file             File      @relation(fields: [fileId], references: [id])
 
   @@map("file_shares_summary")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @map("id") @db.Uuid
+  name      String   @unique @map("name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]   @relation("UserRoles")
+
+  @@map("roles")
+}
+
+model FileStatus {
+  id          String  @id @default(uuid()) @map("id") @db.Uuid
+  name        String  @unique @map("name")
+  description String?
+  files       File[]
+
+  @@map("file_status")
+}
+
+model AccessGrantStatus {
+  id          String        @id @default(uuid()) @map("id") @db.Uuid
+  name        String        @unique @map("name")
+  description String?
+  grants      AccessGrant[]
+
+  @@map("access_grant_status")
+}
+
+model DownloadStatus {
+  id          String     @id @default(uuid()) @map("id") @db.Uuid
+  name        String     @unique @map("name")
+  description String?
+  downloads   Download[]
+
+  @@map("download_status")
+}
+
+model ReceiptStatus {
+  id          String    @id @default(uuid()) @map("id") @db.Uuid
+  name        String    @unique @map("name")
+  description String?
+  receipts    Receipt[]
+
+  @@map("receipt_status")
+}
+
+model BlockchainSyncStatus {
+  id          String           @id @default(uuid()) @map("id") @db.Uuid
+  name        String           @unique @map("name")
+  description String?
+  syncs       BlockchainSync[]
+
+  @@map("blockchain_sync_status")
+}
+
+model IpfsPinStatus {
+  id          String    @id @default(uuid()) @map("id") @db.Uuid
+  name        String    @unique @map("name")
+  description String?
+  pins        IpfsPin[]
+
+  @@map("ipfs_pin_status")
 }
