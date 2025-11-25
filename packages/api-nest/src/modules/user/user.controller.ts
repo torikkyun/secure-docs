@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Roles } from "src/common/decorators/roles.decorator";
@@ -37,5 +37,10 @@ export class UserController {
   @Roles("admin")
   async findAll(@Query() dto: QueryUserDto) {
     return await this.userService.findAll(dto);
+  }
+
+  @Get("wallet/:address")
+  async getUserByWallet(@Param("address") address: string) {
+    return await this.userService.findByWallet(address);
   }
 }

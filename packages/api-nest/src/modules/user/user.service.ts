@@ -165,4 +165,29 @@ export class UserService {
       limit,
     };
   }
+
+  async findByWallet(walletAddress: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { walletAddress },
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        publicKey: true,
+        isActive: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    return {
+      id: user.id,
+      walletAddress: user.walletAddress,
+      username: user.username,
+      publicKey: user.publicKey,
+      isActive: user.isActive,
+    };
+  }
 }

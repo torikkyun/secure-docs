@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { KeyManager } from "@/lib/crypto/key-manager";
 import { FileShareABI } from "../../abis/FileShareABI";
 
 export default function ShareTestPage() {
@@ -40,6 +41,100 @@ export default function ShareTestPage() {
       functionName: "shareFile",
       args: [recipient as `0x${string}`, cid],
     });
+  };
+
+  const generateEncryptedKey = async () => {
+    if (!(fileId && recipient)) {
+      setApiStatus({
+        success: false,
+        message: "Please enter File ID and Recipient Address first",
+      });
+      return;
+    }
+
+    try {
+      setApiStatus({ success: false, message: "Generating encrypted key..." });
+
+      // 1. Load owner's identity
+      const identity = await KeyManager.loadIdentity();
+      if (!identity) {
+        throw new Error("Identity not found. Please login first.");
+      }
+
+      // 2. Fetch file details to get encryptedKeyOwner
+      const fileRes = await fetch(`http://localhost:3001/api/files/${fileId}`, {
+        headers: {
+          Authorization:
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQzYzUyYzM3LWFjNGUtNDJlYy04MDJiLTU1ODVjM2U5ZDNkNyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiYTdhNjRjN2EtMDQ1Zi00ZDZkLWE3MTEtOGY5YTU5OGQyNGI1IiwiaWF0IjoxNzY0MDM5NTQzLCJleHAiOjE3NjQxMjU5NDN9.uHmgLtMAJRcbpXheZzCl5-4WYsOhZk_bOkLAiOQPLjM",
+        },
+      });
+
+      if (!fileRes.ok) {
+        throw new Error(`Failed to fetch file: ${fileRes.statusText}`);
+      }
+
+      const fileData = await fileRes.json();
+      const encryptedKeyOwner = fileData.data.encryptedKeyOwner;
+
+      if (!encryptedKeyOwner) {
+        throw new Error("File does not have encryptedKeyOwner");
+      }
+
+      // 3. Decrypt encryptedKeyOwner to get AES key
+      // encryptedKeyOwner is encrypted with owner's own public key
+      const aesKeyBase64 = KeyManager.decryptMessage(
+        encryptedKeyOwner,
+        identity.publicKey, // Sender is owner (self)
+        identity.privateKey // Receiver is owner (self)
+      );
+
+      if (!aesKeyBase64) {
+        throw new Error(
+          "Failed to decrypt file key. You may not be the owner."
+        );
+      }
+
+      // 4. Fetch grantee's public key from backend
+      const userRes = await fetch(
+        `http://localhost:3001/api/users/wallet/${recipient}`,
+        {
+          headers: {
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQzYzUyYzM3LWFjNGUtNDJlYy04MDJiLTU1ODVjM2U5ZDNkNyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiYTdhNjRjN2EtMDQ1Zi00ZDZkLWE3MTEtOGY5YTU5OGQyNGI1IiwiaWF0IjoxNzY0MDM5NTQzLCJleHAiOjE3NjQxMjU5NDN9.uHmgLtMAJRcbpXheZzCl5-4WYsOhZk_bOkLAiOQPLjM",
+          },
+        }
+      );
+
+      if (!userRes.ok) {
+        throw new Error(`Failed to fetch grantee user: ${userRes.statusText}`);
+      }
+
+      const userData = await userRes.json();
+      const granteePublicKey = userData.data.publicKey;
+
+      if (!granteePublicKey) {
+        throw new Error("Grantee does not have a public key");
+      }
+
+      // 5. Re-encrypt AES key for grantee
+      const encryptedKeyForGrantee = KeyManager.encryptMessage(
+        aesKeyBase64,
+        granteePublicKey, // Recipient's public key
+        identity.privateKey // Sender's private key (owner)
+      );
+
+      setEncryptedKeyGrantee(encryptedKeyForGrantee);
+      setApiStatus({
+        success: true,
+        message: "Encrypted key generated successfully!",
+      });
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setApiStatus({
+        success: false,
+        message: `Error: ${errorMessage}`,
+      });
+    }
   };
 
   const syncWithApi = async () => {
@@ -141,13 +236,22 @@ export default function ShareTestPage() {
               <Label htmlFor="encryptedKeyGrantee">
                 Encrypted Key for Grantee
               </Label>
-              <Input
-                id="encryptedKeyGrantee"
-                onChange={(e) => setEncryptedKeyGrantee(e.target.value)}
-                placeholder="base64..."
-                required
-                value={encryptedKeyGrantee}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="encryptedKeyGrantee"
+                  onChange={(e) => setEncryptedKeyGrantee(e.target.value)}
+                  placeholder="Click 'Generate' to auto-fill..."
+                  readOnly
+                  value={encryptedKeyGrantee}
+                />
+                <Button
+                  onClick={generateEncryptedKey}
+                  type="button"
+                  variant="secondary"
+                >
+                  Generate
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
