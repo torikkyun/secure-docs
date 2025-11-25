@@ -12,14 +12,14 @@ import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { PrepareUploadDto } from "./dto/prepare-upload.dto";
 import { QueryFileDto } from "./dto/query-file.dto";
 import { UploadFileDto } from "./dto/upload-file.dto";
-import { FilesService } from "./files.service";
+import { FileService } from "./file.service";
 
 @Controller("api/files")
 @ApiTags("files")
 @ApiBearerAuth()
-export class FilesController {
-  private readonly filesService: FilesService;
-  constructor(filesService: FilesService) {
+export class FileController {
+  private readonly filesService: FileService;
+  constructor(filesService: FileService) {
     this.filesService = filesService;
   }
 

@@ -85,7 +85,7 @@ model AccessGrant {
   grantorId           String     @map("grantor_id") @db.Uuid
   granteeId           String     @map("grantee_id") @db.Uuid
   encryptedKeyGrantee String     @map("encrypted_key_grantee") @db.Text
-  grantMessage        Json       @map("grant_message")
+  grantMessage        Json?      @map("grant_message")
   signature           String?    @map("signature") @db.Text
   txHash              String?    @map("tx_hash") @db.VarChar(66)
   grantedAt           DateTime   @default(now()) @map("granted_at")

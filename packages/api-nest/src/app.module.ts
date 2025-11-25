@@ -13,9 +13,10 @@ import { PrismaModule } from "./database/prisma.module";
 import { RedisModule } from "./infrastructure/cache/redis.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
+import { AccessGrantModule } from "./modules/access-grant/access-grant.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { FileModule } from "./modules/file/file.module";
 import { UserModule } from "./modules/user/user.module";
-import { FilesModule } from "./modules/files/files.module";
 
 const guards = [JwtGuard, RolesGuard];
 
@@ -37,7 +38,8 @@ const guards = [JwtGuard, RolesGuard];
     HealthModule,
     AuthModule,
     UserModule,
-    FilesModule,
+    FileModule,
+    AccessGrantModule,
   ],
   providers: [
     ...guards.map((Guard) => ({

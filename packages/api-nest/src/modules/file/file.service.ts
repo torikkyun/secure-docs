@@ -5,13 +5,13 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma } from "generated/prisma/browser";
+import { Prisma } from "generated/prisma/client";
 import { PrismaService } from "src/database/prisma.service";
 import { QueryFileDto } from "./dto/query-file.dto";
 import type { UploadFileDto } from "./dto/upload-file.dto";
 
 @Injectable()
-export class FilesService {
+export class FileService {
   private readonly prisma: PrismaService;
   constructor(prisma: PrismaService) {
     this.prisma = prisma;
