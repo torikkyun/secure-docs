@@ -44,67 +44,70 @@ async function main() {
       await prisma.fileStatus.upsert({
         where: { name: "active" },
         update: {},
-        create: { name: "active", description: "File is active" },
+        create: { name: "active", description: "File đã được tạo" },
       });
       await prisma.fileStatus.upsert({
         where: { name: "deleted" },
         update: {},
-        create: { name: "deleted", description: "File is deleted" },
+        create: { name: "deleted", description: "File đã bị xóa" },
       });
 
       // Seed AccessGrantStatus
       await prisma.accessGrantStatus.upsert({
         where: { name: "active" },
         update: {},
-        create: { name: "active", description: "Grant is active" },
+        create: { name: "active", description: "Quyền truy cập đã được cấp" },
       });
       await prisma.accessGrantStatus.upsert({
         where: { name: "revoked" },
         update: {},
-        create: { name: "revoked", description: "Grant is revoked" },
+        create: {
+          name: "revoked",
+          description: "Quyền truy cập đã bị thu hồi",
+        },
       });
       await prisma.accessGrantStatus.upsert({
         where: { name: "expired" },
         update: {},
-        create: { name: "expired", description: "Grant is expired" },
+        create: { name: "expired", description: "Quyền truy cập đã hết hạn" },
       });
 
       // Seed DownloadStatus
       await prisma.downloadStatus.upsert({
         where: { name: "success" },
         update: {},
-        create: { name: "success", description: "Download successful" },
+        create: { name: "success", description: "Download thành công" },
       });
       await prisma.downloadStatus.upsert({
         where: { name: "failed" },
         update: {},
-        create: { name: "failed", description: "Download failed" },
+        create: { name: "failed", description: "Download thất bại" },
       });
 
       // Seed ReceiptStatus
       await prisma.receiptStatus.upsert({
         where: { name: "confirmed" },
         update: {},
-        create: { name: "confirmed", description: "Receipt confirmed" },
+        create: { name: "confirmed", description: "Đã được xác nhận" },
       });
 
       // Seed BlockchainSyncStatus
       await prisma.blockchainSyncStatus.upsert({
         where: { name: "confirmed" },
         update: {},
-        create: { name: "confirmed", description: "Sync confirmed" },
+        create: { name: "confirmed", description: "Đã được xác nhận" },
       });
 
       // Seed IpfsPinStatus
       await prisma.ipfsPinStatus.upsert({
         where: { name: "pinned" },
         update: {},
-        create: { name: "pinned", description: "File is pinned" },
+        create: { name: "pinned", description: "Đã được pin" },
       });
       await prisma.ipfsPinStatus.upsert({
         where: { name: "unpinned" },
         update: {},
-        create: { name: "unpinned", description: "File is unpinned" },
+        create: { name: "unpinned", description: "Không còn được pin" },
       });
 
       break;

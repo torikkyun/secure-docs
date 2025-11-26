@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class UploadFileDto {
   @IsNotEmpty()
@@ -22,17 +22,20 @@ export class UploadFileDto {
   @ApiProperty({ example: 10_485_760 })
   fileSize: number;
 
-  @IsOptional()
   @IsString()
-  @ApiPropertyOptional({ example: "application/pdf" })
-  fileType?: string;
+  @ApiProperty({ example: "application/pdf" })
+  fileType: string;
 
   @IsNotEmpty()
   @IsString()
   @ApiProperty({ example: "encrypted_aes_key_base64" })
   encryptedKeyOwner: string;
 
-  @IsOptional()
-  @ApiPropertyOptional()
-  metadata?: unknown;
+  @IsNumber()
+  @ApiProperty({ example: 10_485_760 })
+  pinSize: number;
+
+  @IsString()
+  @ApiProperty({ example: "pinata" })
+  pinService: string;
 }

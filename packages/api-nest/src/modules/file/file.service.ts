@@ -49,9 +49,21 @@ export class FileService {
       fileSize,
       fileType,
       encryptedKeyOwner,
-      metadata,
+      pinSize,
+      pinService,
     }: UploadFileDto
   ) {
+    // const [status, ipfsPinStatus] = await Promise.all([
+    //   this.prisma.fileStatus.findUnique({
+    //     where: { name: "active" },
+    //     select: { id: true },
+    //   }),
+    //   this.prisma.ipfsPinStatus.findUnique({
+    //     where: { name: "pinned" },
+    //     select: { id: true },
+    //   }),
+    // ]);
+
     const file = await this.prisma.file.create({
       data: {
         ownerId,
@@ -59,17 +71,32 @@ export class FileService {
         cid,
         fileName,
         fileSize: BigInt(fileSize),
-        fileType: fileType ?? null,
+        fileType,
         encryptedKeyOwner,
-        metadata:
-          metadata ??
-          (null as unknown as
-            | Prisma.NullableJsonNullValueInput
-            | Prisma.InputJsonValue),
+        status: {
+          connectOrCreate: {
+            where: { name: "active" },
+            create: { name: "active" },
+          },
+        },
         ipfsPins: {
           create: {
-            pinStatusId: "pinned",
+            pinStatus: {
+              connectOrCreate: {
+                where: { name: "pinned" },
+                create: { name: "pinned" },
+              },
+            },
+            pinSize: BigInt(pinSize),
+            pinService,
           },
+        },
+      },
+      include: {
+        owner: { select: { id: true, username: true, walletAddress: true } },
+        ipfsPins: {
+          where: { pinStatus: { name: "pinned" } },
+          select: { pinSize: true, pinService: true },
         },
       },
     });
@@ -145,6 +172,10 @@ export class FileService {
               select: { id: true, username: true, walletAddress: true },
             },
           },
+        },
+        ipfsPins: {
+          where: { pinStatusId: "pinned" },
+          select: { pinSize: true, pinService: true },
         },
       },
     });

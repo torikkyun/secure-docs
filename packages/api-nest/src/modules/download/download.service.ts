@@ -3,6 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Request } from "express";
+import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrismaService } from "src/database/prisma.service";
 import { CompleteDownloadDto } from "./dto/complete-download.dto";
 import { RequestDownloadDto } from "./dto/request-download.dto";
@@ -14,30 +16,37 @@ export class DownloadService {
     this.prisma = prisma;
   }
 
-  async requestDownload(userId: string, dto: RequestDownloadDto) {
-    const { fileId } = dto;
-
-    // 1. Find file and check existence
+  async requestDownload(
+    userId: string,
+    { fileId }: RequestDownloadDto,
+    req: Request
+  ) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
-      include: {
-        owner: true,
+      select: {
+        id: true,
+        cid: true,
+        fileHash: true,
+        fileName: true,
+        fileType: true,
+        fileSize: true,
+        encryptedKeyOwner: true,
+        ownerId: true,
+        owner: {
+          select: {
+            publicKey: true,
+          },
+        },
       },
     });
-
     if (!file) {
-      throw new NotFoundException("File not found");
+      throw new NotFoundException("Không tìm thấy file");
     }
-
-    // 2. Check permissions
     let accessGrantId: string | null = null;
     let encryptedKey = "";
-
     if (file.ownerId === userId) {
-      // User is owner
       encryptedKey = file.encryptedKeyOwner;
     } else {
-      // Check for active grant
       const grant = await this.prisma.accessGrant.findUnique({
         where: {
           idx_unique_grant: {
@@ -47,30 +56,26 @@ export class DownloadService {
         },
       });
 
-      if (!grant || grant.status !== "active") {
+      if (!grant || grant.statusId !== "active") {
         throw new ForbiddenException(
-          "You do not have permission to download this file"
+          "Bạn không có quyền truy cập vào file này"
         );
       }
-
-      // Check expiration
       if (grant.expiresAt && new Date() > grant.expiresAt) {
-        throw new ForbiddenException("Access grant has expired");
+        throw new ForbiddenException("Quyền truy cập của bạn đã hết hạn");
       }
-
       accessGrantId = grant.id;
       encryptedKey = grant.encryptedKeyGrantee;
     }
-
-    // 3. Create download record
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
     const download = await this.prisma.download.create({
       data: {
         fileId,
         userId,
         accessGrantId,
-        status: "pending", // Using "pending" to indicate start
-        ipAddress: null, // Could capture from request if available
-        userAgent: null, // Could capture from request if available
+        statusId: "pending",
+        ipAddress,
+        userAgent,
       },
     });
 
@@ -80,7 +85,7 @@ export class DownloadService {
       fileHash: file.fileHash,
       fileName: file.fileName,
       fileType: file.fileType,
-      fileSize: file.fileSize.toString(), // Serialize BigInt
+      fileSize: file.fileSize.toString(),
       encryptedKey,
       ownerPublicKey: file.owner.publicKey,
     };
@@ -106,7 +111,7 @@ export class DownloadService {
     const updatedDownload = await this.prisma.download.update({
       where: { id: downloadId },
       data: {
-        status: dto.success ? "success" : "failed",
+        statusId: dto.success ? "success" : "failed",
         fileSizeDownloaded: dto.bytesDownloaded
           ? BigInt(dto.bytesDownloaded)
           : null,
@@ -117,7 +122,7 @@ export class DownloadService {
     return {
       success: true,
       downloadId: updatedDownload.id,
-      status: updatedDownload.status,
+      status: updatedDownload.statusId,
     };
   }
 }

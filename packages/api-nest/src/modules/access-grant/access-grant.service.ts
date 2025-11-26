@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Prisma } from "generated/prisma/client";
 import { serializeBigInt } from "src/common/utils/bigint.util";
+import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { PrismaService } from "src/database/prisma.service";
 import { CreateAccessGrantDto } from "./dto/create-access-grant.dto";
 import { QueryAccessGrantDto } from "./dto/query-access-grant.dto";
@@ -66,7 +67,7 @@ export class AccessGrantService {
       },
     });
 
-    if (existingGrant && existingGrant.status === "active") {
+    if (existingGrant && existingGrant.statusId === "active") {
       throw new ConflictException("Quyền truy cập đã tồn tại");
     }
 
@@ -78,7 +79,7 @@ export class AccessGrantService {
         encryptedKeyGrantee,
         txHash,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
-        status: "active",
+        statusId: "active",
       },
       include: {
         file: true,
@@ -106,7 +107,7 @@ export class AccessGrantService {
     userId: string,
     { fileId, granteeId, status, page = 1, limit = 20 }: QueryAccessGrantDto
   ) {
-    const skip = (page - 1) * limit;
+    const { skip, take } = getOffsetPagination(page, limit);
 
     const where: Prisma.AccessGrantWhereInput = {
       OR: [{ grantorId: userId }, { granteeId: userId }],
@@ -119,14 +120,14 @@ export class AccessGrantService {
       where.granteeId = granteeId;
     }
     if (status) {
-      where.status = status;
+      where.statusId = status;
     }
 
     const [grants, total] = await Promise.all([
       this.prisma.accessGrant.findMany({
         where,
         skip,
-        take: +limit,
+        take,
         orderBy: { grantedAt: "desc" },
         include: {
           file: {
@@ -156,8 +157,8 @@ export class AccessGrantService {
     return serializeBigInt({
       grants,
       pagination: {
-        page: +page,
-        limit: +limit,
+        page,
+        limit,
         total,
         totalPages: Math.ceil(total / limit),
         hasNext: page * limit < total,
@@ -206,7 +207,7 @@ export class AccessGrantService {
       throw new ForbiddenException("Only the grantor can revoke access");
     }
 
-    if (grant.status === "revoked") {
+    if (grant.statusId === "revoked") {
       throw new ConflictException("Grant is already revoked");
     }
 
@@ -215,7 +216,7 @@ export class AccessGrantService {
     const updatedGrant = await this.prisma.accessGrant.update({
       where: { id },
       data: {
-        status: "revoked",
+        statusId: "revoked",
         revokedAt: new Date(),
         revokeReason: revokeAccessGrantDto.reason,
         revokeSignature: revokeAccessGrantDto.signature,
@@ -250,14 +251,14 @@ export class AccessGrantService {
     }
 
     const isExpired = grant.expiresAt && new Date() > grant.expiresAt;
-    const isRevoked = grant.status === "revoked";
+    const isRevoked = grant.statusId === "revoked";
     const isValid = !(isExpired || isRevoked);
 
     return {
       valid: isValid,
       grant: {
         id: grant.id,
-        status: grant.status,
+        status: grant.statusId,
         grantedAt: grant.grantedAt,
         expiresAt: grant.expiresAt,
       },
@@ -268,11 +269,11 @@ export class AccessGrantService {
         fileName: grant.file.fileName,
       },
       verifications: {
-        signatureValid: true, // Placeholder
+        signatureValid: true,
         notExpired: !isExpired,
         notRevoked: !isRevoked,
         fileExists: true,
-        granteeMatches: true, // Placeholder
+        granteeMatches: true,
       },
     };
   }

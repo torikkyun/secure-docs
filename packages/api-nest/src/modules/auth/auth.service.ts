@@ -11,6 +11,7 @@ import { ethers } from "ethers";
 import { Request } from "express";
 import { Role } from "generated/prisma/client";
 import { SiweMessage } from "siwe";
+import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrismaService } from "src/database/prisma.service";
 import { LoginWalletDto } from "./dto/login-wallet.dto";
 import { RegisterDto } from "./dto/register.dto";
@@ -106,12 +107,7 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
     const tempToken = randomUUID();
-    const ipAddress =
-      (req.headers["x-forwarded-for"] as string) ||
-      req.ip ||
-      req.socket?.remoteAddress;
-    const userAgent = req.headers["user-agent"] as string;
-
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
     const session = await this.prisma.userSession.create({
       data: {
         userId: user.id,
@@ -119,7 +115,6 @@ export class AuthService {
         walletAddress: user.walletAddress,
         createdAt: new Date(),
         expiresAt,
-        isActive: true,
         ipAddress,
         userAgent,
       },

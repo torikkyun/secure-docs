@@ -1,5 +1,6 @@
-import { Body, Controller, Param, Post } from "@nestjs/common";
+import { Body, Controller, Param, Post, Req } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { DownloadService } from "./download.service";
 import { CompleteDownloadDto } from "./dto/complete-download.dto";
@@ -17,9 +18,10 @@ export class DownloadController {
   @Post("request")
   async requestDownload(
     @CurrentUser() user: { id: string },
-    @Body() dto: RequestDownloadDto
+    @Body() dto: RequestDownloadDto,
+    @Req() req: Request
   ) {
-    return await this.downloadService.requestDownload(user.id, dto);
+    return await this.downloadService.requestDownload(user.id, dto, req);
   }
 
   @Post(":id/complete")

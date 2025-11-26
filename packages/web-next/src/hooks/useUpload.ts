@@ -14,7 +14,20 @@ export const useUpload = () => {
    */
   const uploadFile = async (
     file: File,
-    options: { pinataJwt: string; backendToken?: string }
+    options: {
+      pinataJwt: string;
+      backendToken?: string;
+      metadata?: {
+        fileHash?: string;
+        cid?: string;
+        fileName?: string;
+        fileSize?: number;
+        fileType?: string | null;
+        encryptedKeyOwner?: string;
+        pinSize?: number;
+        pinService?: string;
+      };
+    }
   ) => {
     setIsUploading(true);
     try {
@@ -101,13 +114,17 @@ export const useUpload = () => {
       // 6. Send Metadata to Backend
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2412";
 
+      const md = options.metadata;
+
       const payload = {
-        fileHash,
-        cid,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type || null,
-        encryptedKeyOwner, // This is now the TweetNaCl encrypted box
+        fileHash: md?.fileHash ?? fileHash,
+        cid: md?.cid ?? cid,
+        fileName: md?.fileName ?? file.name,
+        fileSize: md?.fileSize ?? file.size,
+        fileType: md?.fileType ?? (file.type || null),
+        encryptedKeyOwner: md?.encryptedKeyOwner ?? encryptedKeyOwner,
+        pinSize: md?.pinSize ?? file.size,
+        pinService: md?.pinService ?? "pinata",
         metadata: { pinnedFrom: "pinata", originalName: file.name },
       };
 
