@@ -5,7 +5,6 @@ import { JwtGuard } from "./common/guards/jwt.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import configuration from "./config/configuration";
 import jwtConfig from "./config/jwt.config";
-import kmsConfig from "./config/kms.config";
 import redisConfig from "./config/redis.config";
 import siweConfig from "./config/siwe.config";
 import swaggerConfig from "./config/swagger.config";
@@ -24,14 +23,7 @@ const guards = [JwtGuard, RolesGuard];
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [
-        configuration,
-        redisConfig,
-        jwtConfig,
-        swaggerConfig,
-        kmsConfig,
-        siweConfig,
-      ],
+      load: [configuration, redisConfig, jwtConfig, swaggerConfig, siweConfig],
     }),
     PrismaModule,
     RedisModule,

@@ -74,6 +74,11 @@ async function main() {
 
       // Seed DownloadStatus
       await prisma.downloadStatus.upsert({
+        where: { name: "pending" },
+        update: {},
+        create: { name: "pending", description: "Đang chờ xử lý" },
+      });
+      await prisma.downloadStatus.upsert({
         where: { name: "success" },
         update: {},
         create: { name: "success", description: "Download thành công" },

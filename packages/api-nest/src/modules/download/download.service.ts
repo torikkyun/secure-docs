@@ -54,9 +54,22 @@ export class DownloadService {
             granteeId: userId,
           },
         },
+        select: {
+          id: true,
+          status: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          expiresAt: true,
+          encryptedKeyGrantee: true,
+        },
       });
 
-      if (!grant || grant.statusId !== "active") {
+      console.log(grant);
+
+      if (!grant || grant.status.name !== "active") {
         throw new ForbiddenException(
           "Bạn không có quyền truy cập vào file này"
         );
@@ -68,12 +81,18 @@ export class DownloadService {
       encryptedKey = grant.encryptedKeyGrantee;
     }
     const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    const status = await this.prisma.downloadStatus.findUnique({
+      where: { name: "pending" },
+    });
+    if (!status) {
+      throw new NotFoundException("Không tìm thấy trạng thái download");
+    }
     const download = await this.prisma.download.create({
       data: {
         fileId,
         userId,
         accessGrantId,
-        statusId: "pending",
+        statusId: status.id,
         ipAddress,
         userAgent,
       },
