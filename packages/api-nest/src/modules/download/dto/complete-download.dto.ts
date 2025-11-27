@@ -1,29 +1,24 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CompleteDownloadDto {
+  @IsBoolean()
   @ApiProperty({
-    description: "Whether the download was successful",
     example: true,
   })
-  @IsBoolean()
   success: boolean;
 
-  @ApiProperty({
-    description: "The size of the file downloaded in bytes",
-    example: 1024,
-    required: false,
-  })
   @IsOptional()
   @IsNumber()
+  @ApiPropertyOptional({
+    example: 1024,
+  })
   bytesDownloaded?: number;
 
-  @ApiProperty({
-    description: "Error message if download failed",
-    example: "Network error",
-    required: false,
-  })
   @IsOptional()
   @IsString()
+  @ApiPropertyOptional({
+    example: "Network error",
+  })
   errorMessage?: string;
 }

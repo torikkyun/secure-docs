@@ -173,7 +173,11 @@ export default function DownloadTestPage() {
         `http://localhost:3001/api/downloads/${downloadId}/complete`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFlMzgxYzFlLTkxZTctNGZhMC1iYzE1LThhYWM4ZTk5NTYwMyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiZjQxMzU3MWMtMTE4Yi00NjRiLWFiMDYtNWRlYzJmM2ZhNTQ5IiwiaWF0IjoxNzY0MjA5OTI4LCJleHAiOjE3NjQyOTYzMjh9.3xpBM6mKf16Vyz5XcEoBHjNIQEgy1Hm3-_x5CfJz9iw", // TODO: Add token
+          },
           body: JSON.stringify({
             success: true,
             bytesDownloaded: decryptedBuffer.byteLength,
