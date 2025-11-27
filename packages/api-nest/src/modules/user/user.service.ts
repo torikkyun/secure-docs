@@ -149,6 +149,7 @@ export class UserService {
         walletAddress: true,
         username: true,
         email: true,
+        publicKey: true,
         storageUsed: true,
         storageLimit: true,
         isActive: true,

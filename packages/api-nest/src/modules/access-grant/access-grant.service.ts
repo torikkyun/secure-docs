@@ -31,15 +31,12 @@ export class AccessGrantService {
       expiresAt,
     }: CreateAccessGrantDto
   ) {
-    // 1. Verify file exists and user is owner
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
-
     if (!file) {
       throw new NotFoundException("Không tìm thấy file");
     }
-
     if (file.ownerId !== userId) {
       throw new ForbiddenException("Bạn không phải chủ sở hữu file");
     }
@@ -47,15 +44,20 @@ export class AccessGrantService {
     const grantee = await this.prisma.user.findUnique({
       where: { walletAddress: granteeWalletAddress },
     });
-
     if (!grantee) {
       throw new NotFoundException("Không tìm thấy người nhận quyền truy cập");
     }
-
     if (grantee.id === userId) {
       throw new BadRequestException(
         "Không thể cấp quyền truy cập cho chính bạn"
       );
+    }
+
+    const status = await this.prisma.accessGrantStatus.findUnique({
+      where: { name: "active" },
+    });
+    if (!status) {
+      throw new NotFoundException("Không tìm thấy trạng thái");
     }
 
     const existingGrant = await this.prisma.accessGrant.findUnique({
@@ -67,7 +69,7 @@ export class AccessGrantService {
       },
     });
 
-    if (existingGrant && existingGrant.statusId === "active") {
+    if (existingGrant && existingGrant.statusId === status.id) {
       throw new ConflictException("Quyền truy cập đã tồn tại");
     }
 
@@ -79,7 +81,7 @@ export class AccessGrantService {
         encryptedKeyGrantee,
         txHash,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
-        statusId: "active",
+        statusId: status.id,
       },
       include: {
         file: true,
@@ -108,11 +110,9 @@ export class AccessGrantService {
     { fileId, granteeId, status, page = 1, limit = 20 }: QueryAccessGrantDto
   ) {
     const { skip, take } = getOffsetPagination(page, limit);
-
     const where: Prisma.AccessGrantWhereInput = {
       OR: [{ grantorId: userId }, { granteeId: userId }],
     };
-
     if (fileId) {
       where.fileId = fileId;
     }
@@ -129,7 +129,11 @@ export class AccessGrantService {
         skip,
         take,
         orderBy: { grantedAt: "desc" },
-        include: {
+        select: {
+          id: true,
+          txHash: true,
+          expiresAt: true,
+          grantedAt: true,
           file: {
             select: {
               id: true,
@@ -139,14 +143,22 @@ export class AccessGrantService {
           },
           grantor: {
             select: {
+              id: true,
               walletAddress: true,
               username: true,
             },
           },
           grantee: {
             select: {
+              id: true,
               walletAddress: true,
               username: true,
+            },
+          },
+          status: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
@@ -154,8 +166,8 @@ export class AccessGrantService {
       this.prisma.accessGrant.count({ where }),
     ]);
 
-    return serializeBigInt({
-      grants,
+    return {
+      grants: serializeBigInt(grants),
       pagination: {
         page,
         limit,
@@ -164,26 +176,58 @@ export class AccessGrantService {
         hasNext: page * limit < total,
         hasPrev: page > 1,
       },
-    });
+    };
   }
 
   async findOne(userId: string, id: string) {
     const grant = await this.prisma.accessGrant.findUnique({
       where: { id },
-      include: {
-        file: true,
-        grantor: true,
-        grantee: true,
+      select: {
+        id: true,
+        encryptedKeyGrantee: true,
+        txHash: true,
+        expiresAt: true,
+        grantedAt: true,
+        file: {
+          select: {
+            id: true,
+            fileName: true,
+            fileSize: true,
+          },
+        },
+        grantor: {
+          select: {
+            id: true,
+            walletAddress: true,
+            username: true,
+          },
+        },
+        grantee: {
+          select: {
+            id: true,
+            walletAddress: true,
+            username: true,
+          },
+        },
+        status: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        revokedAt: true,
+        revokeReason: true,
+        revokeSignature: true,
       },
     });
 
     if (!grant) {
-      throw new NotFoundException("Grant not found");
+      throw new NotFoundException("Quyền truy cập không tồn tại");
     }
 
-    if (grant.grantorId !== userId && grant.granteeId !== userId) {
+    if (grant.grantor.id !== userId && grant.grantee.id !== userId) {
       throw new ForbiddenException(
-        "You do not have permission to view this grant"
+        "Bạn không có quyền cập nhật quyền truy cập này"
       );
     }
 
@@ -197,18 +241,31 @@ export class AccessGrantService {
   ) {
     const grant = await this.prisma.accessGrant.findUnique({
       where: { id },
+      select: {
+        id: true,
+        grantor: {
+          select: {
+            id: true,
+          },
+        },
+        status: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
     if (!grant) {
-      throw new NotFoundException("Grant not found");
+      throw new NotFoundException("Quyền truy cập không tồn tại");
     }
 
-    if (grant.grantorId !== userId) {
-      throw new ForbiddenException("Only the grantor can revoke access");
+    if (grant.grantor.id !== userId) {
+      throw new ForbiddenException("Bạn không có quyền hủy quyền truy cập này");
     }
 
-    if (grant.statusId === "revoked") {
-      throw new ConflictException("Grant is already revoked");
+    if (grant.status.id === "revoked") {
+      throw new ConflictException("Quyền truy cập này đã bị hủy");
     }
 
     // Verify signature logic would go here (omitted for now as per plan)

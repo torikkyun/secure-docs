@@ -34,19 +34,12 @@ export class AccessGrantController {
     @CurrentUser() user: { id: string },
     @Query() dto: QueryAccessGrantDto
   ) {
-    const result = await this.accessGrantService.findAll(user.id, dto);
-    return {
-      result,
-      message: "Lấy danh sách quyền truy cập thành công",
-    };
+    return await this.accessGrantService.findAll(user.id, dto);
   }
 
   @Get(":id")
   async findOne(@CurrentUser() user: { id: string }, @Param("id") id: string) {
-    const grant = await this.accessGrantService.findOne(user.id, id);
-    return {
-      grant,
-    };
+    return await this.accessGrantService.findOne(user.id, id);
   }
 
   @Post(":id/revoke")
@@ -55,18 +48,11 @@ export class AccessGrantController {
     @Param("id") id: string,
     @Body() dto: RevokeAccessGrantDto
   ) {
-    const result = await this.accessGrantService.revoke(user.id, id, dto);
-    return {
-      result,
-      message: "Hủy quyền truy cập thành công",
-    };
+    return await this.accessGrantService.revoke(user.id, id, dto);
   }
 
   @Get("verify/:id")
   async verify(@CurrentUser() user: { id: string }, @Param("id") id: string) {
-    const result = await this.accessGrantService.verify(user.id, id);
-    return {
-      result,
-    };
+    return await this.accessGrantService.verify(user.id, id);
   }
 }

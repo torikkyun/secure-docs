@@ -65,7 +65,7 @@ export default function ShareTestPage() {
       const fileRes = await fetch(`http://localhost:3001/api/files/${fileId}`, {
         headers: {
           Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQzYzUyYzM3LWFjNGUtNDJlYy04MDJiLTU1ODVjM2U5ZDNkNyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiYTdhNjRjN2EtMDQ1Zi00ZDZkLWE3MTEtOGY5YTU5OGQyNGI1IiwiaWF0IjoxNzY0MDM5NTQzLCJleHAiOjE3NjQxMjU5NDN9.uHmgLtMAJRcbpXheZzCl5-4WYsOhZk_bOkLAiOQPLjM",
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1MjBiNDM4LWNkZmItNGJmMy1iNTNkLTQyZmJlNjMxMjY3YyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiNzU0MWFjODctY2JiMi00NmVlLTlmNWEtZjJlZDdkMWMwNDg3IiwiaWF0IjoxNzY0MTY4NDQyLCJleHAiOjE3NjQyNTQ4NDJ9.GL63lnwhdFJ5WHFYGZE2zv_-Kb_ZyqScmvCIjroyDfw",
         },
       });
 
@@ -74,7 +74,8 @@ export default function ShareTestPage() {
       }
 
       const fileData = await fileRes.json();
-      const encryptedKeyOwner = fileData.data.encryptedKeyOwner;
+      console.log(fileData);
+      const encryptedKeyOwner = fileData.data.file.encryptedKeyOwner;
 
       if (!encryptedKeyOwner) {
         throw new Error("File does not have encryptedKeyOwner");
@@ -100,7 +101,7 @@ export default function ShareTestPage() {
         {
           headers: {
             Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQzYzUyYzM3LWFjNGUtNDJlYy04MDJiLTU1ODVjM2U5ZDNkNyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiYTdhNjRjN2EtMDQ1Zi00ZDZkLWE3MTEtOGY5YTU5OGQyNGI1IiwiaWF0IjoxNzY0MDM5NTQzLCJleHAiOjE3NjQxMjU5NDN9.uHmgLtMAJRcbpXheZzCl5-4WYsOhZk_bOkLAiOQPLjM",
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1MjBiNDM4LWNkZmItNGJmMy1iNTNkLTQyZmJlNjMxMjY3YyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiNzU0MWFjODctY2JiMi00NmVlLTlmNWEtZjJlZDdkMWMwNDg3IiwiaWF0IjoxNzY0MTY4NDQyLCJleHAiOjE3NjQyNTQ4NDJ9.GL63lnwhdFJ5WHFYGZE2zv_-Kb_ZyqScmvCIjroyDfw",
           },
         }
       );
@@ -110,6 +111,7 @@ export default function ShareTestPage() {
       }
 
       const userData = await userRes.json();
+      console.log(userData);
       const granteePublicKey = userData.data.publicKey;
 
       if (!granteePublicKey) {
@@ -148,7 +150,7 @@ export default function ShareTestPage() {
         headers: {
           "Content-Type": "application/json",
           Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQzYzUyYzM3LWFjNGUtNDJlYy04MDJiLTU1ODVjM2U5ZDNkNyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiYTdhNjRjN2EtMDQ1Zi00ZDZkLWE3MTEtOGY5YTU5OGQyNGI1IiwiaWF0IjoxNzY0MDM5NTQzLCJleHAiOjE3NjQxMjU5NDN9.uHmgLtMAJRcbpXheZzCl5-4WYsOhZk_bOkLAiOQPLjM", // TODO: Add token handling
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ1MjBiNDM4LWNkZmItNGJmMy1iNTNkLTQyZmJlNjMxMjY3YyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiNzU0MWFjODctY2JiMi00NmVlLTlmNWEtZjJlZDdkMWMwNDg3IiwiaWF0IjoxNzY0MTY4NDQyLCJleHAiOjE3NjQyNTQ4NDJ9.GL63lnwhdFJ5WHFYGZE2zv_-Kb_ZyqScmvCIjroyDfw", // TODO: Add token handling
         },
         body: JSON.stringify({
           fileId,

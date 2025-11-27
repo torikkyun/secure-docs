@@ -53,17 +53,19 @@ export class FileService {
       pinService,
     }: UploadFileDto
   ) {
-    // const [status, ipfsPinStatus] = await Promise.all([
-    //   this.prisma.fileStatus.findUnique({
-    //     where: { name: "active" },
-    //     select: { id: true },
-    //   }),
-    //   this.prisma.ipfsPinStatus.findUnique({
-    //     where: { name: "pinned" },
-    //     select: { id: true },
-    //   }),
-    // ]);
-
+    const [status, ipfsPinStatus] = await Promise.all([
+      this.prisma.fileStatus.findUnique({
+        where: { name: "active" },
+        select: { id: true },
+      }),
+      this.prisma.ipfsPinStatus.findUnique({
+        where: { name: "pinned" },
+        select: { id: true },
+      }),
+    ]);
+    if (!(status && ipfsPinStatus)) {
+      throw new Error("Trạng thái file hoặc trạng thái pin không tồn tại");
+    }
     const file = await this.prisma.file.create({
       data: {
         ownerId,
@@ -73,30 +75,42 @@ export class FileService {
         fileSize: BigInt(fileSize),
         fileType,
         encryptedKeyOwner,
-        status: {
-          connectOrCreate: {
-            where: { name: "active" },
-            create: { name: "active" },
-          },
-        },
+        statusId: status.id,
         ipfsPins: {
           create: {
-            pinStatus: {
-              connectOrCreate: {
-                where: { name: "pinned" },
-                create: { name: "pinned" },
-              },
-            },
+            pinStatusId: ipfsPinStatus.id,
             pinSize: BigInt(pinSize),
             pinService,
           },
         },
       },
-      include: {
-        owner: { select: { id: true, username: true, walletAddress: true } },
+      select: {
+        id: true,
+        fileHash: true,
+        cid: true,
+        fileName: true,
+        fileSize: true,
+        fileType: true,
+        encryptedKeyOwner: true,
+        uploadTimestamp: true,
+        status: {
+          select: {
+            name: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            username: true,
+            walletAddress: true,
+          },
+        },
         ipfsPins: {
           where: { pinStatus: { name: "pinned" } },
-          select: { pinSize: true, pinService: true },
+          select: {
+            pinSize: true,
+            pinService: true,
+          },
         },
       },
     });
@@ -104,7 +118,7 @@ export class FileService {
       where: { id: ownerId },
       data: { storageUsed: { increment: BigInt(fileSize) } },
     });
-    return file;
+    return serializeBigInt(file);
   }
 
   async findAll(
@@ -120,7 +134,7 @@ export class FileService {
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
     const where: Prisma.FileWhereInput = {
-      statusId: { not: "deleted" },
+      status: { name: "active" },
     };
     if (search) {
       where.fileName = { contains: search, mode: "insensitive" };
@@ -131,7 +145,7 @@ export class FileService {
       where.grants = {
         some: {
           granteeId: userId,
-          statusId: "active",
+          status: { name: "active" },
         },
       };
     }
@@ -141,11 +155,18 @@ export class FileService {
         skip,
         take,
         orderBy: { [sortBy]: order },
-        include: {
-          owner: { select: { id: true, username: true, walletAddress: true } },
-          _count: { select: { grants: true, downloads: true } },
+        select: {
+          id: true,
+          fileName: true,
+          fileSize: true,
+          fileType: true,
+          uploadTimestamp: true,
+          status: {
+            select: {
+              name: true,
+            },
+          },
         },
-        omit: { ownerId: true, encryptedKeyOwner: true },
       }),
       this.prisma.file.count({ where }),
     ]);
@@ -163,18 +184,37 @@ export class FileService {
   async findOne(userId: string, fileId: string) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
-      include: {
-        owner: { select: { id: true, username: true, walletAddress: true } },
+      select: {
+        id: true,
+        fileHash: true,
+        cid: true,
+        fileName: true,
+        fileSize: true,
+        fileType: true,
+        encryptedKeyOwner: true,
+        uploadTimestamp: true,
+        status: {
+          select: {
+            name: true,
+          },
+        },
+        owner: {
+          select: {
+            id: true,
+            username: true,
+            walletAddress: true,
+          },
+        },
         grants: {
-          where: { statusId: "active" },
-          include: {
+          where: { status: { name: "active" } },
+          select: {
             grantee: {
               select: { id: true, username: true, walletAddress: true },
             },
           },
         },
         ipfsPins: {
-          where: { pinStatusId: "pinned" },
+          where: { pinStatus: { name: "pinned" } },
           select: { pinSize: true, pinService: true },
         },
       },
@@ -182,8 +222,8 @@ export class FileService {
     if (!file) {
       throw new NotFoundException("File không tồn tại");
     }
-    const isOwner = file.ownerId === userId;
-    const hasGrant = file.grants.some((g) => g.granteeId === userId);
+    const isOwner = file.owner.id === userId;
+    const hasGrant = file.grants.some((g) => g.grantee.id === userId);
     if (!(isOwner || hasGrant)) {
       throw new ForbiddenException("Bạn không có quyền truy cập file này");
     }
@@ -205,7 +245,11 @@ export class FileService {
     }
     await this.prisma.file.update({
       where: { id: fileId },
-      data: { statusId: "deleted" },
+      data: { status: { connect: { name: "deleted" } } },
+    });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { storageUsed: { decrement: file.fileSize } },
     });
     return { message: "Xóa file thành công" };
   }
