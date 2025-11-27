@@ -84,20 +84,6 @@ async function main() {
         create: { name: "failed", description: "Download thất bại" },
       });
 
-      // Seed ReceiptStatus
-      await prisma.receiptStatus.upsert({
-        where: { name: "confirmed" },
-        update: {},
-        create: { name: "confirmed", description: "Đã được xác nhận" },
-      });
-
-      // Seed BlockchainSyncStatus
-      await prisma.blockchainSyncStatus.upsert({
-        where: { name: "confirmed" },
-        update: {},
-        create: { name: "confirmed", description: "Đã được xác nhận" },
-      });
-
       // Seed IpfsPinStatus
       await prisma.ipfsPinStatus.upsert({
         where: { name: "pinned" },
