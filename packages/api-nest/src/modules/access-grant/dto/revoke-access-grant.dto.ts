@@ -1,11 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class RevokeAccessGrantDto {
-  @IsObject()
+  @IsString()
   @IsNotEmpty()
-  @ApiProperty()
-  revokeMessage: Record<string, unknown>;
+  @ApiProperty({ example: "Siwe message string" })
+  message: string;
 
   @IsString()
   @IsNotEmpty()

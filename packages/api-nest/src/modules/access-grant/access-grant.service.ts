@@ -120,7 +120,9 @@ export class AccessGrantService {
       where.granteeId = granteeId;
     }
     if (status) {
-      where.statusId = status;
+      where.status = {
+        name: status,
+      };
     }
 
     const [grants, total] = await Promise.all([
@@ -250,7 +252,7 @@ export class AccessGrantService {
         },
         status: {
           select: {
-            id: true,
+            name: true,
           },
         },
       },
@@ -264,16 +266,18 @@ export class AccessGrantService {
       throw new ForbiddenException("Bạn không có quyền hủy quyền truy cập này");
     }
 
-    if (grant.status.id === "revoked") {
+    if (grant.status.name === "revoked") {
       throw new ConflictException("Quyền truy cập này đã bị hủy");
     }
-
-    // Verify signature logic would go here (omitted for now as per plan)
 
     const updatedGrant = await this.prisma.accessGrant.update({
       where: { id },
       data: {
-        statusId: "revoked",
+        status: {
+          connect: {
+            name: "revoked",
+          },
+        },
         revokedAt: new Date(),
         revokeReason: revokeAccessGrantDto.reason,
         revokeSignature: revokeAccessGrantDto.signature,
@@ -288,49 +292,52 @@ export class AccessGrantService {
   async verify(userId: string, id: string) {
     const grant = await this.prisma.accessGrant.findUnique({
       where: { id },
-      include: {
-        file: true,
-        grantor: true,
-        grantee: true,
+      select: {
+        id: true,
+        expiresAt: true,
+        grantedAt: true,
+        grantor: {
+          select: {
+            id: true,
+            email: true,
+            walletAddress: true,
+          },
+        },
+        grantee: {
+          select: {
+            id: true,
+            email: true,
+            walletAddress: true,
+          },
+        },
+        status: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
     if (!grant) {
-      throw new NotFoundException("Grant not found");
+      throw new NotFoundException("Không tìm thấy quyền truy cập");
     }
 
-    // Anyone with token can verify? Or just involved parties?
-    // Docs say "Verify grant signature and permission", implies involved parties or public if they have ID?
-    // Assuming involved parties for now for safety.
-    if (grant.grantorId !== userId && grant.granteeId !== userId) {
-      // throw new ForbiddenException('You do not have permission to verify this grant');
-      // Actually, verification might be needed by the grantee to check if they still have access
+    if (grant.grantor.id !== userId && grant.grantee.id !== userId) {
+      throw new ForbiddenException(
+        "Bạn không có quyền xác nhận quyền truy cập này"
+      );
     }
 
     const isExpired = grant.expiresAt && new Date() > grant.expiresAt;
-    const isRevoked = grant.statusId === "revoked";
+    const isRevoked = grant.status.name === "revoked";
     const isValid = !(isExpired || isRevoked);
 
     return {
       valid: isValid,
-      grant: {
-        id: grant.id,
-        status: grant.statusId,
-        grantedAt: grant.grantedAt,
-        expiresAt: grant.expiresAt,
-      },
-      file: {
-        id: grant.file.id,
-        fileHash: grant.file.fileHash,
-        cid: grant.file.cid,
-        fileName: grant.file.fileName,
-      },
       verifications: {
-        signatureValid: true,
         notExpired: !isExpired,
         notRevoked: !isRevoked,
-        fileExists: true,
-        granteeMatches: true,
       },
     };
   }

@@ -12,6 +12,8 @@ export class QueryAccessGrantDto extends OffsetPaginationQueryDto {
   granteeId?: string;
 
   @IsOptional()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    enum: ["active", "revoked"],
+  })
   status?: string;
 }

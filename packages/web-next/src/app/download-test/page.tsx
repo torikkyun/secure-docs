@@ -43,7 +43,7 @@ export default function DownloadTestPage() {
           headers: {
             "Content-Type": "application/json",
             Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFlMzgxYzFlLTkxZTctNGZhMC1iYzE1LThhYWM4ZTk5NTYwMyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiZjQxMzU3MWMtMTE4Yi00NjRiLWFiMDYtNWRlYzJmM2ZhNTQ5IiwiaWF0IjoxNzY0MjA5OTI4LCJleHAiOjE3NjQyOTYzMjh9.3xpBM6mKf16Vyz5XcEoBHjNIQEgy1Hm3-_x5CfJz9iw", // TODO: Add token
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFlMzgxYzFlLTkxZTctNGZhMC1iYzE1LThhYWM4ZTk5NTYwMyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiM2FkNDQwMjMtYzAzNy00NzFiLWFhNGYtZWZjZGFmMWY2OTkxIiwiaWF0IjoxNzY0Mjk3OTY2LCJleHAiOjE3NjQzODQzNjZ9.VLun1Gvr_oS1PWymg0BC5hR5El3lW1aFMtknUfDwYNo", // TODO: Add token
           },
           body: JSON.stringify({ fileId }),
         }
@@ -176,7 +176,7 @@ export default function DownloadTestPage() {
           headers: {
             "Content-Type": "application/json",
             Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFlMzgxYzFlLTkxZTctNGZhMC1iYzE1LThhYWM4ZTk5NTYwMyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiZjQxMzU3MWMtMTE4Yi00NjRiLWFiMDYtNWRlYzJmM2ZhNTQ5IiwiaWF0IjoxNzY0MjA5OTI4LCJleHAiOjE3NjQyOTYzMjh9.3xpBM6mKf16Vyz5XcEoBHjNIQEgy1Hm3-_x5CfJz9iw", // TODO: Add token
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFlMzgxYzFlLTkxZTctNGZhMC1iYzE1LThhYWM4ZTk5NTYwMyIsInJvbGUiOnsibmFtZSI6InVzZXIifSwic2Vzc2lvbklkIjoiM2FkNDQwMjMtYzAzNy00NzFiLWFhNGYtZWZjZGFmMWY2OTkxIiwiaWF0IjoxNzY0Mjk3OTY2LCJleHAiOjE3NjQzODQzNjZ9.VLun1Gvr_oS1PWymg0BC5hR5El3lW1aFMtknUfDwYNo", // TODO: Add token
           },
           body: JSON.stringify({
             success: true,
