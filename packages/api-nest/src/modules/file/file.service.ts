@@ -9,14 +9,17 @@ import { Prisma } from "generated/prisma/client";
 import { serializeBigInt } from "src/common/utils/bigint.util";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { PrismaService } from "src/database/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { QueryFileDto } from "./dto/query-file.dto";
 import type { UploadFileDto } from "./dto/upload-file.dto";
 
 @Injectable()
 export class FileService {
   private readonly prisma: PrismaService;
-  constructor(prisma: PrismaService) {
+  private readonly auditService: AuditService;
+  constructor(prisma: PrismaService, auditService: AuditService) {
     this.prisma = prisma;
+    this.auditService = auditService;
   }
 
   async prepareUpload(userId: string, fileSize: number) {
@@ -51,7 +54,9 @@ export class FileService {
       encryptedKeyOwner,
       pinSize,
       pinService,
-    }: UploadFileDto
+    }: UploadFileDto,
+    ipAddress?: string,
+    userAgent?: string
   ) {
     const [status, ipfsPinStatus] = await Promise.all([
       this.prisma.fileStatus.findUnique({
@@ -118,6 +123,22 @@ export class FileService {
       where: { id: ownerId },
       data: { storageUsed: { increment: BigInt(fileSize) } },
     });
+
+    // Audit Log: FILE_UPLOAD
+    await this.auditService.log({
+      userId: ownerId,
+      eventType: "FILE_UPLOAD",
+      fileId: file.id,
+      eventData: {
+        fileName,
+        fileSize,
+        fileType,
+        cid,
+      },
+      ipAddress: ipAddress || "unknown",
+      userAgent: userAgent || "unknown",
+    });
+
     return serializeBigInt(file);
   }
 
@@ -233,7 +254,12 @@ export class FileService {
     };
   }
 
-  async remove(userId: string, fileId: string) {
+  async remove(
+    userId: string,
+    fileId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
@@ -251,6 +277,19 @@ export class FileService {
       where: { id: userId },
       data: { storageUsed: { decrement: file.fileSize } },
     });
+
+    // Audit Log: FILE_DELETE
+    await this.auditService.log({
+      userId,
+      eventType: "FILE_DELETE",
+      fileId,
+      eventData: {
+        fileName: file.fileName,
+      },
+      ipAddress: ipAddress || "unknown",
+      userAgent: userAgent || "unknown",
+    });
+
     return { message: "Xóa file thành công" };
   }
 }

@@ -20,8 +20,8 @@ export class AuthController {
 
   @Post("register")
   @Public()
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  register(@Body() dto: RegisterDto, @Req() req: Request) {
+    return this.authService.register(dto, req);
   }
 
   @Post("login")
@@ -45,11 +45,12 @@ export class AuthController {
   @ApiBearerAuth()
   async logout(
     @CurrentUser()
-    user: { id: string; role: { name: string }; sessionId: string }
+    user: { id: string; role: { name: string }; sessionId: string },
+    @Req() req: Request
   ) {
     const sessionId = user.sessionId;
     if (sessionId) {
-      await this.authService.logoutBySessionId(sessionId);
+      await this.authService.logoutBySessionId(sessionId, req);
       return { message: "Đăng xuất thành công" };
     }
   }

@@ -1,5 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Req,
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { QueryUserDto } from "./dto/query-user.dto";
@@ -23,9 +32,10 @@ export class UserController {
   @Patch("/profile")
   async updateProfile(
     @CurrentUser() user: { id: string },
-    @Body() dto: UpdateUserProfileDto
+    @Body() dto: UpdateUserProfileDto,
+    @Req() req: Request
   ) {
-    return await this.userService.updateProfile(user.id, dto);
+    return await this.userService.updateProfile(user.id, dto, req);
   }
 
   @Get("/storage")

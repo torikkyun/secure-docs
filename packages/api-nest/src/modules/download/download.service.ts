@@ -9,6 +9,7 @@ import { serializeBigInt } from "src/common/utils/bigint.util";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
 import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrismaService } from "src/database/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { CompleteDownloadDto } from "./dto/complete-download.dto";
 import { QueryDownloadDto } from "./dto/query-download.dto";
 import { RequestDownloadDto } from "./dto/request-download.dto";
@@ -16,8 +17,11 @@ import { RequestDownloadDto } from "./dto/request-download.dto";
 @Injectable()
 export class DownloadService {
   private readonly prisma: PrismaService;
-  constructor(prisma: PrismaService) {
+  private readonly auditService: AuditService;
+
+  constructor(prisma: PrismaService, auditService: AuditService) {
     this.prisma = prisma;
+    this.auditService = auditService;
   }
 
   async requestDownload(
@@ -97,6 +101,19 @@ export class DownloadService {
         ipAddress,
         userAgent,
       },
+    });
+
+    // Audit Log: FILE_DOWNLOAD
+    await this.auditService.log({
+      userId,
+      eventType: "FILE_DOWNLOAD",
+      fileId,
+      eventData: {
+        fileName: file.fileName,
+        downloadId: download.id,
+      },
+      ipAddress,
+      userAgent,
     });
 
     return {

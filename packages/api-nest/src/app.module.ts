@@ -13,6 +13,7 @@ import { RedisModule } from "./infrastructure/cache/redis.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { AccessGrantModule } from "./modules/access-grant/access-grant.module";
+import { AuditModule } from "./modules/audit/audit.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { DownloadModule } from "./modules/download/download.module";
 import { FileModule } from "./modules/file/file.module";
@@ -34,6 +35,7 @@ const guards = [JwtGuard, RolesGuard];
     FileModule,
     DownloadModule,
     AccessGrantModule,
+    AuditModule,
   ],
   providers: [
     ...guards.map((Guard) => ({

@@ -106,23 +106,35 @@ model Download {
 }
 
 model AuditLog {
-  id               String   @id @default(uuid()) @map("id") @db.Uuid
-  eventType        String   @map("event_type") @db.VarChar(50)
-  userId           String   @map("user_id") @db.Uuid
-  fileId           String?  @map("file_id") @db.Uuid
-  targetUserId     String?  @map("target_user_id") @db.Uuid
-  eventData        Json     @map("event_data")
-  signature        String?  @map("signature") @db.Text
-  blockchainTxHash String?  @map("blockchain_tx_hash") @db.VarChar(66)
-  ipAddress        String   @map("ip_address") @db.VarChar(45)
-  userAgent        String   @map("user_agent") @db.Text
-  timestamp        DateTime @default(now()) @map("timestamp")
+  id               String    @id @default(uuid()) @map("id") @db.Uuid
+  eventTypeId      String    @map("event_type_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  fileId           String?   @map("file_id") @db.Uuid
+  targetUserId     String?   @map("target_user_id") @db.Uuid
+  eventData        Json      @map("event_data")
+  signature        String?   @map("signature") @db.Text
+  blockchainTxHash String?   @map("blockchain_tx_hash") @db.VarChar(66)
+  ipAddress        String    @map("ip_address") @db.VarChar(45)
+  userAgent        String    @map("user_agent") @db.Text
+  timestamp        DateTime  @default(now()) @map("timestamp")
   // Relations
-  user             User     @relation("AuditLogUser", fields: [userId], references: [id])
-  file             File?    @relation(fields: [fileId], references: [id])
-  targetUser       User?    @relation("AuditLogTargetUser", fields: [targetUserId], references: [id])
+  user             User      @relation("AuditLogUser", fields: [userId], references: [id])
+  file             File?     @relation(fields: [fileId], references: [id])
+  targetUser       User?     @relation("AuditLogTargetUser", fields: [targetUserId], references: [id])
+  eventType        EventType @relation(fields: [eventTypeId], references: [id])
 
   @@map("audit_logs")
+}
+
+model EventType {
+  id          String     @id @default(uuid()) @map("id") @db.Uuid
+  name        String     @unique @map("name") @db.VarChar(50)
+  description String?    @map("description")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  auditLogs   AuditLog[]
+
+  @@map("event_types")
 }
 
 model IpfsPin {

@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, Req } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import extractIpAndUserAgent from "src/common/utils/request.util";
 import { AccessGrantService } from "./access-grant.service";
 import { CreateAccessGrantDto } from "./dto/create-access-grant.dto";
 import { QueryAccessGrantDto } from "./dto/query-access-grant.dto";
@@ -19,9 +21,16 @@ export class AccessGrantController {
   @Post()
   async create(
     @CurrentUser() user: { id: string },
-    @Body() dto: CreateAccessGrantDto
+    @Body() dto: CreateAccessGrantDto,
+    @Req() req: Request
   ) {
-    const grant = await this.accessGrantService.create(user.id, dto);
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    const grant = await this.accessGrantService.create(
+      user.id,
+      dto,
+      ipAddress,
+      userAgent
+    );
     return {
       grantId: grant.id,
       grant,
@@ -46,9 +55,17 @@ export class AccessGrantController {
   async revoke(
     @CurrentUser() user: { id: string },
     @Param("id") id: string,
-    @Body() dto: RevokeAccessGrantDto
+    @Body() dto: RevokeAccessGrantDto,
+    @Req() req: Request
   ) {
-    return await this.accessGrantService.revoke(user.id, id, dto);
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    return await this.accessGrantService.revoke(
+      user.id,
+      id,
+      dto,
+      ipAddress,
+      userAgent
+    );
   }
 
   @Get("verify/:id")

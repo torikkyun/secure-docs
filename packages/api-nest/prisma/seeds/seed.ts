@@ -101,6 +101,33 @@ async function main() {
         create: { name: "unpinned", description: "Không còn được pin" },
       });
 
+      // Seed EventType
+      const eventTypes = [
+        { name: "USER_REGISTER", description: "Người dùng đăng ký tài khoản" },
+        { name: "USER_LOGIN", description: "Người dùng đăng nhập" },
+        { name: "USER_LOGOUT", description: "Người dùng đăng xuất" },
+        {
+          name: "USER_UPDATE_PROFILE",
+          description: "Người dùng cập nhật thông tin cá nhân",
+        },
+        { name: "FILE_UPLOAD", description: "Người dùng upload file" },
+        { name: "FILE_SHARE", description: "Người dùng chia sẻ file" },
+        {
+          name: "FILE_REVOKE",
+          description: "Người dùng thu hồi quyền truy cập",
+        },
+        { name: "FILE_DELETE", description: "Người dùng xóa file" },
+        { name: "FILE_DOWNLOAD", description: "Người dùng tải file" },
+      ];
+
+      for (const eventType of eventTypes) {
+        await prisma.eventType.upsert({
+          where: { name: eventType.name },
+          update: {},
+          create: eventType,
+        });
+      }
+
       break;
     }
     case "test":

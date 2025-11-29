@@ -6,9 +6,12 @@ import {
   Param,
   Post,
   Query,
+  Req,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrepareUploadDto } from "./dto/prepare-upload.dto";
 import { QueryFileDto } from "./dto/query-file.dto";
 import { UploadFileDto } from "./dto/upload-file.dto";
@@ -34,9 +37,16 @@ export class FileController {
   @Post("upload")
   async uploadFile(
     @CurrentUser() user: { id: string },
-    @Body() dto: UploadFileDto
+    @Body() dto: UploadFileDto,
+    @Req() req: Request
   ) {
-    return await this.filesService.createFile(user.id, dto);
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    return await this.filesService.createFile(
+      user.id,
+      dto,
+      ipAddress,
+      userAgent
+    );
   }
 
   @Get()
@@ -50,7 +60,12 @@ export class FileController {
   }
 
   @Delete(":id")
-  remove(@CurrentUser() user: { id: string }, @Param("id") id: string) {
-    return this.filesService.remove(user.id, id);
+  remove(
+    @CurrentUser() user: { id: string },
+    @Param("id") id: string,
+    @Req() req: Request
+  ) {
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    return this.filesService.remove(user.id, id, ipAddress, userAgent);
   }
 }

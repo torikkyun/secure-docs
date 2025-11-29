@@ -3,18 +3,23 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { Request } from "express";
 import { Prisma } from "generated/prisma/client";
 import { serializeBigInt } from "src/common/utils/bigint.util";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
+import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrismaService } from "src/database/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { QueryUserDto } from "./dto/query-user.dto";
 import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 
 @Injectable()
 export class UserService {
   private readonly prisma: PrismaService;
-  constructor(prisma: PrismaService) {
+  private readonly auditService: AuditService;
+  constructor(prisma: PrismaService, auditService: AuditService) {
     this.prisma = prisma;
+    this.auditService = auditService;
   }
 
   async getProfile(userId: string) {
@@ -44,7 +49,8 @@ export class UserService {
 
   async updateProfile(
     userId: string,
-    { email, username }: UpdateUserProfileDto
+    { email, username }: UpdateUserProfileDto,
+    req: Request
   ) {
     if (email) {
       const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -72,6 +78,20 @@ export class UserService {
         lastLoginAt: true,
         role: { select: { name: true } },
       },
+    });
+
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+
+    // Audit Log: USER_UPDATE_PROFILE
+    await this.auditService.log({
+      userId: user.id,
+      eventType: "USER_UPDATE_PROFILE",
+      eventData: {
+        username,
+        email,
+      },
+      ipAddress,
+      userAgent,
     });
 
     return serializeBigInt(user);

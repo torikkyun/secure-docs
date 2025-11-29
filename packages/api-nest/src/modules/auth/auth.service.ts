@@ -13,6 +13,7 @@ import { Role } from "generated/prisma/client";
 import { SiweMessage } from "siwe";
 import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrismaService } from "src/database/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { LoginWalletDto } from "./dto/login-wallet.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { NonceService } from "./nonce.service";
@@ -23,18 +24,21 @@ export class AuthService {
   private readonly config: ConfigService;
   private readonly nonceService: NonceService;
   private readonly jwtService: JwtService;
+  private readonly auditService: AuditService;
   private cachedRole: Role | null = null;
   private static readonly EXPIRATION_RE = /^(\d+)(s|m|h|d)?$/;
   constructor(
     prisma: PrismaService,
     config: ConfigService,
     nonceService: NonceService,
-    jwtService: JwtService
+    jwtService: JwtService,
+    auditService: AuditService
   ) {
     this.prisma = prisma;
     this.config = config;
     this.nonceService = nonceService;
     this.jwtService = jwtService;
+    this.auditService = auditService;
   }
 
   private async getDefaultRole() {
@@ -51,14 +55,17 @@ export class AuthService {
     return role;
   }
 
-  async register({
-    walletAddress: rawWallet,
-    username,
-    email,
-    signature,
-    message,
-    publicKey,
-  }: RegisterDto) {
+  async register(
+    {
+      walletAddress: rawWallet,
+      username,
+      email,
+      signature,
+      message,
+      publicKey,
+    }: RegisterDto,
+    req: Request
+  ) {
     const walletAddress = this.normalizeWallet(rawWallet);
     await this.verifySiweMessage(message, signature, walletAddress);
     await this.ensureUnique(walletAddress, email);
@@ -77,6 +84,20 @@ export class AuthService {
         username: true,
         email: true,
       },
+    });
+
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    await this.auditService.log({
+      userId: user.id,
+      eventType: "USER_REGISTER",
+      eventData: {
+        walletAddress,
+        username,
+        email,
+      },
+      signature,
+      ipAddress,
+      userAgent,
     });
     return {
       success: true,
@@ -108,6 +129,18 @@ export class AuthService {
     });
     const tempToken = randomUUID();
     const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+
+    await this.auditService.log({
+      userId: user.id,
+      eventType: "USER_LOGIN",
+      eventData: {
+        walletAddress,
+        method: "wallet",
+      },
+      signature,
+      ipAddress,
+      userAgent,
+    });
     const session = await this.prisma.userSession.create({
       data: {
         userId: user.id,
@@ -264,18 +297,25 @@ export class AuthService {
     }
   }
 
-  async logout(sessionToken: string) {
-    await this.prisma.userSession.updateMany({
-      where: { sessionToken, isActive: true },
-      data: {
-        isActive: false,
-        lastActivityAt: new Date(),
-        expiresAt: new Date(),
-      },
+  async logoutBySessionId(sessionId: string, req: Request) {
+    const session = await this.prisma.userSession.findUnique({
+      where: { id: sessionId },
+      select: { userId: true, ipAddress: true, userAgent: true },
     });
-  }
 
-  async logoutBySessionId(sessionId: string) {
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    if (session) {
+      await this.auditService.log({
+        userId: session.userId,
+        eventType: "USER_LOGOUT",
+        eventData: {
+          method: "sessionId",
+        },
+        ipAddress,
+        userAgent,
+      });
+    }
+
     await this.prisma.userSession.updateMany({
       where: { id: sessionId, isActive: true },
       data: {

@@ -9,6 +9,7 @@ import { Prisma } from "generated/prisma/client";
 import { serializeBigInt } from "src/common/utils/bigint.util";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { PrismaService } from "src/database/prisma.service";
+import { AuditService } from "../audit/audit.service";
 import { CreateAccessGrantDto } from "./dto/create-access-grant.dto";
 import { QueryAccessGrantDto } from "./dto/query-access-grant.dto";
 import { RevokeAccessGrantDto } from "./dto/revoke-access-grant.dto";
@@ -16,9 +17,11 @@ import { RevokeAccessGrantDto } from "./dto/revoke-access-grant.dto";
 @Injectable()
 export class AccessGrantService {
   private readonly prisma: PrismaService;
+  private readonly auditService: AuditService;
 
-  constructor(prisma: PrismaService) {
+  constructor(prisma: PrismaService, auditService: AuditService) {
     this.prisma = prisma;
+    this.auditService = auditService;
   }
 
   async create(
@@ -29,7 +32,9 @@ export class AccessGrantService {
       encryptedKeyGrantee,
       txHash,
       expiresAt,
-    }: CreateAccessGrantDto
+    }: CreateAccessGrantDto,
+    ipAddress: string,
+    userAgent: string
   ) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
@@ -100,6 +105,21 @@ export class AccessGrantService {
           },
         },
       },
+    });
+
+    // Audit Log: FILE_SHARE
+    await this.auditService.log({
+      userId,
+      eventType: "FILE_SHARE",
+      fileId,
+      targetUserId: grantee.id,
+      eventData: {
+        grantId: grant.id,
+        expiresAt: grant.expiresAt,
+      },
+      blockchainTxHash: txHash,
+      ipAddress,
+      userAgent,
     });
 
     return serializeBigInt(grant);
@@ -239,7 +259,9 @@ export class AccessGrantService {
   async revoke(
     userId: string,
     id: string,
-    revokeAccessGrantDto: RevokeAccessGrantDto
+    revokeAccessGrantDto: RevokeAccessGrantDto,
+    ipAddress: string,
+    userAgent: string
   ) {
     const grant = await this.prisma.accessGrant.findUnique({
       where: { id },
@@ -253,6 +275,11 @@ export class AccessGrantService {
         status: {
           select: {
             name: true,
+          },
+        },
+        file: {
+          select: {
+            id: true,
           },
         },
       },
@@ -282,6 +309,20 @@ export class AccessGrantService {
         revokeReason: revokeAccessGrantDto.reason,
         revokeSignature: revokeAccessGrantDto.signature,
       },
+    });
+
+    // Audit Log: FILE_REVOKE
+    await this.auditService.log({
+      userId,
+      eventType: "FILE_REVOKE",
+      fileId: grant.file.id,
+      eventData: {
+        grantId: id,
+        reason: revokeAccessGrantDto.reason,
+      },
+      signature: revokeAccessGrantDto.signature,
+      ipAddress,
+      userAgent,
     });
 
     return {
