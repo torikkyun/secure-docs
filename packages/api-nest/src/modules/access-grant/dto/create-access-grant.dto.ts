@@ -1,11 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import {
-  IsDateString,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsDateString, IsNotEmpty, IsString, IsUUID } from "class-validator";
 
 export class CreateAccessGrantDto {
   @IsUUID()
@@ -24,12 +18,12 @@ export class CreateAccessGrantDto {
   encryptedKeyGrantee: string;
 
   @IsString()
-  @IsOptional()
-  @ApiPropertyOptional()
-  txHash?: string;
+  @IsNotEmpty()
+  @ApiProperty()
+  txHash: string;
 
   @IsDateString()
-  @IsOptional()
-  @ApiPropertyOptional()
-  expiresAt?: string;
+  @IsNotEmpty()
+  @ApiProperty()
+  expiresAt: string;
 }

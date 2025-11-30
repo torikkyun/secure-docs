@@ -16,5 +16,11 @@
   },
   "dependencies": {
     "@web3auth/modal": "^10.8.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "electron-winstaller"
+    ]
   }
 }

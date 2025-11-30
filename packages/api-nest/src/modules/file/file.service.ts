@@ -55,8 +55,8 @@ export class FileService {
       pinSize,
       pinService,
     }: UploadFileDto,
-    ipAddress?: string,
-    userAgent?: string
+    ipAddress: string,
+    userAgent: string
   ) {
     const [status, ipfsPinStatus] = await Promise.all([
       this.prisma.fileStatus.findUnique({
@@ -135,8 +135,8 @@ export class FileService {
         fileType,
         cid,
       },
-      ipAddress: ipAddress || "unknown",
-      userAgent: userAgent || "unknown",
+      ipAddress,
+      userAgent,
     });
 
     return serializeBigInt(file);
@@ -257,8 +257,8 @@ export class FileService {
   async remove(
     userId: string,
     fileId: string,
-    ipAddress?: string,
-    userAgent?: string
+    ipAddress: string,
+    userAgent: string
   ) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
@@ -286,8 +286,8 @@ export class FileService {
       eventData: {
         fileName: file.fileName,
       },
-      ipAddress: ipAddress || "unknown",
-      userAgent: userAgent || "unknown",
+      ipAddress,
+      userAgent,
     });
 
     return { message: "Xóa file thành công" };
