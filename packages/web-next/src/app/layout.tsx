@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 import WagmiProviderWrapper from "@/components/wagmi-provider";
 
 const geistSans = Geist({
@@ -35,6 +36,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <WagmiProviderWrapper>{children}</WagmiProviderWrapper>
+        <Toaster />
       </body>
     </html>
   );

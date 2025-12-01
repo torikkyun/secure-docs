@@ -7,25 +7,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { FileItem } from "@/types/dashboard";
 
-interface RecentFilesProps {
+type RecentFilesProps = {
   files: FileItem[];
-}
+};
 
 export default function RecentFiles({ files }: RecentFilesProps) {
   const getFileIcon = (fileType: string) => {
-    if (fileType.includes("image")) return <Image className="h-5 w-5" />;
-    if (fileType.includes("folder")) return <Folder className="h-5 w-5" />;
-    if (fileType.includes("code") || fileType.includes("text"))
+    if (fileType.includes("image")) {
+      return <Image className="h-5 w-5" />;
+    }
+    if (fileType.includes("folder")) {
+      return <Folder className="h-5 w-5" />;
+    }
+    if (fileType.includes("code") || fileType.includes("text")) {
       return <FileCode className="h-5 w-5" />;
+    }
     return <FileText className="h-5 w-5" />;
   };
 
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === 0) {
+      return "0 Bytes";
+    }
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / k ** i) * 100) / 100 + " " + sizes[i];
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
   };
 
   const getStatusBadge = (status: string) => {
