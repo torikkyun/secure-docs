@@ -146,6 +146,7 @@ export class AuthService {
         userId: user.id,
         sessionToken: tempToken,
         walletAddress: user.walletAddress,
+        signature,
         createdAt: new Date(),
         expiresAt,
         ipAddress,

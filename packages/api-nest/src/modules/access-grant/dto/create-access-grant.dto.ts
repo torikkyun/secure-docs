@@ -22,6 +22,8 @@ export class CreateAccessGrantDto {
   @ApiProperty()
   txHash: string;
 
+  signature: string;
+
   @IsDateString()
   @IsNotEmpty()
   @ApiProperty()
