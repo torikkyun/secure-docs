@@ -152,7 +152,7 @@ export default function FileGrid() {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600">
-                  Move to trash
+                  Chuyển vào thùng rác
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

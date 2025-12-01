@@ -30,7 +30,7 @@ export default function Sidebar() {
           size="lg"
         >
           <HardDrive className="h-4 w-4" />
-          My Drive
+          HẸ HẸ HẸ
         </Button>
         <Button
           variant="ghost"
