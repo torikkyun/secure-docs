@@ -6,8 +6,9 @@ import Sidebar from "@/components/drive/Sidebar";
 import { Button } from "@/components/ui/button";
 import { useDrive } from "@/contexts/DriveContext";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
-export default function DrivePage() {
+export default function RecentPage() {
   const {
     viewMode,
     setViewMode,
@@ -15,8 +16,12 @@ export default function DrivePage() {
     setSortBy,
     sortOrder,
     setSortOrder,
-    currentFolder,
+    setCurrentFolder,
   } = useDrive();
+
+  useEffect(() => {
+    setCurrentFolder("Recent");
+  }, [setCurrentFolder]);
 
   const toggleSort = () => {
     if (sortBy === "modified") {
@@ -34,19 +39,15 @@ export default function DrivePage() {
         <Sidebar />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="mb-6 pb-5 border-b border-neutral-900">
-            <div className="mb-3 flex items-center gap-2 text-neutral-600 text-sm">
-              <span className="cursor-pointer font-medium transition-colors hover:text-neutral-900">
-                My Drive
-              </span>
-              <span className="material-icons text-base">chevron_right</span>
-              <span className="font-medium text-neutral-900">
-                {currentFolder}
-              </span>
-            </div>
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-4xl text-neutral-900">
-                {currentFolder}
-              </h2>
+              <div>
+                <h2 className="font-bold text-4xl text-neutral-900 mb-2">
+                  Recent
+                </h2>
+                <p className="text-neutral-600 text-sm">
+                  Files you&apos;ve recently opened or edited
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Button
                   className={cn(
