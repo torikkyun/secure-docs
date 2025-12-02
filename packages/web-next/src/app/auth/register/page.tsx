@@ -22,6 +22,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Identity, KeyManager } from "@/lib/crypto/key-manager";
@@ -60,6 +68,8 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [hasMetaMask, setHasMetaMask] = useState(false);
+  const [showRecoveryDialog, setShowRecoveryDialog] = useState(false);
+  const [recoveryPhraseSaved, setRecoveryPhraseSaved] = useState(false);
 
   // Check for MetaMask on mount
   useEffect(() => {
@@ -153,7 +163,7 @@ export default function RegisterPage() {
     }
   };
 
-  const generateKeys = async (walletAddr: string) => {
+  const generateKeys = async (_walletAddr: string) => {
     try {
       setStatus("generating");
 
@@ -167,8 +177,8 @@ export default function RegisterPage() {
         publicKey: newIdentity.publicKey,
       }));
 
-      // Prepare SIWE message
-      await prepareMessage(walletAddr);
+      // Show recovery dialog
+      setShowRecoveryDialog(true);
     } catch (err: unknown) {
       setStatus("error");
       setError(err instanceof Error ? err.message : String(err));
@@ -224,10 +234,17 @@ export default function RegisterPage() {
     }
   };
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Registration flow requires validation and multi-step process
   const signAndSubmit = async () => {
     try {
       // Validate form first
       if (!validateForm()) {
+        return;
+      }
+
+      // Check if recovery phrase was saved
+      if (!recoveryPhraseSaved) {
+        setError("Please save your recovery phrase before continuing");
         return;
       }
 
@@ -329,6 +346,24 @@ export default function RegisterPage() {
     status === "preparing" ||
     status === "signing" ||
     status === "submitting";
+
+  const handleContinueAfterRecovery = async () => {
+    if (!form.walletAddress) {
+      return;
+    }
+
+    setShowRecoveryDialog(false);
+    setRecoveryPhraseSaved(true);
+
+    // Now prepare the message
+    await prepareMessage(form.walletAddress);
+  };
+
+  const copyRecoveryPhrase = () => {
+    if (identity?.mnemonic) {
+      navigator.clipboard.writeText(identity.mnemonic);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-zinc-50 via-white to-zinc-100 p-4">
@@ -525,6 +560,79 @@ export default function RegisterPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Recovery Phrase Dialog */}
+      <Dialog onOpenChange={setShowRecoveryDialog} open={showRecoveryDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="size-5 text-primary" />
+              Save Your Recovery Phrase
+            </DialogTitle>
+            <DialogDescription>
+              This 12-word phrase is the ONLY way to recover your encryption
+              keys. Store it safely and never share it with anyone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Warning Box */}
+            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+              <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
+              <div className="flex-1">
+                <p className="font-medium text-red-900 text-sm">
+                  Important Security Warning
+                </p>
+                <p className="mt-1 text-red-700 text-xs">
+                  If you lose this phrase, your encrypted files cannot be
+                  recovered. Write it down and store it securely offline.
+                </p>
+              </div>
+            </div>
+
+            {/* Recovery Phrase Display */}
+            <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+              <Label className="mb-2 block text-muted-foreground text-sm">
+                Recovery Phrase
+              </Label>
+              <p className="wrap-break-word font-mono text-sm leading-relaxed">
+                {identity?.mnemonic}
+              </p>
+            </div>
+
+            {/* Copy Button */}
+            <Button
+              className="w-full"
+              onClick={copyRecoveryPhrase}
+              variant="outline"
+            >
+              <svg
+                aria-label="Copy icon"
+                className="mr-2 size-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <title>Copy to clipboard</title>
+                <path
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
+              </svg>
+              Copy to Clipboard
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button className="w-full" onClick={handleContinueAfterRecovery}>
+              <CheckCircle className="mr-2 size-4" />
+              I've Saved My Recovery Phrase
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

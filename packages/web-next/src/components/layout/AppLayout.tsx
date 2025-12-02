@@ -9,7 +9,7 @@ import {
   SelectedFileProvider,
   useSelectedFile,
 } from "@/contexts/SelectedFileContext";
-import { useDashboardStats } from "@/hooks/useDashboard";
+import { useStorage } from "@/hooks/useStorage";
 import { useUser } from "@/hooks/useUser";
 import AppHeader from "./AppHeader";
 import AppSidebar from "./AppSidebar";
@@ -25,7 +25,13 @@ function AppLayoutContent({
   breadcrumbs,
   showDetailsSidebar = true,
 }: AppLayoutProps) {
-  const { stats, loading: statsLoading } = useDashboardStats();
+  const {
+    storage,
+    storageUsed,
+    storageLimit,
+    usagePercentage,
+    isLoading: storageLoading,
+  } = useStorage();
   const { user, loading: userLoading } = useUser();
   const { selectedFile, setSelectedFile } = useSelectedFile();
   const [isDetailsSidebarOpen, setIsDetailsSidebarOpen] = useState(false);
@@ -58,7 +64,11 @@ function AppLayoutContent({
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
       <div className="hidden lg:block">
-        <AppSidebar loading={statsLoading} stats={stats} />
+        {/* normalize storage shape for sidebar */}
+        <AppSidebar
+          loading={storageLoading}
+          storage={storage ?? { storageUsed, storageLimit, usagePercentage }}
+        />
       </div>
 
       {/* Main Content Area */}

@@ -4,7 +4,6 @@ import {
   Clock,
   FileText,
   HardDrive,
-  HelpCircle,
   Home,
   Settings,
   Shield,
@@ -17,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBytes } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import type { DashboardStats } from "@/types/api";
+import type { StorageInfo } from "@/types/api";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home, badge: null },
@@ -28,17 +27,25 @@ const navItems = [
 
 const bottomNavItems = [
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/help", label: "Help", icon: HelpCircle },
 ];
 
-
 type AppSidebarProps = {
-  stats?: DashboardStats | null;
+  storage?: StorageInfo | null;
   loading?: boolean;
 };
 
-export default function AppSidebar({ stats, loading }: AppSidebarProps) {
+export default function AppSidebar({ storage, loading }: AppSidebarProps) {
   const pathname = usePathname();
+
+  // Safe derived values
+  const used = storage?.storageUsed ?? 0;
+  const limit = storage?.storageLimit ?? 0;
+  let percentage = 0;
+  if (storage && typeof storage.usagePercentage === "number") {
+    percentage = storage.usagePercentage;
+  } else if (limit > 0) {
+    percentage = Math.round((used / limit) * 100);
+  }
 
   return (
     <aside className="flex h-screen w-[280px] flex-col border-border border-r bg-card">
@@ -58,7 +65,7 @@ export default function AppSidebar({ stats, loading }: AppSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="mt-4 flex-1 space-y-1 px-3">
+      <nav className="mt-4 space-y-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -111,63 +118,53 @@ export default function AppSidebar({ stats, loading }: AppSidebarProps) {
       </nav>
 
       {/* Storage Used Section */}
-      <div className="border-border border-t px-4 py-4">
-        {loading && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Skeleton className="size-9 rounded-lg" />
-              <div className="flex-1 space-y-1">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-4 w-24" />
+      <div className="px-3">
+        <div className="mt-4 border-border border-t px-4 py-4">
+          {loading && (
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-9 rounded-lg" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
               </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+              <Skeleton className="h-3 w-32" />
             </div>
-            <Skeleton className="h-2 w-full rounded-full" />
-            <Skeleton className="h-3 w-32" />
-          </div>
-        )}
-        {!loading && stats && (
-          <div className="space-y-3">
-            {/* Header with Icon */}
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
-                <HardDrive className="size-5 text-primary" />
+          )}
+          {!loading && (
+            <div className="mt-4 space-y-3">
+              {/* Header with Icon */}
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                  <HardDrive className="size-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-muted-foreground text-xs">
+                    Storage Used
+                  </p>
+                  <p className="font-bold text-base text-foreground leading-tight">
+                    {formatBytes(used)}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-muted-foreground text-xs">
-                  Storage Used
-                </p>
-                <p className="font-bold text-base text-foreground leading-tight">
-                  {formatBytes(stats.storageInfo.storageUsed)}
-                </p>
-              </div>
-            </div>
 
-            {/* Progress Bar */}
-            <div className="space-y-1.5">
-              <Progress
-                className="h-2"
-                value={
-                  (stats.storageInfo.storageUsed /
-                    stats.storageInfo.storageLimit) *
-                  100
-                }
-              />
-              <div className="flex items-center justify-between">
-                <p className="text-muted-foreground text-xs">
-                  {formatBytes(stats.storageInfo.storageLimit)} total
-                </p>
-                <p className="font-medium text-primary text-xs">
-                  {Math.round(
-                    (stats.storageInfo.storageUsed /
-                      stats.storageInfo.storageLimit) *
-                      100
-                  )}
-                  %
-                </p>
+              {/* Progress Bar */}
+              <div className="space-y-1.5">
+                <Progress className="h-2" value={percentage} />
+                <div className="flex items-center justify-between">
+                  <p className="text-muted-foreground text-xs">
+                    {formatBytes(limit)} total
+                  </p>
+                  <p className="font-medium text-primary text-xs">
+                    {Math.round(percentage)}%
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </aside>
   );

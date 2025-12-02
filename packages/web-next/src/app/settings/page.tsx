@@ -1,184 +1,416 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useStorage } from "@/hooks/useStorage";
+import { userApi } from "@/lib/api";
+import { KeyManager } from "@/lib/crypto/key-manager";
+import { formatBytes } from "@/lib/formatters";
+import type { User } from "@/types/api";
 
 export default function SettingsPage() {
+  const [mnemonic, setMnemonic] = useState("");
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryStatus, setRecoveryStatus] = useState<{
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
+
+  const [profile, setProfile] = useState<User | null>(null);
+  const {
+    storageUsed,
+    storageLimit,
+    usagePercentage,
+    storageAvailable,
+    isLoading: storageLoading,
+  } = useStorage();
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{
+    type: "success" | "error" | null;
+    message: string;
+  }>({ type: null, message: "" });
+
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+  });
+
+  // Fetch user profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await userApi.getProfile();
+        setProfile(data);
+        setFormData({
+          username: data.username,
+          email: data.email,
+        });
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    setSaveStatus({ type: null, message: "" });
+
+    try {
+      const data = await userApi.updateProfile(formData);
+      setProfile(data);
+      setSaveStatus({
+        type: "success",
+        message: "Profile updated successfully!",
+      });
+    } catch (error: unknown) {
+      console.error("Error saving profile:", error);
+      setSaveStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to save profile. Please try again.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCopyWallet = () => {
+    if (profile?.walletAddress) {
+      navigator.clipboard.writeText(profile.walletAddress);
+    }
+  };
+
+  // storage-derived values are provided by useStorage hook
+
+  const handleRecoverIdentity = async () => {
+    if (!mnemonic.trim()) {
+      setRecoveryStatus({
+        type: "error",
+        message: "Please enter your recovery phrase",
+      });
+      return;
+    }
+
+    setIsRecovering(true);
+    setRecoveryStatus({ type: null, message: "" });
+
+    try {
+      const identity = await KeyManager.recoverIdentity(mnemonic.trim());
+      await KeyManager.saveIdentity(identity);
+
+      setRecoveryStatus({
+        type: "success",
+        message:
+          "Identity recovered successfully! Your keys have been restored.",
+      });
+
+      setMnemonic("");
+    } catch (error: unknown) {
+      console.error("Recovery failed:", error);
+      setRecoveryStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to recover identity. Please check your recovery phrase.",
+      });
+    } finally {
+      setIsRecovering(false);
+    }
+  };
+
   return (
     <AppLayout breadcrumbs={["Settings"]} showDetailsSidebar={false}>
-      <div className="px-8 py-6">
-        <div className="max-w-3xl">
-          <div className="mb-6 border-neutral-900 border-b pb-5">
-            <h2 className="mb-2 font-bold text-4xl text-neutral-900">
-              Settings
-            </h2>
-            <p className="text-neutral-600 text-sm">
-              Manage your account and preferences
-            </p>
-          </div>
+      <div className="space-y-6 p-8">
+        {/* Header */}
+        <div>
+          <h1 className="font-bold text-3xl text-neutral-900">Settings</h1>
+          <p className="mt-2 text-neutral-600 text-sm">
+            Manage your account settings and preferences
+          </p>
+        </div>
 
-          <div className="space-y-8">
-            {/* Account Section */}
-            <section className="rounded-xl border-2 border-neutral-900 bg-white p-6">
-              <h3 className="mb-4 flex items-center gap-2 font-bold text-neutral-900 text-xl">
-                <span className="material-icons">person</span>
-                Account
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <Label
-                    className="font-medium text-neutral-700"
-                    htmlFor="name"
-                  >
-                    Display Name
-                  </Label>
+        {/* Tabs */}
+        <Tabs className="w-full" defaultValue="account">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+          </TabsList>
+
+          {/* Account Tab */}
+          <TabsContent className="space-y-6" value="account">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>
+                  Update your account details and public profile
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
                   <Input
-                    className="mt-1.5 border-neutral-300 focus:border-neutral-900"
-                    id="name"
-                    placeholder="Your name"
+                    disabled={isLoadingProfile}
+                    id="username"
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                    placeholder="Enter your username"
+                    value={formData.username}
                   />
                 </div>
-                <div>
-                  <Label
-                    className="font-medium text-neutral-700"
-                    htmlFor="email"
-                  >
-                    Email
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
                   <Input
-                    className="mt-1.5 border-neutral-300 focus:border-neutral-900"
+                    disabled={isLoadingProfile}
                     id="email"
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="your@email.com"
                     type="email"
+                    value={formData.email}
                   />
                 </div>
-              </div>
-            </section>
+                {saveStatus.message && (
+                  <div
+                    className={`flex items-start gap-3 rounded-lg border p-4 ${
+                      saveStatus.type === "success"
+                        ? "border-green-200 bg-green-50 text-green-900"
+                        : "border-red-200 bg-red-50 text-red-900"
+                    }`}
+                  >
+                    <span className="material-icons text-base">
+                      {saveStatus.type === "success" ? "check_circle" : "error"}
+                    </span>
+                    <p className="text-sm">{saveStatus.message}</p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="wallet">Wallet Address</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      className="font-mono text-sm"
+                      id="wallet"
+                      readOnly
+                      value={profile?.walletAddress || "Loading..."}
+                    />
+                    <Button
+                      disabled={!profile}
+                      onClick={handleCopyWallet}
+                      size="icon"
+                      variant="outline"
+                    >
+                      <span className="material-icons text-base">
+                        content_copy
+                      </span>
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    Your wallet address cannot be changed
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Storage Section */}
-            <section className="rounded-xl border-2 border-neutral-900 bg-white p-6">
-              <h3 className="mb-4 flex items-center gap-2 font-bold text-neutral-900 text-xl">
-                <span className="material-icons">cloud_queue</span>
-                Storage
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-700">Used</span>
-                  <span className="font-semibold text-neutral-900">
-                    25 GB of 100 GB
-                  </span>
+            <Card>
+              <CardHeader>
+                <CardTitle>Storage</CardTitle>
+                <CardDescription>
+                  Monitor your storage usage and upgrade if needed
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-700">Storage Used</span>
+                    <span className="font-semibold text-neutral-900">
+                      {storageLoading
+                        ? "Loading..."
+                        : `${formatBytes(storageUsed)} / ${formatBytes(storageLimit)}`}
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+                    <div
+                      className="h-full rounded-full bg-blue-600 transition-all"
+                      style={{
+                        width: `${usagePercentage}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-muted-foreground text-xs">
+                    {storageLoading
+                      ? "Loading..."
+                      : formatBytes(storageAvailable)}{" "}
+                    available
+                  </p>
                 </div>
-                <div className="h-3 overflow-hidden rounded-full bg-neutral-100">
-                  <div className="h-3 w-1/4 rounded-full bg-neutral-900 transition-all duration-500" />
+                {/* <Button className="w-full gap-2" variant="outline">
+                  <span className="material-icons text-base">upgrade</span>
+                  Upgrade Storage Plan
+                </Button> */}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent className="space-y-6" value="security">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recovery Phrase</CardTitle>
+                <CardDescription>
+                  Restore your encryption keys using your 12-word recovery
+                  phrase
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <div className="flex gap-3">
+                    <span className="material-icons text-blue-600">info</span>
+                    <div className="flex-1">
+                      <p className="font-medium text-blue-900 text-sm">
+                        Important Security Information
+                      </p>
+                      <p className="mt-1 text-blue-700 text-xs">
+                        Your recovery phrase is the only way to restore access
+                        to your encrypted files if you lose your device. Never
+                        share it with anyone.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <Button className="mt-4 w-full gap-2 rounded-full bg-neutral-900 text-white hover:bg-neutral-800">
-                  <span className="material-icons text-base">add</span>
-                  Upgrade Storage
+
+                <div className="space-y-2">
+                  <Label htmlFor="recovery-phrase">
+                    Recovery Phrase (12 words)
+                  </Label>
+                  <Input
+                    id="recovery-phrase"
+                    onChange={(e) => setMnemonic(e.target.value)}
+                    placeholder="word1 word2 word3 ... word12"
+                    value={mnemonic}
+                  />
+                </div>
+
+                {recoveryStatus.message && (
+                  <div
+                    className={`flex items-start gap-3 rounded-lg border p-4 ${
+                      recoveryStatus.type === "success"
+                        ? "border-green-200 bg-green-50 text-green-900"
+                        : "border-red-200 bg-red-50 text-red-900"
+                    }`}
+                  >
+                    <span className="material-icons text-base">
+                      {recoveryStatus.type === "success"
+                        ? "check_circle"
+                        : "error"}
+                    </span>
+                    <p className="text-sm">{recoveryStatus.message}</p>
+                  </div>
+                )}
+
+                <Button
+                  className="w-full gap-2"
+                  disabled={isRecovering}
+                  onClick={handleRecoverIdentity}
+                >
+                  <span className="material-icons text-base">restore</span>
+                  {isRecovering ? "Recovering..." : "Restore Identity"}
                 </Button>
-              </div>
-            </section>
+              </CardContent>
+            </Card>
 
-            {/* Security Section */}
-            <section className="rounded-xl border-2 border-neutral-900 bg-white p-6">
-              <h3 className="mb-4 flex items-center gap-2 font-bold text-neutral-900 text-xl">
-                <span className="material-icons">lock</span>
-                Security
-              </h3>
-              <div className="space-y-4">
+            {/* <Card>
+              <CardHeader>
+                <CardTitle>Two-Factor Authentication</CardTitle>
+                <CardDescription>
+                  Add an extra layer of security to your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-neutral-900">
-                      Two-Factor Authentication
-                    </p>
-                    <p className="text-neutral-600 text-sm">
-                      Add an extra layer of security
-                    </p>
+                    <p className="font-medium text-sm">Status</p>
+                    <p className="text-muted-foreground text-sm">Not enabled</p>
                   </div>
-                  <Button
-                    className="rounded-full border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
-                    variant="outline"
-                  >
-                    Enable
-                  </Button>
+                  <Button variant="outline">Enable 2FA</Button>
                 </div>
-                <Separator className="bg-neutral-200" />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-neutral-900">
-                      Change Password
-                    </p>
-                    <p className="text-neutral-600 text-sm">
-                      Update your password regularly
-                    </p>
-                  </div>
-                  <Button
-                    className="rounded-full border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
-                    variant="outline"
-                  >
-                    Change
-                  </Button>
-                </div>
-              </div>
-            </section>
+              </CardContent>
+            </Card>
 
-            {/* Preferences Section */}
-            <section className="rounded-xl border-2 border-neutral-900 bg-white p-6">
-              <h3 className="mb-4 flex items-center gap-2 font-bold text-neutral-900 text-xl">
-                <span className="material-icons">tune</span>
-                Preferences
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-neutral-900">
-                      Email Notifications
-                    </p>
-                    <p className="text-neutral-600 text-sm">
-                      Receive updates about your files
-                    </p>
+            <Card>
+              <CardHeader>
+                <CardTitle>Active Sessions</CardTitle>
+                <CardDescription>
+                  Manage your active login sessions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-blue-100">
+                      <span className="material-icons text-blue-600">
+                        computer
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Current Device</p>
+                      <p className="text-muted-foreground text-xs">
+                        Windows • Chrome • Active now
+                      </p>
+                    </div>
                   </div>
-                  <Button
-                    className="rounded-full border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
-                    variant="outline"
-                  >
-                    Configure
+                  <Button size="sm" variant="ghost">
+                    <span className="material-icons text-base">
+                      check_circle
+                    </span>
                   </Button>
                 </div>
-                <Separator className="bg-neutral-200" />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-neutral-900">Default View</p>
-                    <p className="text-neutral-600 text-sm">
-                      Grid or list view by default
-                    </p>
-                  </div>
-                  <Button
-                    className="rounded-full border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
-                    variant="outline"
-                  >
-                    Grid
-                  </Button>
-                </div>
-              </div>
-            </section>
+              </CardContent>
+            </Card> */}
+          </TabsContent>
+        </Tabs>
 
-            {/* Save Button */}
-            <div className="flex justify-end gap-3">
-              <Button
-                className="rounded-full border-neutral-300 text-neutral-700 hover:bg-neutral-100"
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button className="gap-2 rounded-full bg-neutral-900 text-white hover:bg-neutral-800">
-                <span className="material-icons text-base">save</span>
-                Save Changes
-              </Button>
-            </div>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-3 border-neutral-200 border-t pt-6">
+          <Button
+            onClick={() => {
+              setFormData({
+                username: profile?.username || "",
+                email: profile?.email || "",
+              });
+              setSaveStatus({ type: null, message: "" });
+            }}
+            variant="outline"
+          >
+            Cancel
+          </Button>
+          <Button
+            className="gap-2"
+            disabled={isSaving || isLoadingProfile}
+            onClick={handleSaveProfile}
+          >
+            <span className="material-icons text-base">save</span>
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </div>
     </AppLayout>
