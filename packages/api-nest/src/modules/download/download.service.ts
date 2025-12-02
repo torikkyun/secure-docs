@@ -131,7 +131,7 @@ export class DownloadService {
   async completeDownload(
     userId: string,
     downloadId: string,
-    { success, bytesDownloaded, errorMessage }: CompleteDownloadDto
+    { success, errorMessage }: CompleteDownloadDto
   ) {
     const download = await this.prisma.download.findUnique({
       where: { id: downloadId },
@@ -154,7 +154,6 @@ export class DownloadService {
       where: { id: downloadId },
       data: {
         statusId: status.id,
-        fileSizeDownloaded: bytesDownloaded ? BigInt(bytesDownloaded) : null,
         errorMessage,
       },
     });
@@ -189,8 +188,8 @@ export class DownloadService {
         select: {
           id: true,
           downloadTimestamp: true,
-          fileSizeDownloaded: true,
           errorMessage: true,
+          ipAddress: true,
           status: {
             select: {
               id: true,
@@ -229,7 +228,6 @@ export class DownloadService {
       select: {
         id: true,
         downloadTimestamp: true,
-        fileSizeDownloaded: true,
         errorMessage: true,
         ipAddress: true,
         userAgent: true,

@@ -23,6 +23,7 @@ export type File = {
   fileSize: number;
   fileType: string;
   uploadTimestamp: string;
+  encryptedKeyOwner?: string; // Added for share functionality
   status: {
     name: string;
   };
@@ -61,7 +62,6 @@ export type Download = {
   userId: string;
   downloadTimestamp: string;
   ipAddress: string;
-  fileSizeDownloaded: number | null;
   status: {
     name: string;
   };

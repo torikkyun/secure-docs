@@ -15,32 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSelectedFile } from "@/contexts/SelectedFileContext";
+import { formatBytes, formatDate } from "@/lib/formatters";
 
 type FileDetailsSidebarProps = {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
 };
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) {
-    return "0 B";
-  }
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function truncateHash(hash: string, start = 8, end = 8): string {
   if (hash.length <= start + end) {
@@ -65,7 +45,10 @@ export default function FileDetailsSidebar({
   };
 
   return (
-    <aside className="flex h-full w-full flex-col space-y-6 overflow-y-auto border-border border-l bg-card p-4 shadow-2xl sm:w-[320px] sm:p-6 md:w-[360px] xl:w-[400px] xl:shadow-none">
+    <aside
+      className="flex h-full w-full flex-col space-y-6 overflow-y-auto border-border border-l bg-card p-4 shadow-2xl sm:w-[320px] sm:p-6 md:w-[360px] xl:w-[400px] xl:shadow-none"
+      data-file-details-sidebar
+    >
       {/* Header with Close Button */}
       <div className="flex items-center justify-between border-border border-b pb-4">
         <h3 className="font-bold">File Details</h3>

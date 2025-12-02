@@ -1,9 +1,10 @@
 "use client";
 
-import { FileText, Loader2, Upload, X } from "lucide-react";
-import { useState } from "react";
-import FileCards from "@/components/dashboard/FileCards";
+import { FileText, Loader2, Share2, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import FileTable from "@/components/dashboard/FileTable";
 import AppLayout from "@/components/layout/AppLayout";
+import { ShareFileDialog } from "@/components/ShareFileDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,28 +16,60 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { useRecentFiles } from "@/hooks/useDashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUpload } from "@/hooks/useUpload";
+import { fileApi } from "@/lib/api";
+import { formatBytes } from "@/lib/formatters";
+import type { File as FileType } from "@/types/api";
 
-function formatBytes(bytes: number): string {
-  if (bytes === 0) {
-    return "0 B";
-  }
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-}
+/* formatBytes moved to `@/lib/formatters` */
 
 export default function FilesPage() {
+  const [activeTab, setActiveTab] = useState<"uploaded" | "received">(
+    "uploaded"
+  );
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
+  // Share state
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [fileToShare, setFileToShare] = useState<FileType | null>(null);
+
+  // Files state
+  const [files, setFiles] = useState<FileType[]>([]);
+  const [loading, setLoading] = useState(true);
+  // const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const { isUploading, uploadFile } = useUpload();
-  const { files, loading: filesLoading, refetch } = useRecentFiles();
+
+  // Fetch files
+  const fetchFiles = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fileApi.findAll({
+        type: activeTab,
+        page: currentPage,
+        limit: 20,
+        // search: searchQuery || undefined,
+      });
+
+      setFiles(response.files);
+      setTotalPages(response.pagination.totalPages);
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, currentPage]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,7 +107,7 @@ export default function FilesPage() {
       setUploadProgress(10);
 
       // Get Pinata JWT from environment or localStorage
-      const pinataJwt = process.env.NEXT_PUBLIC_PINATA_JWT || "";
+      const pinataJwt = process.env.NEXT_PUBLIC_PINATA_JWT;
       if (!pinataJwt) {
         throw new Error("Pinata JWT not configured");
       }
@@ -95,7 +128,7 @@ export default function FilesPage() {
 
       // Refetch files list
       setTimeout(() => {
-        refetch();
+        fetchFiles();
         setIsUploadDialogOpen(false);
         setSelectedFile(null);
         setUploadProgress(0);
@@ -106,10 +139,19 @@ export default function FilesPage() {
     }
   };
 
+  const handleShareFile = (file: FileType) => {
+    setFileToShare(file);
+    setIsShareDialogOpen(true);
+  };
+
+  const handleShareSuccess = () => {
+    fetchFiles(); // Refresh files list after successful share
+  };
+
   return (
     <AppLayout breadcrumbs={["My Files"]}>
-      <div className="space-y-8 p-8">
-        {/* Upload Button */}
+      <div className="space-y-6 p-8">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-bold text-2xl text-foreground">My Files</h2>
@@ -123,13 +165,142 @@ export default function FilesPage() {
           </Button>
         </div>
 
-        {/* Files Grid */}
-        <FileCards files={files} loading={filesLoading} />
+        {/* Tabs */}
+        <Tabs
+          defaultValue="uploaded"
+          onValueChange={(value) =>
+            setActiveTab(value as "uploaded" | "received")
+          }
+        >
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="uploaded">My Uploads</TabsTrigger>
+              <TabsTrigger value="received">Received Files</TabsTrigger>
+            </TabsList>
+
+            {/* Search */}
+            {/* <div className="relative w-64">
+              <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search files..."
+                type="search"
+              />
+            </div> */}
+          </div>
+
+          {/* Uploaded Files Tab */}
+          <TabsContent className="mt-6" value="uploaded">
+            {!loading && files.length === 0 && (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <FileText className="mb-4 size-12 text-muted-foreground" />
+                  <p className="mb-2 font-medium text-foreground">
+                    No files uploaded yet
+                  </p>
+                  <p className="mb-4 text-muted-foreground text-sm">
+                    Start by uploading your first encrypted file
+                  </p>
+                  <Button onClick={() => setIsUploadDialogOpen(true)}>
+                    <Upload className="mr-2 size-4" />
+                    Upload File
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+            {(loading || files.length > 0) && (
+              <div className="space-y-4">
+                <FileTable
+                  files={files}
+                  loading={loading}
+                  onFileDeletedAction={fetchFiles}
+                />
+
+                {/* Pagination */}
+                {!loading && totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      variant="outline"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-muted-foreground text-sm">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      variant="outline"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Received Files Tab */}
+          <TabsContent className="mt-6" value="received">
+            {!loading && files.length === 0 && (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <Share2 className="mb-4 size-12 text-muted-foreground" />
+                  <p className="mb-2 font-medium text-foreground">
+                    No files received yet
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Files shared with you will appear here
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            {(loading || files.length > 0) && (
+              <div className="space-y-4">
+                <FileTable
+                  files={files}
+                  loading={loading}
+                  onFileDeletedAction={fetchFiles}
+                  onShareAction={handleShareFile}
+                />
+
+                {/* Pagination */}
+                {!loading && totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      variant="outline"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-muted-foreground text-sm">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      variant="outline"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Upload Dialog */}
       <Dialog onOpenChange={setIsUploadDialogOpen} open={isUploadDialogOpen}>
-        (
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Upload File</DialogTitle>
@@ -279,8 +450,18 @@ export default function FilesPage() {
             </Button>
           </div>
         </DialogContent>
-        );
       </Dialog>
+
+      {/* Share Dialog */}
+      <ShareFileDialog
+        file={fileToShare}
+        isOpen={isShareDialogOpen}
+        onCloseAction={() => {
+          setIsShareDialogOpen(false);
+          setFileToShare(null);
+        }}
+        onSuccessAction={handleShareSuccess}
+      />
     </AppLayout>
   );
 }

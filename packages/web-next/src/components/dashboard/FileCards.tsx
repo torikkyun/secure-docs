@@ -1,60 +1,17 @@
 "use client";
 
-import {
-  ArrowUpDown,
-  File,
-  FileText,
-  Folder,
-  Image,
-  MoreVertical,
-} from "lucide-react";
+import { ArrowUpDown, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatBytes, formatDate } from "@/lib/formatters";
+import getFileIcon from "@/lib/getFileIcon";
 import type { File as FileType } from "@/types/api";
 
 type FileCardsProps = {
   files: FileType[];
   loading: boolean;
 };
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) {
-    return "0 B";
-  }
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-}
-
-function getFileIcon(fileType: string) {
-  const iconClass = "size-12 text-primary";
-  const type = fileType.toLowerCase();
-
-  if (type.includes("folder") || type.includes("directory")) {
-    return <Folder className={iconClass} />;
-  }
-  if (type.includes("text") || type.includes("txt")) {
-    return <FileText className={iconClass} />;
-  }
-  if (
-    type.includes("zip") ||
-    type.includes("rar") ||
-    type.includes("archive")
-  ) {
-    return <File className={iconClass} />;
-  }
-  if (
-    type.includes("image") ||
-    type.includes("png") ||
-    type.includes("jpg") ||
-    type.includes("jpeg")
-  ) {
-    return <Image className={iconClass} />;
-  }
-  return <FileText className={iconClass} />;
-}
 
 export default function FileCards({ files, loading }: FileCardsProps) {
   if (loading) {
@@ -126,7 +83,7 @@ export default function FileCards({ files, loading }: FileCardsProps) {
                     {formatBytes(file.fileSize)}
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    {new Date(file.uploadTimestamp).toLocaleDateString()}
+                    {formatDate(file.uploadTimestamp)}
                   </p>
                 </div>
               </div>

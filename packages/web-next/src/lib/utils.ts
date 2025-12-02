@@ -15,14 +15,6 @@ export function formatFileSize(bytes: number) {
   return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }
 
-export function formatDate(date: Date | string) {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(date));
-}
-
 export function getFileTypeIcon(filename: string) {
   const ext = filename.split(".").pop()?.toLowerCase();
   switch (ext) {

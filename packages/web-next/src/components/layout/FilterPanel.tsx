@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type FilterPanelProps = {
@@ -9,7 +9,7 @@ type FilterPanelProps = {
   setShowFiltersAction: (show: boolean) => void;
   filterType: "all" | "uploaded" | "received";
   setFilterTypeAction: (type: "all" | "uploaded" | "received") => void;
-  onApplyAction: () => void;
+  onApplyAction: (applied?: "all" | "uploaded" | "received") => void;
   onResetAction: () => void;
 };
 
@@ -22,6 +22,15 @@ export function FilterPanel({
   onResetAction,
 }: FilterPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const [selectedType, setSelectedType] = useState<
+    "all" | "uploaded" | "received"
+  >(filterType);
+
+  useEffect(() => {
+    if (showFilters) {
+      setSelectedType(filterType);
+    }
+  }, [showFilters, filterType]);
 
   useEffect(() => {
     if (!showFilters) {
@@ -86,33 +95,33 @@ export function FilterPanel({
         <div className="grid grid-cols-3 gap-2">
           <Button
             className={`h-9 transition-all ${
-              filterType === "all"
+              selectedType === "all"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border"
             }`}
-            onClick={() => setFilterTypeAction("all")}
+            onClick={() => setSelectedType("all")}
             variant="outline"
           >
             All
           </Button>
           <Button
             className={`h-9 transition-all ${
-              filterType === "uploaded"
+              selectedType === "uploaded"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border"
             }`}
-            onClick={() => setFilterTypeAction("uploaded")}
+            onClick={() => setSelectedType("uploaded")}
             variant="outline"
           >
             Uploaded
           </Button>
           <Button
             className={`h-9 transition-all ${
-              filterType === "received"
+              selectedType === "received"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border"
             }`}
-            onClick={() => setFilterTypeAction("received")}
+            onClick={() => setSelectedType("received")}
             variant="outline"
           >
             Received
@@ -125,8 +134,10 @@ export function FilterPanel({
         <Button
           className="flex-1"
           onClick={() => {
-            onResetAction();
+            setSelectedType("all");
+            // do not apply to parent until user clicks Apply
             setShowFiltersAction(false);
+            onResetAction();
           }}
           variant="outline"
         >
@@ -135,7 +146,9 @@ export function FilterPanel({
         <Button
           className="flex-1"
           onClick={() => {
-            onApplyAction();
+            // apply selection to parent then trigger parent apply handler
+            setFilterTypeAction(selectedType);
+            onApplyAction(selectedType);
             setShowFiltersAction(false);
           }}
         >

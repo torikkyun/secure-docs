@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight, LogOut, Settings } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,9 +46,13 @@ export default function AppHeader({
   );
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const initials = localUser?.username
+    ? localUser.username.substring(0, 2).toUpperCase()
+    : "";
+  const avatarUrl = (localUser as unknown as { avatarUrl?: string })?.avatarUrl;
 
   const performSearch = useCallback(
-    (searchQuery: string) => {
+    (searchQuery: string, overrideType?: "all" | "uploaded" | "received") => {
       setResultsLoading(true);
       const params: { [k: string]: unknown } = {
         page: 1,
@@ -55,8 +60,9 @@ export default function AppHeader({
         sort: "-uploadTimestamp",
         search: searchQuery,
       };
-      if (filterType && filterType !== "all") {
-        params.type = filterType;
+      const typeToUse = overrideType ?? filterType;
+      if (typeToUse && typeToUse !== "all") {
+        params.type = typeToUse;
       }
 
       return fileApi
@@ -176,17 +182,32 @@ export default function AppHeader({
                     {localUser.role?.name}
                   </p>
                 </div>
+                <div className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-primary to-primary/60">
+                  <span className="font-bold text-base text-primary-foreground">
+                    {initials}
+                  </span>
+                </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel className="pb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative size-12 shrink-0">
-                    <div className="flex size-full items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-primary to-primary/60">
-                      <span className="font-bold text-base text-primary-foreground">
-                        {localUser.username.substring(0, 2).toUpperCase()}
-                      </span>
-                    </div>
+                    {avatarUrl ? (
+                      <Image
+                        alt={localUser?.username || "avatar"}
+                        className="size-full rounded-full object-cover"
+                        height={48}
+                        src={avatarUrl}
+                        width={48}
+                      />
+                    ) : (
+                      <div className="flex size-full items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-primary to-primary/60">
+                        <span className="font-bold text-base text-primary-foreground">
+                          {initials}
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute right-0 bottom-0 size-3.5 rounded-full border-2 border-background bg-green-500" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -222,7 +243,7 @@ export default function AppHeader({
                   } catch {
                     /* ignore */
                   }
-                  router.push("/login");
+                  router.push("/auth/login");
                 }}
               >
                 <LogOut className="mr-2 size-4" />
@@ -248,17 +269,18 @@ export default function AppHeader({
         />
         <FilterPanel
           filterType={filterType}
-          onApplyAction={() => {
+          onApplyAction={(applied) => {
+            if (applied) {
+              setFilterType(applied);
+            }
             if (query) {
-              performSearch(query);
+              performSearch(query, applied);
             }
             setShowFilters(false);
           }}
           onResetAction={() => {
-            setFilterType("all");
-            if (query) {
-              performSearch(query);
-            }
+            // Reset only closes the panel and clears the panel selection.
+            // The actual filter in the parent is only updated when Apply is clicked.
           }}
           setFilterTypeAction={setFilterType}
           setShowFiltersAction={setShowFilters}

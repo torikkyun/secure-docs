@@ -1,18 +1,11 @@
 "use client";
 
-import {
-  FileIcon,
-  FileText,
-  FolderOpen,
-  Image as ImageIcon,
-  Search,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { FolderOpen, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import getFileIcon from "@/lib/getFileIcon";
 import type { File } from "@/types/api";
 
 type SearchBarProps = {
@@ -25,21 +18,6 @@ type SearchBarProps = {
   searchInputRef: RefObject<HTMLInputElement | null>;
   setShowFiltersAction?: (show: boolean) => void;
   filterActive?: boolean;
-};
-
-// Get file type icon helper
-const getFileIcon = (fileName: string) => {
-  const ext = fileName.split(".").pop()?.toLowerCase();
-  if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(ext || "")) {
-    return <ImageIcon className="size-5 text-blue-500" />;
-  }
-  if (["pdf"].includes(ext || "")) {
-    return <FileText className="size-5 text-red-500" />;
-  }
-  if (["doc", "docx", "txt", "md"].includes(ext || "")) {
-    return <FileText className="size-5 text-blue-600" />;
-  }
-  return <FileIcon className="size-5 text-gray-500" />;
 };
 
 // Format bytes into human readable string

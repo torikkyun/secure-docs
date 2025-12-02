@@ -87,21 +87,20 @@ model AccessGrant {
 }
 
 model Download {
-  id                 String         @id @default(uuid()) @map("id") @db.Uuid
-  fileId             String         @map("file_id") @db.Uuid
-  userId             String         @map("user_id") @db.Uuid
-  accessGrantId      String?        @map("access_grant_id") @db.Uuid
-  downloadTimestamp  DateTime       @default(now()) @map("download_timestamp")
-  ipAddress          String         @map("ip_address") @db.VarChar(45)
-  userAgent          String         @map("user_agent") @db.Text
-  statusId           String         @map("status_id") @db.Uuid
-  errorMessage       String?        @map("error_message")
-  fileSizeDownloaded BigInt?        @map("file_size_downloaded")
+  id                String         @id @default(uuid()) @map("id") @db.Uuid
+  fileId            String         @map("file_id") @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
+  accessGrantId     String?        @map("access_grant_id") @db.Uuid
+  downloadTimestamp DateTime       @default(now()) @map("download_timestamp")
+  ipAddress         String         @map("ip_address") @db.VarChar(45)
+  userAgent         String         @map("user_agent") @db.Text
+  statusId          String         @map("status_id") @db.Uuid
+  errorMessage      String?        @map("error_message")
   // Relations
-  file               File           @relation(fields: [fileId], references: [id])
-  user               User           @relation(fields: [userId], references: [id])
-  accessGrant        AccessGrant?   @relation(fields: [accessGrantId], references: [id])
-  status             DownloadStatus @relation(fields: [statusId], references: [id])
+  file              File           @relation(fields: [fileId], references: [id])
+  user              User           @relation(fields: [userId], references: [id])
+  accessGrant       AccessGrant?   @relation(fields: [accessGrantId], references: [id])
+  status            DownloadStatus @relation(fields: [statusId], references: [id])
 
   @@map("downloads")
 }

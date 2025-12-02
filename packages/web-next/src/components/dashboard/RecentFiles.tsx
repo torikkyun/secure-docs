@@ -1,10 +1,12 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import { FileCode, FileText, Folder, Image, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatBytes } from "@/lib/formatters";
+import getFileIcon from "@/lib/getFileIcon";
 import type { FileItem } from "@/types/dashboard";
 
 type RecentFilesProps = {
@@ -12,29 +14,6 @@ type RecentFilesProps = {
 };
 
 export default function RecentFiles({ files }: RecentFilesProps) {
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes("image")) {
-      return <Image className="h-5 w-5" />;
-    }
-    if (fileType.includes("folder")) {
-      return <Folder className="h-5 w-5" />;
-    }
-    if (fileType.includes("code") || fileType.includes("text")) {
-      return <FileCode className="h-5 w-5" />;
-    }
-    return <FileText className="h-5 w-5" />;
-  };
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) {
-      return "0 Bytes";
-    }
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "active":
@@ -89,7 +68,7 @@ export default function RecentFiles({ files }: RecentFilesProps) {
             >
               <div className="flex flex-1 items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                  {getFileIcon(file.fileType)}
+                  {getFileIcon(file.fileType, "h-5 w-5 text-indigo-600")}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="truncate font-semibold text-slate-900 text-sm">

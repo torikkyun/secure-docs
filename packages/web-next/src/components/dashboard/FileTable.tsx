@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Archive,
-  Download,
-  Eye,
-  FileText,
-  Image,
-  Share2,
-  Trash2,
-} from "lucide-react";
+import { Download, Eye, Share2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -38,68 +30,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSelectedFile } from "@/contexts/SelectedFileContext";
+import { useDownload } from "@/hooks/useDownload";
 import { fileApi } from "@/lib/api";
+import { formatBytes, formatDate } from "@/lib/formatters";
+import getFileIcon from "@/lib/getFileIcon";
 import type { File as FileType } from "@/types/api";
 
 type FileTableProps = {
   files?: FileType[];
   loading?: boolean;
   onFileDeletedAction?: () => void;
+  onShareAction?: (file: FileType) => void;
 };
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) {
-    return "0 B";
-  }
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
-
-function getFileIcon(fileType?: string) {
-  if (!fileType) {
-    return <FileText className="size-5 text-primary" />;
-  }
-
-  const type = fileType.toLowerCase();
-  if (type.includes("image") || type.includes("jpg") || type.includes("png")) {
-    return <Image className="size-5 text-primary" />;
-  }
-  if (type.includes("pdf")) {
-    return <FileText className="size-5 text-red-600" />;
-  }
-  if (type.includes("zip") || type.includes("archive")) {
-    return <Archive className="size-5 text-primary" />;
-  }
-  return <FileText className="size-5 text-primary" />;
-}
 
 export default function FileTable({
   files = [],
   loading = false,
   onFileDeletedAction,
+  onShareAction,
 }: FileTableProps) {
   const router = useRouter();
   const { selectedFile, setSelectedFile, setIsLoading } = useSelectedFile();
+  const { downloadFile } = useDownload();
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to deselect
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+
+      // Check if click is inside FileDetailsSidebar
+      const sidebar = document.querySelector("[data-file-details-sidebar]");
+      const isClickInsideSidebar = sidebar?.contains(target);
+
       if (
         selectedFile &&
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(target) &&
+        !isClickInsideSidebar
       ) {
         setSelectedFile(null);
       }
@@ -126,19 +94,32 @@ export default function FileTable({
     }
   };
 
-  const handleShareFile = (fileId: string) => {
-    router.push(`/files/${fileId}/share`);
+  const handleShareFile = (file: FileType) => {
+    if (onShareAction) {
+      onShareAction(file);
+    } else {
+      router.push(`/files/${file.id}/share`);
+    }
   };
 
-  const handleDownloadFile = (file: FileType) => {
-    toast.loading(`Preparing ${file.fileName} for download`);
+  const handleDownloadFile = async (file: FileType) => {
+    const loadingToast = toast.loading(
+      `Preparing ${file.fileName} for download`
+    );
 
-    // TODO: Implement actual download logic
-    // await fileApi.downloadFile(file.id);
+    try {
+      await downloadFile(file.id, (step) => {
+        toast.loading(step, { id: loadingToast });
+      });
 
-    setTimeout(() => {
-      toast.success(`${file.fileName} is being downloaded`);
-    }, 1000);
+      toast.success(`${file.fileName} downloaded successfully`, {
+        id: loadingToast,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Download failed", {
+        id: loadingToast,
+      });
+    }
   };
 
   const handleDeleteFile = async (file: FileType) => {
@@ -250,7 +231,7 @@ export default function FileTable({
                               : "bg-primary/10 group-hover:bg-primary/15"
                           }`}
                         >
-                          {getFileIcon(file.fileType)}
+                          {getFileIcon(file.fileName)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-foreground group-hover:text-primary">
@@ -311,7 +292,7 @@ export default function FileTable({
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleShareFile(file.id);
+                              handleShareFile(file);
                             }}
                           >
                             <Share2 className="mr-2 size-4" />
@@ -347,7 +328,7 @@ export default function FileTable({
                     <Eye className="mr-2 size-4" />
                     View Details
                   </ContextMenuItem>
-                  <ContextMenuItem onClick={() => handleShareFile(file.id)}>
+                  <ContextMenuItem onClick={() => handleShareFile(file)}>
                     <Share2 className="mr-2 size-4" />
                     Share File
                   </ContextMenuItem>
