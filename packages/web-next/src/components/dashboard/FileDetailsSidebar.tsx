@@ -19,7 +19,7 @@ import { formatBytes, formatDate } from "@/lib/formatters";
 
 type FileDetailsSidebarProps = {
   isOpen: boolean;
-  onClose?: () => void;
+  onCloseAction?: () => void;
 };
 
 function truncateHash(hash: string, start = 8, end = 8): string {
@@ -31,7 +31,7 @@ function truncateHash(hash: string, start = 8, end = 8): string {
 
 export default function FileDetailsSidebar({
   isOpen,
-  onClose,
+  onCloseAction,
 }: FileDetailsSidebarProps) {
   const { selectedFile, isLoading } = useSelectedFile();
 
@@ -54,7 +54,7 @@ export default function FileDetailsSidebar({
         <h3 className="font-bold">File Details</h3>
         <Button
           className="size-6"
-          onClick={onClose}
+          onClick={onCloseAction}
           size="icon"
           variant="ghost"
         >
