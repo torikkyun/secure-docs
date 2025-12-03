@@ -14,9 +14,6 @@
     "typescript": "^5.9.3",
     "ultracite": "6.3.2"
   },
-  "dependencies": {
-    "@web3auth/modal": "^10.8.0"
-  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "electron",

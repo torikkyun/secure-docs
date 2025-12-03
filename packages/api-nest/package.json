@@ -8,6 +8,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
+    "generate:dev": "dotenv -e .env.development.local -- prisma generate",
     "db:dev": "dotenv -e .env.development.local -- prisma migrate dev && dotenv -e .env.development.local -- prisma generate",
     "reset:dev": "dotenv -e .env.development.local -- prisma migrate reset --force",
     "seed:dev": "dotenv -e .env.development.local -- ts-node -r tsconfig-paths/register prisma/seeds/seed.ts --environment development",
