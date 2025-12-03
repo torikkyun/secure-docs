@@ -67,15 +67,15 @@ export function FilterPanel({
 
   return (
     <div
-      className="slide-in-from-top-2 absolute top-full right-0 z-50 mt-3 w-80 animate-in rounded-xl border border-border bg-card p-4 shadow-xl"
+      className="absolute top-full right-0 z-50 mt-2 w-72 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-lg animate-in slide-in-from-top-2"
       ref={panelRef}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold text-foreground text-sm">
-          Filter Options
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="font-semibold text-black dark:text-white text-sm">
+          Tùy chọn lọc
         </h3>
         <Button
-          className="size-6"
+          className="size-6 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800"
           onClick={() => setShowFiltersAction(false)}
           size="icon"
           variant="ghost"
@@ -85,74 +85,72 @@ export function FilterPanel({
       </div>
 
       {/* Filter Type */}
-      <div className="mb-4 space-y-2">
+      <div className="mb-5 space-y-2.5">
         <label
-          className="block font-medium text-muted-foreground text-xs uppercase tracking-wide"
+          className="block font-semibold text-black dark:text-white text-xs uppercase tracking-wide"
           htmlFor="filter-type-select"
         >
-          File Source
+          Nguồn tệp
         </label>
         <div className="grid grid-cols-3 gap-2">
           <Button
-            className={`h-9 transition-all ${
+            className={`h-9 font-medium text-xs transition-all ${
               selectedType === "all"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border"
+                ? "bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white"
+                : "border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-600"
             }`}
             onClick={() => setSelectedType("all")}
             variant="outline"
           >
-            All
+            Tất cả
           </Button>
           <Button
-            className={`h-9 transition-all ${
+            className={`h-9 font-medium text-xs transition-all ${
               selectedType === "uploaded"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border"
+                ? "bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white"
+                : "border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-600"
             }`}
             onClick={() => setSelectedType("uploaded")}
             variant="outline"
           >
-            Uploaded
+            Đã tải lên
           </Button>
           <Button
-            className={`h-9 transition-all ${
+            className={`h-9 font-medium text-xs transition-all ${
               selectedType === "received"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border"
+                ? "bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white"
+                : "border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-600"
             }`}
             onClick={() => setSelectedType("received")}
             variant="outline"
           >
-            Received
+            Nhận được
           </Button>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 border-border border-t pt-3">
+      <div className="flex gap-2 border-gray-200 dark:border-neutral-700 border-t pt-4">
         <Button
-          className="flex-1"
+          className="flex-1 border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:bg-gray-100 dark:hover:bg-neutral-800 font-medium text-sm transition-colors"
           onClick={() => {
             setSelectedType("all");
-            // do not apply to parent until user clicks Apply
             setShowFiltersAction(false);
             onResetAction();
           }}
           variant="outline"
         >
-          Reset
+          Đặt lại
         </Button>
         <Button
-          className="flex-1"
+          className="flex-1 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100 font-medium text-sm transition-colors"
           onClick={() => {
-            // apply selection to parent then trigger parent apply handler
             setFilterTypeAction(selectedType);
             onApplyAction(selectedType);
             setShowFiltersAction(false);
           }}
         >
-          Apply Filters
+          Áp dụng
         </Button>
       </div>
     </div>

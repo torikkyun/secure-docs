@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,14 +22,14 @@ import { userApi } from "@/lib/api";
 import type { StorageInfo, User } from "@/types/api";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home, badge: null },
-  { href: "/files", label: "My Files", icon: FileText, badge: null },
-  { href: "/shares", label: "Shares", icon: Users, badge: null },
-  { href: "/downloads", label: "Downloads", icon: Clock, badge: null },
+  { href: "/dashboard", label: "Trang chủ", icon: Home, badge: null },
+  { href: "/files", label: "Tệp của tôi", icon: FileText, badge: null },
+  { href: "/shares", label: "Chia sẻ", icon: Users, badge: null },
+  { href: "/downloads", label: "Tải xuống", icon: Clock, badge: null },
 ];
 
 const bottomNavItems = [
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Cài đặt", icon: Settings },
 ];
 
 type AppSidebarProps = {
@@ -102,7 +102,7 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
             <h1 className="font-bold text-black dark:text-white text-lg leading-none">
               SecureDocs
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-xs">Blockchain Storage</p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs">Lưu trữ Blockchain</p>
           </div>
         </Link>
       </div>
@@ -162,7 +162,7 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
 
       {/* Storage Used Section */}
       <div className="flex flex-1 flex-col justify-between px-3">
-        <div className="px-3">
+        <div>
           <div className="mt-4 border-gray-200 dark:border-neutral-800 border-t px-4 py-4">
             {loading && (
               <div className="mt-4 space-y-3">
@@ -186,7 +186,7 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-600 dark:text-gray-400 text-xs">
-                      Storage Used
+                      Dung lượng đã dùng
                     </p>
                     <p className="font-bold text-base text-black dark:text-white leading-tight">
                       {formatBytes(used)}
@@ -199,7 +199,7 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
                   <Progress className="h-2" value={percentage} />
                   <div className="flex items-center justify-between">
                     <p className="text-gray-600 dark:text-gray-400 text-xs">
-                      {formatBytes(limit)} total
+                      {formatBytes(limit)} tổng cộng
                     </p>
                     <p className="font-medium text-black dark:text-white text-xs">
                       {Math.round(percentage)}%
@@ -213,46 +213,55 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
 
         {/* User Profile Section */}
         <div className="px-3 pb-4">
-          <div className="border-gray-200 dark:border-neutral-800 border-t px-4 py-4">
+          <div>
             {userLoading && (
-              <div className="space-y-3">
-                <Skeleton className="h-10 w-full rounded-lg" />
+              <div className="space-y-2.5">
+                <Skeleton className="h-14 w-full rounded-lg" />
                 <Skeleton className="h-9 w-full rounded-lg" />
               </div>
             )}
             {!userLoading && localUser && (
-              <div className="space-y-3">
-                {/* User Info */}
-                <div className="rounded-lg bg-gray-100 dark:bg-neutral-800 p-3">
-                  <p className="font-semibold text-black dark:text-white text-sm truncate">
-                    {localUser.username}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400 text-xs truncate">
-                    {localUser.email}
-                  </p>
+              <div className="space-y-2">
+                {/* User Info Box */}
+                <div className="rounded-lg bg-white dark:bg-neutral-800 p-3 flex items-center gap-3 border border-gray-200 dark:border-neutral-700">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-black dark:bg-white flex-shrink-0 font-semibold">
+                    <span className="text-white dark:text-black text-xs">
+                      {initials}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-black dark:text-white text-sm truncate">
+                      {localUser.username}
+                    </p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs truncate">
+                      {localUser.email}
+                    </p>
+                  </div>
                 </div>
                 {/* Action Buttons */}
-                <button
-                  onClick={() => router.push("/settings")}
-                  className="flex w-full items-center gap-2 rounded-lg bg-gray-100 dark:bg-neutral-800 px-3 py-2.5 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-700 hover:text-black dark:hover:text-white font-semibold text-sm transition-colors"
-                >
-                  <Settings className="size-4" />
-                  <span>Settings</span>
-                </button>
-                <button
-                  onClick={() => {
-                    try {
-                      localStorage.removeItem("auth_token");
-                    } catch {
-                      /* ignore */
-                    }
-                    router.push("/auth/login");
-                  }}
-                  className="flex w-full items-center gap-2 rounded-lg bg-gray-100 dark:bg-neutral-800 px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 font-semibold text-sm transition-colors"
-                >
-                  <LogOut className="size-4" />
-                  <span>Logout</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => router.push("/settings")}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-100 dark:bg-neutral-800 px-2 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-xs transition-colors"
+                  >
+                    <Settings className="size-3.5" />
+                    <span>Cài đặt</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      try {
+                        localStorage.removeItem("auth_token");
+                      } catch {
+                        /* ignore */
+                      }
+                      router.push("/auth/login");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-medium text-xs transition-colors"
+                  >
+                    <LogOut className="size-3.5" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
