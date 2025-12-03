@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Loader2, Share2, Upload, X } from "lucide-react";
+import { FileText, Loader2, Share2, Upload, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import FileTable from "@/components/dashboard/FileTable";
 import AppLayout from "@/components/layout/AppLayout";
@@ -149,19 +149,23 @@ export default function FilesPage() {
   };
 
   return (
-    <AppLayout breadcrumbs={["My Files"]}>
-      <div className="space-y-6 p-8">
+    <AppLayout breadcrumbs={["Tệp Của Tôi"]}>
+      <div className="min-h-screen bg-white dark:bg-neutral-950 p-8 space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-bold text-2xl text-foreground">My Files</h2>
-            <p className="text-muted-foreground text-sm">
-              Upload and manage your encrypted files
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-neutral-800 pb-8">
+          <div className="flex-1">
+            <h1 className="font-bold text-3xl text-black dark:text-white mb-2">Tệp Của Tôi</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-base">
+              Tải lên và quản lý các tệp được mã hóa của bạn một cách an toàn
             </p>
           </div>
-          <Button onClick={() => setIsUploadDialogOpen(true)} size="lg">
+          <Button 
+            onClick={() => setIsUploadDialogOpen(true)} 
+            size="lg" 
+            className="ml-6 bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 font-semibold transition-colors duration-200"
+          >
             <Upload className="mr-2 size-5" />
-            Upload File
+            Tải Lên Tệp
           </Button>
         </div>
 
@@ -171,46 +175,51 @@ export default function FilesPage() {
           onValueChange={(value) =>
             setActiveTab(value as "uploaded" | "received")
           }
+          className="w-full"
         >
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="uploaded">My Uploads</TabsTrigger>
-              <TabsTrigger value="received">Received Files</TabsTrigger>
-            </TabsList>
-
-            {/* Search */}
-            {/* <div className="relative w-64">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search files..."
-                type="search"
-              />
-            </div> */}
-          </div>
+          <TabsList className="bg-transparent border-b border-gray-300 dark:border-neutral-700 p-0 w-full justify-start rounded-none h-auto gap-0">
+            <TabsTrigger 
+              value="uploaded" 
+              className="relative px-4 py-4 font-semibold text-base rounded-none border-b-2 border-transparent data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-black dark:data-[state=active]:bg-white dark:data-[state=active]:border-white dark:data-[state=active]:text-black text-gray-700 dark:text-gray-500 bg-transparent hover:text-gray-900 dark:hover:text-gray-300 transition-all duration-200 flex items-center gap-2"
+            >
+              <ArrowUp className="size-5" />
+              <span>Tệp Tải Lên</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="received" 
+              className="relative px-4 py-4 font-semibold text-base rounded-none border-b-2 border-transparent data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-black dark:data-[state=active]:bg-white dark:data-[state=active]:border-white dark:data-[state=active]:text-black text-gray-700 dark:text-gray-500 bg-transparent hover:text-gray-900 dark:hover:text-gray-300 transition-all duration-200 flex items-center gap-2"
+            >
+              <ArrowDown className="size-5" />
+              <span>Tệp Đã Nhận</span>
+            </TabsTrigger>
+          </TabsList>
 
           {/* Uploaded Files Tab */}
-          <TabsContent className="mt-6" value="uploaded">
+          <TabsContent className="mt-8" value="uploaded">
             {!loading && files.length === 0 && (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <FileText className="mb-4 size-12 text-muted-foreground" />
-                  <p className="mb-2 font-medium text-foreground">
-                    No files uploaded yet
+              <Card className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-sm">
+                <CardContent className="flex flex-col items-center justify-center py-24">
+                  <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-full mb-6">
+                    <FileText className="size-12 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <p className="mb-3 font-bold text-black dark:text-white text-lg">
+                    Chưa tải lên tệp nào
                   </p>
-                  <p className="mb-4 text-muted-foreground text-sm">
-                    Start by uploading your first encrypted file
+                  <p className="mb-8 text-gray-600 dark:text-gray-400 text-base text-center max-w-md">
+                    Bắt đầu bằng cách tải lên tệp được mã hóa đầu tiên của bạn
                   </p>
-                  <Button onClick={() => setIsUploadDialogOpen(true)}>
+                  <Button 
+                    onClick={() => setIsUploadDialogOpen(true)} 
+                    className="bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 font-semibold"
+                  >
                     <Upload className="mr-2 size-4" />
-                    Upload File
+                    Tải Lên Tệp
                   </Button>
                 </CardContent>
               </Card>
             )}
             {(loading || files.length > 0) && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <FileTable
                   files={files}
                   loading={loading}
@@ -219,16 +228,17 @@ export default function FilesPage() {
 
                 {/* Pagination */}
                 {!loading && totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-4 pt-6 border-t border-gray-200 dark:border-neutral-800">
                     <Button
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       variant="outline"
+                      className="border border-gray-300 dark:border-neutral-700 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      Previous
+                      ← Trước
                     </Button>
-                    <span className="text-muted-foreground text-sm">
-                      Page {currentPage} of {totalPages}
+                    <span className="text-gray-700 dark:text-gray-300 text-base font-medium min-w-fit">
+                      Trang <span className="font-bold">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
                     </span>
                     <Button
                       disabled={currentPage === totalPages}
@@ -236,8 +246,9 @@ export default function FilesPage() {
                         setCurrentPage((p) => Math.min(totalPages, p + 1))
                       }
                       variant="outline"
+                      className="border border-gray-300 dark:border-neutral-700 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      Next
+                      Tiếp →
                     </Button>
                   </div>
                 )}
@@ -246,22 +257,24 @@ export default function FilesPage() {
           </TabsContent>
 
           {/* Received Files Tab */}
-          <TabsContent className="mt-6" value="received">
+          <TabsContent className="mt-8" value="received">
             {!loading && files.length === 0 && (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Share2 className="mb-4 size-12 text-muted-foreground" />
-                  <p className="mb-2 font-medium text-foreground">
-                    No files received yet
+              <Card className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-sm">
+                <CardContent className="flex flex-col items-center justify-center py-24">
+                  <div className="bg-gray-100 dark:bg-neutral-800 p-4 rounded-full mb-6">
+                    <Share2 className="size-12 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <p className="mb-3 font-bold text-black dark:text-white text-lg">
+                    Chưa nhận tệp nào
                   </p>
-                  <p className="text-muted-foreground text-sm">
-                    Files shared with you will appear here
+                  <p className="text-gray-600 dark:text-gray-400 text-base text-center max-w-md">
+                    Các tệp được chia sẻ với bạn sẽ xuất hiện ở đây
                   </p>
                 </CardContent>
               </Card>
             )}
             {(loading || files.length > 0) && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <FileTable
                   files={files}
                   loading={loading}
@@ -271,16 +284,17 @@ export default function FilesPage() {
 
                 {/* Pagination */}
                 {!loading && totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-4 pt-6 border-t border-gray-200 dark:border-neutral-800">
                     <Button
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       variant="outline"
+                      className="border border-gray-300 dark:border-neutral-700 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      Previous
+                      ← Trước
                     </Button>
-                    <span className="text-muted-foreground text-sm">
-                      Page {currentPage} of {totalPages}
+                    <span className="text-gray-700 dark:text-gray-300 text-base font-medium min-w-fit">
+                      Trang <span className="font-bold">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
                     </span>
                     <Button
                       disabled={currentPage === totalPages}
@@ -288,8 +302,9 @@ export default function FilesPage() {
                         setCurrentPage((p) => Math.min(totalPages, p + 1))
                       }
                       variant="outline"
+                      className="border border-gray-300 dark:border-neutral-700 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
-                      Next
+                      Tiếp →
                     </Button>
                   </div>
                 )}
@@ -301,20 +316,20 @@ export default function FilesPage() {
 
       {/* Upload Dialog */}
       <Dialog onOpenChange={setIsUploadDialogOpen} open={isUploadDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px] bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-lg">
           <DialogHeader>
-            <DialogTitle>Upload File</DialogTitle>
-            <DialogDescription>
-              Select a file to encrypt and upload to IPFS
+            <DialogTitle className="text-black dark:text-white text-2xl font-bold">Tải Lên Tệp</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400 text-base mt-2">
+              Chọn một tệp để mã hóa và tải lên IPFS
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-6">
             {/* Drag & Drop Zone */}
             {!selectedFile && (
               <div className="relative">
                 <button
-                  className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-border border-dashed bg-muted/50 p-8 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  className="flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-gray-300 dark:border-neutral-700 border-dashed bg-white dark:bg-neutral-800 p-12 transition-all duration-200 hover:border-gray-400 dark:hover:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-750 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-neutral-900"
                   onClick={() =>
                     document.getElementById("file-upload")?.click()
                   }
@@ -322,16 +337,15 @@ export default function FilesPage() {
                   onDrop={handleDrop}
                   type="button"
                 >
-                  <FileText className="mb-4 size-12 text-muted-foreground" />
-                  <p className="mb-2 font-medium text-foreground text-sm">
-                    Drop your file here or click to browse
+                  <div className="bg-gray-100 dark:bg-neutral-800 p-3 rounded-full mb-4">
+                    <FileText className="size-8 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <p className="font-bold text-black dark:text-white text-base mb-1">
+                    Thả tệp tại đây hoặc nhấp để duyệt
                   </p>
-                  <p className="mb-4 text-muted-foreground text-xs">
-                    File will be encrypted before upload
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Tệp sẽ được mã hóa trước khi tải lên
                   </p>
-                  <span className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 font-medium text-sm shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground">
-                    Choose File
-                  </span>
                 </button>
                 <Input
                   accept="*/*"
@@ -345,18 +359,19 @@ export default function FilesPage() {
 
             {/* Selected File Preview */}
             {selectedFile && !isUploading && !uploadSuccess && (
-              <Card>
+              <Card className="bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 shadow-sm">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <FileText className="size-10 text-primary" />
+                    <div className="flex items-start gap-4">
+                      <div className="bg-gray-200 dark:bg-neutral-700 p-2 rounded-lg">
+                        <FileText className="size-6 text-gray-700 dark:text-gray-300" />
+                      </div>
                       <div>
-                        <p className="font-semibold text-foreground text-sm">
+                        <p className="font-bold text-black dark:text-white text-sm truncate max-w-xs">
                           {selectedFile.name}
                         </p>
-                        <p className="text-muted-foreground text-xs">
-                          {formatBytes(selectedFile.size)} •{" "}
-                          {selectedFile.type || "Unknown type"}
+                        <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">
+                          {formatBytes(selectedFile.size)} • {selectedFile.type || "Loại không xác định"}
                         </p>
                       </div>
                     </div>
@@ -364,6 +379,7 @@ export default function FilesPage() {
                       onClick={() => setSelectedFile(null)}
                       size="icon"
                       variant="ghost"
+                      className="text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-700 hover:text-black dark:hover:text-white transition-colors duration-200 rounded-lg"
                     >
                       <X className="size-4" />
                     </Button>
@@ -376,46 +392,62 @@ export default function FilesPage() {
             {isUploading && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <Loader2 className="size-5 animate-spin text-primary" />
-                  <p className="font-medium text-sm">
+                  <Loader2 className="size-5 animate-spin text-black dark:text-white flex-shrink-0" />
+                  <p className="font-semibold text-sm text-black dark:text-white">
                     {(() => {
                       if (uploadProgress < 30) {
-                        return "Encrypting file...";
+                        return "Đang mã hóa tệp...";
                       }
                       if (uploadProgress < 70) {
-                        return "Uploading to IPFS...";
+                        return "Đang tải lên IPFS...";
                       }
-                      return "Saving metadata...";
+                      return "Đang lưu siêu dữ liệu...";
                     })()}
                   </p>
                 </div>
-                <Progress value={uploadProgress} />
+                <div className="bg-gray-200 dark:bg-neutral-800 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-black dark:bg-white h-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-xs text-right">{uploadProgress}%</p>
               </div>
             )}
 
             {/* Success Message */}
             {uploadSuccess && (
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                <p className="font-medium text-green-900 text-sm">
-                  ✓ File uploaded successfully!
-                </p>
-                <p className="mt-1 text-green-700 text-xs">
-                  Your file has been encrypted and stored on IPFS
-                </p>
+              <div className="rounded-lg border border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4">
+                <div className="flex gap-3">
+                  <div className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5">✓</div>
+                  <div>
+                    <p className="font-bold text-green-900 dark:text-green-200 text-sm">
+                      Tệp đã tải lên thành công!
+                    </p>
+                    <p className="text-green-700 dark:text-green-300 text-xs mt-1">
+                      Tệp của bạn đã được mã hóa và lưu trữ trên IPFS
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Error Message */}
             {uploadError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <p className="font-medium text-red-900 text-sm">Error</p>
-                <p className="mt-1 text-red-700 text-xs">{uploadError}</p>
+              <div className="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+                <div className="flex gap-3">
+                  <div className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5">⚠</div>
+                  <div>
+                    <p className="font-bold text-red-900 dark:text-red-200 text-sm">Lỗi</p>
+                    <p className="text-red-700 dark:text-red-300 text-xs mt-1">{uploadError}</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 border-t border-gray-200 dark:border-neutral-800 pt-6">
             <Button
               disabled={isUploading}
               onClick={() => {
@@ -426,26 +458,28 @@ export default function FilesPage() {
                 setUploadProgress(0);
               }}
               variant="outline"
+              className="border border-gray-300 dark:border-neutral-700 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 font-semibold disabled:opacity-50 transition-colors duration-200"
             >
-              Cancel
+              Hủy
             </Button>
             <Button
               disabled={!selectedFile || isUploading || uploadSuccess}
               onClick={handleUpload}
+              className="bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 font-semibold disabled:opacity-50 transition-colors duration-200"
             >
               {(() => {
                 if (isUploading) {
                   return (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />
-                      Uploading...
+                      Đang tải lên...
                     </>
                   );
                 }
                 if (uploadSuccess) {
-                  return "Done";
+                  return "✓ Xong";
                 }
-                return "Upload";
+                return "Tải Lên";
               })()}
             </Button>
           </div>
