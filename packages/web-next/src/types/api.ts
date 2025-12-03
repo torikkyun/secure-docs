@@ -74,6 +74,7 @@ export type Download = {
 export type StorageInfo = {
   storageUsed: number;
   storageLimit: number;
+  storageRemaining: number;
   usagePercentage: number;
 };
 

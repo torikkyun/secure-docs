@@ -47,10 +47,21 @@ export function useStorage() {
   const storageUsed = storage?.storageUsed ?? 0;
   const storageLimit = storage?.storageLimit ?? 0;
   const usagePercentage =
-    storageLimit > 0 ? Math.round((storageUsed / storageLimit) * 100) : 0;
+    storage && storageLimit > 0
+      ? Math.round((storageUsed / storageLimit) * 100)
+      : 0;
   const storageAvailable =
-    storageLimit - storageUsed >= 0 ? storageLimit - storageUsed : 0;
+    storage && storageLimit - storageUsed >= 0 ? storageLimit - storageUsed : 0;
 
+  console.log("useStorage:", {
+    storage,
+    storageUsed,
+    storageLimit,
+    usagePercentage,
+    storageAvailable,
+    isLoading,
+    error,
+  });
   return {
     storage,
     storageUsed,

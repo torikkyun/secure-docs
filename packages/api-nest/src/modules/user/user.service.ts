@@ -110,11 +110,13 @@ export class UserService {
     const used = BigInt(user.storageUsed);
     const limit = BigInt(user.storageLimit);
     const remaining = limit - used;
+    const usagePercentage = limit > 0n ? Number((used * 100n) / limit) : 0;
 
     return serializeBigInt({
       storageUsed: used,
       storageLimit: limit,
       storageRemaining: remaining < 0n ? 0n : remaining,
+      usagePercentage,
     });
   }
 
