@@ -13,14 +13,17 @@ type StatsCardsProps = {
 export default function StatsCards({ stats, loading }: StatsCardsProps) {
   if (loading) {
     return (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-3 w-full">
         {["total", "received", "shares"].map((type) => (
-          <Card className="transition-transform hover:scale-[1.02]" key={type}>
+          <Card className="bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm" key={type}>
             <CardContent className="p-6">
-              <div className="mb-2">
-                <Skeleton className="h-4 w-28" />
+              <div className="flex items-center gap-4">
+                <div className="space-y-3 flex-1">
+                  <Skeleton className="h-8 w-12 bg-gray-200 dark:bg-zinc-800" />
+                  <Skeleton className="h-4 w-32 bg-gray-200 dark:bg-zinc-800" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-lg bg-gray-200 dark:bg-zinc-800" />
               </div>
-              <Skeleton className="h-10 w-20" />
             </CardContent>
           </Card>
         ))}
@@ -33,60 +36,53 @@ export default function StatsCards({ stats, loading }: StatsCardsProps) {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 grid-cols-1 sm:grid-cols-3 w-full">
       {/* Total Files */}
-      <Card className="transition-all hover:shadow-md">
+      <Card className="group bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm hover:shadow-lg hover:border-black dark:hover:border-white transition-all duration-300 overflow-hidden">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm">Total Files</p>
-              <p className="mt-2 font-bold text-2xl text-foreground md:text-3xl">
-                {new Intl.NumberFormat().format(stats.totalFiles)}
+            <div className="flex-1 space-y-2">
+              <p className="font-bold text-4xl text-black dark:text-white leading-none tracking-tight">
+                {new Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 }).format(stats.totalFiles)}
               </p>
-              <p className="mt-1 text-muted-foreground text-xs">All time</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Tệp được tải lên</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 p-2">
-              <FileText aria-hidden className="h-6 w-6 text-primary" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 flex-shrink-0 group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-all duration-300">
+              <FileText className="h-6 w-6 text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Files Received */}
-      <Card className="transition-all hover:shadow-md">
+      <Card className="group bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm hover:shadow-lg hover:border-black dark:hover:border-white transition-all duration-300 overflow-hidden">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm">Files Received</p>
-              <p className="mt-2 font-bold text-2xl text-foreground md:text-3xl">
-                {new Intl.NumberFormat().format(stats.filesReceived)}
+            <div className="flex-1 space-y-2">
+              <p className="font-bold text-4xl text-black dark:text-white leading-none tracking-tight">
+                {new Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 }).format(stats.filesReceived)}
               </p>
-              <p className="mt-1 text-muted-foreground text-xs">
-                Received from others
-              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Tệp nhận được</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-500/10 p-2">
-              <Users aria-hidden className="h-6 w-6 text-green-600" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 flex-shrink-0 group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-all duration-300">
+              <Users className="h-6 w-6 text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors" />
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Active Shares */}
-      <Card className="transition-all hover:shadow-md">
+      <Card className="group bg-white dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm hover:shadow-lg hover:border-black dark:hover:border-white transition-all duration-300 overflow-hidden">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-muted-foreground text-sm">Active Shares</p>
-              <p className="mt-2 font-bold text-2xl text-foreground md:text-3xl">
-                {new Intl.NumberFormat().format(stats.activeShares)}
+            <div className="flex-1 space-y-2">
+              <p className="font-bold text-4xl text-black dark:text-white leading-none tracking-tight">
+                {new Intl.NumberFormat("vi-VN", { notation: "compact", maximumFractionDigits: 1 }).format(stats.activeShares)}
               </p>
-              <p className="mt-1 text-muted-foreground text-xs">
-                Currently active grants
-              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Chia sẻ hoạt động</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10 p-2">
-              <Share2 aria-hidden className="h-6 w-6 text-amber-600" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 flex-shrink-0 group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-all duration-300">
+              <Share2 className="h-6 w-6 text-black dark:text-white group-hover:text-white dark:group-hover:text-black transition-colors" />
             </div>
           </div>
         </CardContent>

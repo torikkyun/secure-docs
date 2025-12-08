@@ -83,23 +83,23 @@ export default function RegisterPage() {
   // Validate username
   const validateUsername = (username: string): string | undefined => {
     if (!username.trim()) {
-      return "Username is required";
+      return "Tên đăng nhập là bắt buộc";
     }
     if (username.length < 3) {
-      return "Username must be at least 3 characters";
+      return "Tên đăng nhập phải có ít nhất 3 ký tự";
     }
     if (username.length > 30) {
-      return "Username must not exceed 30 characters";
+      return "Tên đăng nhập không được quá 30 ký tự";
     }
   };
 
   // Validate email
   const validateEmail = (email: string): string | undefined => {
     if (!email.trim()) {
-      return "Email is required";
+      return "Email là bắt buộc";
     }
     if (!EMAIL_REGEX.test(email)) {
-      return "Please enter a valid email address";
+      return "Vui lòng nhập địa chỉ email hợp lệ";
     }
   };
 
@@ -142,7 +142,7 @@ export default function RegisterPage() {
       ).ethereum;
       if (!eth) {
         throw new Error(
-          "MetaMask not detected. Please install MetaMask extension."
+          "Không tìm thấy MetaMask. Vui lòng cài đặt tiện ích mở rộng MetaMask."
         );
       }
 
@@ -195,7 +195,7 @@ export default function RegisterPage() {
       );
 
       if (!res.ok) {
-        throw new Error(`Failed to get nonce: ${res.status}`);
+        throw new Error(`Không thể lấy nonce: ${res.status}`);
       }
 
       const body = (await res.json()).data as {
@@ -209,14 +209,14 @@ export default function RegisterPage() {
         body?.expiresAt || new Date(Date.now() + 300_000).toISOString();
 
       if (!nonce) {
-        throw new Error("Nonce not returned from server");
+        throw new Error("Không nhận được nonce từ máy chủ");
       }
 
       // Create SIWE message for registration
       const siwe = new SiweMessage({
         domain: window.location.hostname || "secure-docs.example.com",
         address: walletAddr,
-        statement: "Register wallet for Secure Docs",
+        statement: "Dang ky vi cho Secure Docs",
         uri: window.location.origin,
         version: "1",
         chainId: 1,
@@ -244,7 +244,7 @@ export default function RegisterPage() {
 
       // Check if recovery phrase was saved
       if (!recoveryPhraseSaved) {
-        setError("Please save your recovery phrase before continuing");
+        setError("Vui lòng lưu cụm từ khôi phục trước khi tiếp tục");
         return;
       }
 
@@ -252,7 +252,7 @@ export default function RegisterPage() {
       if (
         !(form.walletAddress && form.username && form.email && form.message)
       ) {
-        throw new Error("Please fill in all fields");
+        throw new Error("Vui lòng điền đầy đủ thông tin");
       }
 
       setStatus("signing");
@@ -300,7 +300,7 @@ export default function RegisterPage() {
       const data = (await res.json()) as { message?: string };
 
       if (!res.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(data.message || "Đăng ký thất bại");
       }
 
       // Save identity to IndexedDB using KeyManager
@@ -323,17 +323,17 @@ export default function RegisterPage() {
   const getStatusMessage = () => {
     switch (status) {
       case "connecting":
-        return "Connecting to MetaMask...";
+        return "Đang kết nối MetaMask...";
       case "generating":
-        return "Generating encryption keys...";
+        return "Đang tạo khóa mã hóa...";
       case "preparing":
-        return "Preparing registration message...";
+        return "Đang chuẩn bị tin nhắn đăng ký...";
       case "signing":
-        return "Please sign the message in MetaMask...";
+        return "Vui lòng ký tin nhắn trong MetaMask...";
       case "submitting":
-        return "Creating your account...";
+        return "Đang tạo tài khoản...";
       case "success":
-        return "Registration successful! Redirecting to login...";
+        return "Đăng ký thành công! Đang chuyển hướng đến đăng nhập...";
       default:
         return "";
     }
@@ -366,29 +366,29 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-zinc-50 via-white to-zinc-100 p-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-white p-4 text-black dark:bg-black dark:text-white">
+      <Card className="w-full max-w-md border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-black dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
-            <Key className="size-8 text-primary" />
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black">
+            <Key className="size-8" />
           </div>
-          <CardTitle className="font-bold text-3xl">Create Account</CardTitle>
-          <CardDescription>
-            Register your wallet to start using SecureDocs
+          <CardTitle className="font-bold text-3xl">Tạo tài khoản</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">
+            Đăng ký ví của bạn để bắt đầu sử dụng SecureDocs
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           {/* MetaMask Not Detected Warning */}
           {!hasMetaMask && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-600" />
+            <div className="flex items-start gap-3 rounded-lg border-2 border-black bg-gray-100 p-4 dark:border-white dark:bg-zinc-900">
+              <AlertCircle className="mt-0.5 size-5 shrink-0" />
               <div className="flex-1">
-                <p className="font-medium text-amber-900 text-sm">
-                  MetaMask Required
+                <p className="font-bold text-sm">
+                  Yêu cầu MetaMask
                 </p>
-                <p className="mt-1 text-amber-700 text-sm">
-                  Please install MetaMask extension to continue.
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  Vui lòng cài đặt tiện ích mở rộng MetaMask để tiếp tục.
                 </p>
               </div>
             </div>
@@ -397,14 +397,14 @@ export default function RegisterPage() {
           {/* Connect Wallet Button */}
           {!form.walletAddress && (
             <Button
-              className="w-full"
+              className="w-full border-2 border-black bg-black text-white hover:bg-gray-800 dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
               disabled={!hasMetaMask || isProcessing}
               onClick={connectWallet}
               size="lg"
             >
               {status === "connecting" ||
-              status === "generating" ||
-              status === "preparing" ? (
+                status === "generating" ||
+                status === "preparing" ? (
                 <>
                   <Loader2 className="mr-2 size-5 animate-spin" />
                   {getStatusMessage()}
@@ -412,7 +412,7 @@ export default function RegisterPage() {
               ) : (
                 <>
                   <Wallet className="mr-2 size-5" />
-                  Connect MetaMask
+                  Kết nối MetaMask
                 </>
               )}
             </Button>
@@ -423,34 +423,33 @@ export default function RegisterPage() {
             <>
               {/* Wallet Address Display */}
               <div className="space-y-2">
-                <Label>Wallet Address</Label>
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-muted p-3">
-                  <Wallet className="size-4 text-muted-foreground" />
-                  <p className="flex-1 truncate font-mono text-muted-foreground text-sm">
+                <Label>Địa chỉ ví</Label>
+                <div className="flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-700 dark:bg-zinc-900">
+                  <Wallet className="size-4 text-gray-600 dark:text-gray-400" />
+                  <p className="flex-1 truncate font-mono text-sm text-gray-600 dark:text-gray-400">
                     {form.walletAddress}
                   </p>
-                  <CheckCircle className="size-4 text-green-600" />
+                  <CheckCircle className="size-4 text-green-600 dark:text-green-500" />
                 </div>
               </div>
 
               {/* Username */}
               <div className="space-y-2">
                 <Label htmlFor="username">
-                  Username <span className="text-red-500">*</span>
+                  Tên đăng nhập <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
-                  <User className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+                  <User className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-gray-500" />
                   <Input
-                    className={`pl-10 ${
-                      formErrors.username
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : ""
-                    }`}
+                    className={`pl-10 border-gray-300 dark:border-gray-700 focus-visible:ring-black dark:focus-visible:ring-white ${formErrors.username
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : ""
+                      }`}
                     disabled={isProcessing}
                     id="username"
                     name="username"
                     onChange={handleChange}
-                    placeholder="Enter your username"
+                    placeholder="Nhập tên đăng nhập của bạn"
                     required
                     type="text"
                     value={form.username}
@@ -467,18 +466,17 @@ export default function RegisterPage() {
                   Email <span className="text-red-500">*</span>
                 </Label>
                 <div className="relative">
-                  <Mail className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+                  <Mail className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-gray-500" />
                   <Input
-                    className={`pl-10 ${
-                      formErrors.email
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : ""
-                    }`}
+                    className={`pl-10 border-gray-300 dark:border-gray-700 focus-visible:ring-black dark:focus-visible:ring-white ${formErrors.email
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : ""
+                      }`}
                     disabled={isProcessing}
                     id="email"
                     name="email"
                     onChange={handleChange}
-                    placeholder="Enter your email"
+                    placeholder="Nhập email của bạn"
                     required
                     type="email"
                     value={form.email}
@@ -491,13 +489,13 @@ export default function RegisterPage() {
 
               {/* Status Message */}
               {status !== "idle" && status !== "error" && (
-                <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-center gap-3 rounded-lg border-2 border-black bg-gray-100 p-4 dark:border-white dark:bg-zinc-900">
                   {status === "success" ? (
-                    <CheckCircle className="size-5 text-green-600" />
+                    <CheckCircle className="size-5 text-black dark:text-white" />
                   ) : (
-                    <Loader2 className="size-5 animate-spin text-primary" />
+                    <Loader2 className="size-5 animate-spin text-black dark:text-white" />
                   )}
-                  <p className="font-medium text-blue-900 text-sm">
+                  <p className="font-medium text-black text-sm dark:text-white">
                     {getStatusMessage()}
                   </p>
                 </div>
@@ -505,18 +503,18 @@ export default function RegisterPage() {
 
               {/* Error Message */}
               {error && (
-                <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-                  <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
+                <div className="flex items-start gap-3 rounded-lg border-2 border-red-500 bg-red-50 p-4 dark:bg-red-950/30">
+                  <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" />
                   <div className="flex-1">
-                    <p className="font-medium text-red-900 text-sm">Error</p>
-                    <p className="mt-1 text-red-700 text-sm">{error}</p>
+                    <p className="font-bold text-red-900 text-sm dark:text-red-300">Lỗi</p>
+                    <p className="mt-1 text-red-700 text-sm dark:text-red-400">{error}</p>
                   </div>
                 </div>
               )}
 
               {/* Submit Button */}
               <Button
-                className="w-full"
+                className="w-full border-2 border-black bg-black text-white hover:bg-gray-800 dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
                 disabled={
                   !(isFormReady && form.username && form.email) ||
                   isProcessing ||
@@ -538,24 +536,24 @@ export default function RegisterPage() {
                     return (
                       <>
                         <CheckCircle className="mr-2 size-5" />
-                        Success!
+                        Thành công!
                       </>
                     );
                   }
-                  return "Register Account";
+                  return "Đăng ký tài khoản";
                 })()}
               </Button>
             </>
           )}
 
           {/* Login Link */}
-          <div className="text-center text-muted-foreground text-sm">
-            Already have an account?{" "}
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+            Đã có tài khoản?{" "}
             <Link
-              className="font-medium text-primary hover:underline"
+              className="font-bold text-black underline hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
               href="/auth/login"
             >
-              Login here
+              Đăng nhập tại đây
             </Link>
           </div>
         </CardContent>
@@ -563,46 +561,44 @@ export default function RegisterPage() {
 
       {/* Recovery Phrase Dialog */}
       <Dialog onOpenChange={setShowRecoveryDialog} open={showRecoveryDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md border-2 border-black bg-white dark:border-white dark:bg-black">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Key className="size-5 text-primary" />
-              Save Your Recovery Phrase
+            <DialogTitle className="flex items-center gap-2 text-black dark:text-white">
+              <Key className="size-5" />
+              Lưu Cụm Từ Khôi Phục Của Bạn
             </DialogTitle>
-            <DialogDescription>
-              This 12-word phrase is the ONLY way to recover your encryption
-              keys. Store it safely and never share it with anyone.
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
+              Cụm từ 12 từ này là cách DUY NHẤT để khôi phục khóa mã hóa của bạn. Hãy lưu trữ an toàn và không bao giờ chia sẻ với bất kỳ ai.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Warning Box */}
-            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-              <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
+            <div className="flex items-start gap-3 rounded-lg border-2 border-red-500 bg-red-50 p-4 dark:bg-red-950/30">
+              <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" />
               <div className="flex-1">
-                <p className="font-medium text-red-900 text-sm">
-                  Important Security Warning
+                <p className="font-bold text-red-900 text-sm dark:text-red-300">
+                  Cảnh Báo Bảo Mật Quan Trọng
                 </p>
-                <p className="mt-1 text-red-700 text-xs">
-                  If you lose this phrase, your encrypted files cannot be
-                  recovered. Write it down and store it securely offline.
+                <p className="mt-1 text-red-700 text-xs dark:text-red-400">
+                  Nếu bạn mất cụm từ này, các tệp được mã hóa của bạn không thể khôi phục. Hãy viết nó ra và lưu trữ an toàn ngoại tuyến.
                 </p>
               </div>
             </div>
 
             {/* Recovery Phrase Display */}
-            <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
-              <Label className="mb-2 block text-muted-foreground text-sm">
-                Recovery Phrase
+            <div className="rounded-lg border-2 border-black/20 bg-gray-50 p-4 dark:border-white/20 dark:bg-zinc-900">
+              <Label className="mb-2 block text-sm text-gray-600 dark:text-gray-400">
+                Cụm từ khôi phục
               </Label>
-              <p className="wrap-break-word font-mono text-sm leading-relaxed">
+              <p className="wrap-break-word font-mono text-sm leading-relaxed text-black dark:text-white">
                 {identity?.mnemonic}
               </p>
             </div>
 
             {/* Copy Button */}
             <Button
-              className="w-full"
+              className="w-full border border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-zinc-800"
               onClick={copyRecoveryPhrase}
               variant="outline"
             >
@@ -613,7 +609,7 @@ export default function RegisterPage() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <title>Copy to clipboard</title>
+                <title>Sao chép</title>
                 <path
                   d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                   strokeLinecap="round"
@@ -621,14 +617,17 @@ export default function RegisterPage() {
                   strokeWidth={2}
                 />
               </svg>
-              Copy to Clipboard
+              Sao chép vào khay nhớ tạm
             </Button>
           </div>
 
           <DialogFooter>
-            <Button className="w-full" onClick={handleContinueAfterRecovery}>
+            <Button
+              className="w-full border-2 border-black bg-black text-white hover:bg-gray-800 dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
+              onClick={handleContinueAfterRecovery}
+            >
               <CheckCircle className="mr-2 size-4" />
-              I've Saved My Recovery Phrase
+              Tôi đã lưu cụm từ khôi phục của mình
             </Button>
           </DialogFooter>
         </DialogContent>

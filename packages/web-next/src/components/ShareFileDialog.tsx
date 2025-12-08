@@ -50,7 +50,7 @@ export function ShareFileDialog({
 
   const handleSearchRecipient = async () => {
     if (!recipientAddress || recipientAddress.length !== 42) {
-      toast.error("Please enter a valid Ethereum address");
+      toast.error("Vui lòng nhập một địa chỉ Ethereum hợp lệ");
       return;
     }
 
@@ -66,7 +66,7 @@ export function ShareFileDialog({
       );
 
       if (!response.ok) {
-        throw new Error("User not found");
+        throw new Error("Không tìm thấy người dùng");
       }
 
       const data = await response.json();
@@ -74,10 +74,10 @@ export function ShareFileDialog({
         username: data.data.username,
         publicKey: data.data.publicKey,
       });
-      toast.success("Recipient found!");
+      toast.success("Đã tìm thấy người nhận!");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to find recipient"
+        error instanceof Error ? error.message : "Không thể tìm thấy người nhận"
       );
       setRecipientInfo(null);
     } finally {
@@ -102,7 +102,7 @@ export function ShareFileDialog({
       const fileDetails = await fileApi.findOne(file.id);
 
       if (!fileDetails.file.encryptedKeyOwner) {
-        throw new Error("File encryption key not found");
+        throw new Error("Không tìm thấy khóa mã hóa của tệp");
       }
 
       await shareFile({
@@ -137,14 +137,14 @@ export function ShareFileDialog({
       });
 
       setShareSuccess(true);
-      toast.success("File shared successfully!");
+      toast.success("Chia sẻ tệp thành công!");
 
       setTimeout(() => {
         onSuccessAction?.();
         handleClose();
       }, 1500);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Share failed");
+      toast.error(error instanceof Error ? error.message : "Chia sẻ thất bại");
       setShareProgress(0);
       setShareStep("");
     }
@@ -166,32 +166,33 @@ export function ShareFileDialog({
 
   return (
     <Dialog onOpenChange={handleClose} open={isOpen}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px] bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-black dark:text-white">
         <DialogHeader>
-          <DialogTitle>Share File</DialogTitle>
-          <DialogDescription>
-            Share "{file.fileName}" with another user securely
+          <DialogTitle className="text-black dark:text-white font-bold text-xl">Chia sẻ tệp</DialogTitle>
+          <DialogDescription className="text-gray-600 dark:text-gray-400">
+            Chia sẻ "{file.fileName}" với người dùng khác một cách an toàn
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Contract Address */}
           <div className="space-y-2">
-            <Label htmlFor="contractAddress">
-              Smart Contract Address (Optional)
+            <Label htmlFor="contractAddress" className="text-black dark:text-white">
+              Địa chỉ Smart Contract (Tùy chọn)
             </Label>
             <Input
               disabled={isSharing}
               id="contractAddress"
               onChange={(e) => setContractAddress(e.target.value)}
               placeholder="0x..."
-              value={contractAddress}
+              value={contractAddress || ""}
+              className="border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:border-black dark:focus:border-white"
             />
           </div>
 
           {/* Recipient Wallet Address */}
           <div className="space-y-2">
-            <Label htmlFor="recipientAddress">Recipient Wallet Address</Label>
+            <Label htmlFor="recipientAddress" className="text-black dark:text-white">Địa chỉ Ví Người nhận</Label>
             <div className="flex gap-2">
               <Input
                 disabled={isSharing}
@@ -199,11 +200,13 @@ export function ShareFileDialog({
                 onChange={(e) => setRecipientAddress(e.target.value)}
                 placeholder="0x..."
                 value={recipientAddress}
+                className="border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:border-black dark:focus:border-white"
               />
               <Button
                 disabled={isSharing || isSearching}
                 onClick={handleSearchRecipient}
                 variant="secondary"
+                className="bg-gray-100 dark:bg-neutral-800 text-black dark:text-white border border-gray-200 dark:border-neutral-700 hover:bg-gray-200 dark:hover:bg-neutral-700"
               >
                 {isSearching ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -216,14 +219,14 @@ export function ShareFileDialog({
 
           {/* Recipient Info */}
           {recipientInfo && (
-            <Card>
+            <Card className="bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-semibold text-foreground text-sm">
+                    <p className="font-bold text-black dark:text-white text-sm">
                       {recipientInfo.username}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-gray-600 dark:text-gray-400 text-xs font-mono">
                       {recipientAddress}
                     </p>
                   </div>
@@ -234,8 +237,9 @@ export function ShareFileDialog({
                     }}
                     size="icon"
                     variant="ghost"
+                    className="hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-full"
                   >
-                    <X className="size-4" />
+                    <X className="size-4 text-gray-600 dark:text-gray-400" />
                   </Button>
                 </div>
               </CardContent>
@@ -244,13 +248,14 @@ export function ShareFileDialog({
 
           {/* Expiry Date (Optional) */}
           <div className="space-y-2">
-            <Label htmlFor="expiresAt">Expiry Date (Optional)</Label>
+            <Label htmlFor="expiresAt" className="text-black dark:text-white">Ngày hết hạn (Tùy chọn)</Label>
             <Input
               disabled={isSharing}
               id="expiresAt"
               onChange={(e) => setExpiresAt(e.target.value)}
               type="datetime-local"
               value={expiresAt}
+              className="border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:border-black dark:focus:border-white text-black dark:text-white"
             />
           </div>
 
@@ -258,48 +263,54 @@ export function ShareFileDialog({
           {isSharing && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Loader2 className="size-5 animate-spin text-primary" />
-                <p className="font-medium text-sm">{shareStep}</p>
+                <Loader2 className="size-5 animate-spin text-black dark:text-white" />
+                <p className="font-medium text-sm text-black dark:text-white">{shareStep}</p>
               </div>
-              <Progress value={shareProgress} />
+              <Progress value={shareProgress} className="h-2 bg-gray-100 dark:bg-neutral-800" />
             </div>
           )}
 
           {/* Success Message */}
           {shareSuccess && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-              <p className="font-medium text-green-900 text-sm">
-                ✓ File shared successfully!
+            <div className="rounded-lg border border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4">
+              <p className="font-bold text-green-900 dark:text-green-200 text-sm">
+                ✓ Chia sẻ tệp thành công!
               </p>
-              <p className="mt-1 text-green-700 text-xs">
-                The recipient can now access this file
+              <p className="mt-1 text-green-700 dark:text-green-300 text-xs">
+                Người nhận hiện có thể truy cập tệp này
               </p>
             </div>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <Button disabled={isSharing} onClick={handleClose} variant="outline">
-            Cancel
+        <div className="flex justify-end gap-3 pt-2">
+          <Button
+            disabled={isSharing}
+            onClick={handleClose}
+            variant="outline"
+            className="border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-transparent hover:bg-gray-100 dark:hover:bg-neutral-800"
+          >
+            Hủy
           </Button>
           <Button
             disabled={!recipientInfo || isSharing || shareSuccess}
             onClick={handleShare}
+            className="bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-100 font-semibold"
           >
             {(() => {
               if (isSharing) {
                 return (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Sharing...
+                    Đang chia sẻ...
                   </>
                 );
               }
               if (shareSuccess) {
-                return "Done";
+                return "Xong";
               }
-              return "Share File";
+              return "Chia sẻ tệp";
             })()}
           </Button>
         </div>

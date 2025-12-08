@@ -12,13 +12,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { userApi } from "@/lib/api";
 import { formatBytes } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import { userApi } from "@/lib/api";
 import type { StorageInfo, User } from "@/types/api";
 
 const navItems = [
@@ -28,8 +28,8 @@ const navItems = [
   { href: "/downloads", label: "Tải xuống", icon: Clock, badge: null },
 ];
 
-const bottomNavItems = [
-  { href: "/settings", label: "Cài đặt", icon: Settings },
+const bottomNavItems: { href: string; label: string; icon: any }[] = [
+  // { href: "/settings", label: "Cài đặt", icon: Settings },
 ];
 
 type AppSidebarProps = {
@@ -38,7 +38,11 @@ type AppSidebarProps = {
   user?: User | null;
 };
 
-export default function AppSidebar({ storage, loading, user }: AppSidebarProps) {
+export default function AppSidebar({
+  storage,
+  loading,
+  user,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [localUser, setLocalUser] = useState<User | null | undefined>(user);
@@ -102,7 +106,9 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
             <h1 className="font-bold text-black dark:text-white text-lg leading-none">
               SecureDocs
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-xs">Lưu trữ Blockchain</p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs">
+              Lưu trữ Blockchain
+            </p>
           </div>
         </Link>
       </div>
@@ -137,27 +143,29 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
           );
         })}
 
-        <div className="mt-4 border-gray-200 dark:border-neutral-800 border-t pt-4">
-          {bottomNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-sm transition-colors",
-                  isActive
-                    ? "bg-black text-white dark:bg-white dark:text-black"
-                    : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
-                )}
-                href={item.href}
-                key={item.href}
-              >
-                <Icon className="size-5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
+        {bottomNavItems.length > 0 && (
+          <div className="mt-4 border-gray-200 dark:border-neutral-800 border-t pt-4">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-sm transition-colors",
+                    isActive
+                      ? "bg-black text-white dark:bg-white dark:text-black"
+                      : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white"
+                  )}
+                  href={item.href}
+                  key={item.href}
+                >
+                  <Icon className="size-5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* Storage Used Section */}
@@ -196,7 +204,7 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
 
                 {/* Progress Bar */}
                 <div className="space-y-1.5">
-                  <Progress className="h-2" value={percentage} />
+                  <Progress className="h-2 bg-gray-100 dark:bg-neutral-800" value={percentage} />
                   <div className="flex items-center justify-between">
                     <p className="text-gray-600 dark:text-gray-400 text-xs">
                       {formatBytes(limit)} tổng cộng
@@ -256,7 +264,7 @@ export default function AppSidebar({ storage, loading, user }: AppSidebarProps) 
                       }
                       router.push("/auth/login");
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 px-2 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 font-medium text-xs transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-black/5 dark:bg-white/10 px-2 py-2 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/20 font-medium text-xs transition-colors"
                   >
                     <LogOut className="size-3.5" />
                     <span>Đăng xuất</span>

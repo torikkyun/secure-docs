@@ -94,33 +94,30 @@ export function FilterPanel({
         </label>
         <div className="grid grid-cols-3 gap-2">
           <Button
-            className={`h-9 font-medium text-xs transition-all ${
-              selectedType === "all"
+            className={`h-9 font-medium text-xs transition-all ${selectedType === "all"
                 ? "bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white"
                 : "border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-600"
-            }`}
+              }`}
             onClick={() => setSelectedType("all")}
             variant="outline"
           >
             Tất cả
           </Button>
           <Button
-            className={`h-9 font-medium text-xs transition-all ${
-              selectedType === "uploaded"
+            className={`h-9 font-medium text-xs transition-all ${selectedType === "uploaded"
                 ? "bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white"
                 : "border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-600"
-            }`}
+              }`}
             onClick={() => setSelectedType("uploaded")}
             variant="outline"
           >
             Đã tải lên
           </Button>
           <Button
-            className={`h-9 font-medium text-xs transition-all ${
-              selectedType === "received"
+            className={`h-9 font-medium text-xs transition-all ${selectedType === "received"
                 ? "bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white"
                 : "border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:border-gray-300 dark:hover:border-neutral-600"
-            }`}
+              }`}
             onClick={() => setSelectedType("received")}
             variant="outline"
           >
@@ -130,7 +127,7 @@ export function FilterPanel({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 border-gray-200 dark:border-neutral-700 border-t pt-4">
+      <div className="flex gap-2 border-t border-gray-200 dark:border-neutral-700 pt-4">
         <Button
           className="flex-1 border border-gray-200 dark:border-neutral-700 text-black dark:text-white bg-white dark:bg-neutral-900 hover:bg-gray-100 dark:hover:bg-neutral-800 font-medium text-sm transition-colors"
           onClick={() => {

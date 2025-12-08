@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const { files, loading: filesLoading, refetch } = useRecentFiles();
 
   return (
-    <AppLayout breadcrumbs={["Dashboard"]}>
+    <AppLayout breadcrumbs={["Trang chủ"]}>
       <div className="space-y-8 p-4 md:p-6 lg:p-8">
         <StatsCards loading={statsLoading} stats={stats} />
         <FileTable

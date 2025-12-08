@@ -86,11 +86,10 @@ export function SearchBar({
         {/* Filter Toggle Button (rightmost) */}
         {typeof setShowFiltersAction === "function" && (
           <Button
-            className={`absolute right-3 size-7 transition-all ${
-              filterActive 
-                ? "bg-black dark:bg-white text-white dark:text-black" 
+            className={`absolute right-3 size-7 transition-all ${filterActive
+                ? "bg-black dark:bg-white text-white dark:text-black"
                 : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800"
-            }`}
+              }`}
             onClick={() => setShowFiltersAction?.(true)}
             size="icon"
             title="Mở bộ lọc"
@@ -132,7 +131,7 @@ export function SearchBar({
           )}
           {!resultsLoading && results.length > 0 && (
             <div>
-              <div className="border-gray-200 dark:border-neutral-700 border-b bg-gray-50 dark:bg-neutral-800/50 px-4 py-2">
+              <div className="border-b border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50 px-4 py-2">
                 <p className="font-medium text-gray-600 dark:text-gray-400 text-xs">
                   Tìm thấy {results.length} kết quả{results.length !== 1 ? "" : ""}
                 </p>
@@ -141,7 +140,7 @@ export function SearchBar({
                 {results.map((r) => (
                   <li key={r.id}>
                     <button
-                      className="group flex w-full items-center gap-4 border-gray-200 dark:border-neutral-700 border-b px-4 py-3 text-left transition-all last:border-b-0 hover:bg-gray-50 dark:hover:bg-neutral-800/50"
+                      className="group flex w-full items-center gap-4 border-b border-gray-200 dark:border-neutral-700 px-4 py-3 text-left transition-all last:border-b-0 hover:bg-gray-50 dark:hover:bg-neutral-800/50"
                       onClick={() => {
                         setResultsOpenAction(false);
                         setQueryAction("");
@@ -186,7 +185,7 @@ export function SearchBar({
                 ))}
               </ul>
               {results.length >= 10 && (
-                <div className="border-gray-200 dark:border-neutral-700 border-t bg-gray-50 dark:bg-neutral-800/50 px-4 py-2 text-center">
+                <div className="border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50 px-4 py-2 text-center">
                   <p className="text-gray-600 dark:text-gray-400 text-xs">
                     Hiển thị 10 kết quả đầu tiên. Tinh chỉnh tìm kiếm để có kết quả chính xác hơn.
                   </p>

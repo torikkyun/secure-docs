@@ -39,29 +39,29 @@ import type { AccessGrant } from "@/types/api";
 function getStatusBadge(status: string, expiresAt: string | null) {
   if (status === "revoked") {
     return (
-      <Badge className="flex w-fit items-center gap-1" variant="destructive">
+      <Badge className="flex w-fit items-center gap-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-900" variant="outline">
         <XCircle className="size-3" />
-        Revoked
+        Đã thu hồi
       </Badge>
     );
   }
 
   if (expiresAt && new Date(expiresAt) < new Date()) {
     return (
-      <Badge className="flex w-fit items-center gap-1" variant="secondary">
+      <Badge className="flex w-fit items-center gap-1 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700" variant="outline">
         <Clock className="size-3" />
-        Expired
+        Đã hết hạn
       </Badge>
     );
   }
 
   return (
     <Badge
-      className="flex w-fit items-center gap-1 bg-primary"
+      className="flex w-fit items-center gap-1 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
       variant="default"
     >
       <CheckCircle className="size-3" />
-      Active
+      Hoạt động
     </Badge>
   );
 }
@@ -91,63 +91,65 @@ function SharesTable({
 
   if (grants.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <FileText className="mb-4 size-12 text-muted-foreground" />
-        <h3 className="mb-2 font-semibold text-lg">No shares found</h3>
-        <p className="text-muted-foreground text-sm">
+      <div className="flex flex-col items-center justify-center py-24 text-center border rounded-lg border-dashed border-gray-300 dark:border-neutral-800">
+        <FileText className="mb-4 size-12 text-gray-400 dark:text-gray-600" />
+        <h3 className="mb-2 font-bold text-lg text-black dark:text-white">Không tìm thấy chia sẻ</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
           {type === "given"
-            ? "You haven't shared any files yet."
-            : "No files have been shared with you."}
+            ? "Bạn chưa chia sẻ tệp nào."
+            : "Chưa có tệp nào được chia sẻ với bạn."}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-xl border border-gray-200 dark:border-neutral-800 overflow-hidden">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>File Name</TableHead>
-            <TableHead>Size</TableHead>
-            <TableHead>
-              {type === "given" ? "Shared With" : "Shared By"}
+        <TableHeader className="bg-gray-50 dark:bg-neutral-900">
+          <TableRow className="border-gray-200 dark:border-neutral-800 hover:bg-transparent">
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Tên Tệp</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Kích thước</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">
+              {type === "given" ? "Chia sẻ với" : "Chia sẻ bởi"}
             </TableHead>
-            <TableHead>Date Granted</TableHead>
-            <TableHead>Expires At</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Ngày cấp</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Hết hạn vào</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Trạng thái</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Hành động</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {grants.map((grant) => (
-            <TableRow key={grant.id}>
-              <TableCell className="font-medium">
+            <TableRow key={grant.id} className="border-gray-100 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800/50">
+              <TableCell className="font-medium text-black dark:text-white">
                 <div className="flex items-center gap-2">
-                  <FileText className="size-4 text-primary" />
-                  {grant.file?.fileName || "Unknown file"}
+                  <div className="rounded-lg bg-gray-100 dark:bg-neutral-800 p-2">
+                    <FileText className="size-4 text-black dark:text-white" />
+                  </div>
+                  {grant.file?.fileName || "Tệp không xác định"}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-gray-600 dark:text-gray-400">
                 {grant.file?.fileSize ? formatBytes(grant.file.fileSize) : "—"}
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="font-medium">
+                  <span className="font-medium text-black dark:text-white">
                     {type === "given"
                       ? grant.grantee?.username
                       : grant.grantor?.username}
                   </span>
-                  <span className="max-w-[150px] truncate text-muted-foreground text-xs">
+                  <span className="max-w-[150px] truncate text-gray-500 text-xs font-mono">
                     {type === "given"
                       ? grant.grantee?.walletAddress
                       : grant.grantor?.walletAddress}
                   </span>
                 </div>
               </TableCell>
-              <TableCell>{formatDate(grant.grantedAt)}</TableCell>
-              <TableCell>
-                {grant.expiresAt ? formatDate(grant.expiresAt) : "Never"}
+              <TableCell className="text-gray-600 dark:text-gray-400">{formatDate(grant.grantedAt)}</TableCell>
+              <TableCell className="text-gray-600 dark:text-gray-400">
+                {grant.expiresAt ? formatDate(grant.expiresAt) : "Không bao giờ"}
               </TableCell>
               <TableCell>
                 {getStatusBadge(grant.status.name, grant.expiresAt)}
@@ -161,6 +163,8 @@ function SharesTable({
                       }
                       size="sm"
                       variant="ghost"
+                      className="hover:bg-gray-100 dark:hover:bg-neutral-800 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white"
+                      title="Mở tệp"
                     >
                       <ExternalLink className="size-4" />
                     </Button>
@@ -169,10 +173,11 @@ function SharesTable({
                     grant.status.name === "active" &&
                     onRevoke && (
                       <Button
-                        className="text-destructive hover:text-destructive"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                         onClick={() => onRevoke(grant.id)}
                         size="sm"
                         variant="ghost"
+                        title="Thu hồi quyền truy cập"
                       >
                         <XCircle className="size-4" />
                       </Button>
@@ -201,7 +206,7 @@ export default function SharesPage() {
       setGrantsGiven(response.grants);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load shares"
+        error instanceof Error ? error.message : "Không thể tải danh sách chia sẻ"
       );
     } finally {
       setLoadingGiven(false);
@@ -215,7 +220,7 @@ export default function SharesPage() {
       setGrantsReceived(response.grants);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load shares"
+        error instanceof Error ? error.message : "Không thể tải danh sách chia sẻ"
       );
     } finally {
       setLoadingReceived(false);
@@ -246,36 +251,47 @@ export default function SharesPage() {
         revokeReason: "Access revoked by owner",
         revokeSignature: signature,
       });
-      toast.success("Access revoked successfully");
+      toast.success("Thu hồi quyền truy cập thành công");
       setConfirmOpen(false);
       setPendingRevokeId(null);
       fetchGrantsGiven();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to revoke access"
+        error instanceof Error ? error.message : "Thu hồi quyền truy cập thất bại"
       );
     }
   };
 
   return (
-    <AppLayout breadcrumbs={["Shares"]}>
-      <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <AppLayout breadcrumbs={["Chia sẻ"]}>
+      <div className="space-y-6 p-4 md:p-6 lg:p-8 min-h-screen bg-white dark:bg-neutral-950 text-black dark:text-white">
         <div>
-          <h1 className="font-bold text-3xl tracking-tight">
-            Shares Management
+          <h1 className="font-bold text-3xl tracking-tight text-black dark:text-white">
+            Quản lý chia sẻ
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Manage files you've shared and files shared with you
+          <p className="mt-2 text-gray-600 dark:text-gray-400">
+            Quản lý các tệp bạn đã chia sẻ và các tệp được chia sẻ với bạn
           </p>
         </div>
 
         <Tabs
           onValueChange={(v) => setActiveTab(v as "given" | "received")}
           value={activeTab}
+          className="w-full"
         >
-          <TabsList>
-            <TabsTrigger value="given">Shared by Me</TabsTrigger>
-            <TabsTrigger value="received">Shared with Me</TabsTrigger>
+          <TabsList className="bg-transparent border-b border-gray-300 dark:border-neutral-700 p-0 w-full justify-start rounded-none h-auto gap-0">
+            <TabsTrigger
+              value="given"
+              className="relative px-4 py-4 font-semibold text-base rounded-none border-b-2 border-transparent data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-black dark:data-[state=active]:bg-white dark:data-[state=active]:border-white dark:data-[state=active]:text-black text-gray-700 dark:text-gray-500 bg-transparent hover:text-gray-900 dark:hover:text-gray-300 transition-all duration-200"
+            >
+              Tôi đã chia sẻ
+            </TabsTrigger>
+            <TabsTrigger
+              value="received"
+              className="relative px-4 py-4 font-semibold text-base rounded-none border-b-2 border-transparent data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:border-black dark:data-[state=active]:bg-white dark:data-[state=active]:border-white dark:data-[state=active]:text-black text-gray-700 dark:text-gray-500 bg-transparent hover:text-gray-900 dark:hover:text-gray-300 transition-all duration-200"
+            >
+              Được chia sẻ với tôi
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent className="mt-6" value="given">
@@ -295,13 +311,13 @@ export default function SharesPage() {
             />
           </TabsContent>
         </Tabs>
+
         <Dialog onOpenChange={setConfirmOpen} open={confirmOpen}>
-          <DialogContent>
+          <DialogContent className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800">
             <DialogHeader>
-              <DialogTitle>Revoke access</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to revoke access to this file? This action
-                can be undone only by granting access again.
+              <DialogTitle className="text-black dark:text-white">Thu hồi quyền truy cập</DialogTitle>
+              <DialogDescription className="text-gray-600 dark:text-gray-400">
+                Bạn có chắc chắn muốn thu hồi quyền truy cập vào tệp này không? Hành động này có thể được hoàn tác bằng cách cấp quyền lại.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -309,11 +325,17 @@ export default function SharesPage() {
                 onClick={() => setConfirmOpen(false)}
                 size="sm"
                 variant="outline"
+                className="border-gray-200 dark:border-neutral-700"
               >
-                Cancel
+                Hủy
               </Button>
-              <Button onClick={confirmRevoke} size="sm" variant="destructive">
-                Revoke Access
+              <Button
+                onClick={confirmRevoke}
+                size="sm"
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Thu hồi
               </Button>
             </DialogFooter>
           </DialogContent>

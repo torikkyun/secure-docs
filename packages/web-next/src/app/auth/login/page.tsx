@@ -58,7 +58,7 @@ export default function LoginPage() {
       ).ethereum;
       if (!eth) {
         throw new Error(
-          "MetaMask not detected. Please install MetaMask extension."
+          "Không tìm thấy MetaMask. Vui lòng cài đặt tiện ích mở rộng MetaMask."
         );
       }
 
@@ -87,7 +87,7 @@ export default function LoginPage() {
       );
 
       if (!res.ok) {
-        throw new Error(`Failed to get nonce: ${res.status}`);
+        throw new Error(`Không thể lấy nonce: ${res.status}`);
       }
 
       const body = (await res.json()).data as {
@@ -101,14 +101,14 @@ export default function LoginPage() {
         body?.expiresAt || new Date(Date.now() + 300_000).toISOString();
 
       if (!nonce) {
-        throw new Error("Nonce not returned from server");
+        throw new Error("Không nhận được nonce từ máy chủ");
       }
 
       // Create SIWE message
       const siwe = new SiweMessage({
         domain: window.location.hostname || "secure-docs.example.com",
         address: walletAddr,
-        statement: "Login to Secure Docs",
+        statement: "Dang nhap vao Secure Docs",
         uri: window.location.origin,
         version: "1",
         chainId: 1,
@@ -169,7 +169,7 @@ export default function LoginPage() {
       };
 
       if (!res.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Đăng nhập thất bại");
       }
 
       // Save token to localStorage
@@ -192,30 +192,30 @@ export default function LoginPage() {
   const getStatusMessage = () => {
     switch (status) {
       case "connecting":
-        return "Connecting to MetaMask...";
+        return "Đang kết nối MetaMask...";
       case "preparing":
-        return "Preparing message...";
+        return "Đang chuẩn bị dữ liệu...";
       case "signing":
-        return "Please sign the message in MetaMask...";
+        return "Vui lòng ký tên trong ví MetaMask...";
       case "submitting":
-        return "Logging in...";
+        return "Đang đăng nhập...";
       case "success":
-        return "Login successful! Redirecting...";
+        return "Đăng nhập thành công! Đang chuyển hướng...";
       default:
         return "";
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-zinc-50 via-white to-zinc-100 p-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-white p-4 text-black dark:bg-black dark:text-white">
+      <Card className="w-full max-w-md border-2 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:border-white dark:bg-black dark:shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-primary/10">
-            <Wallet className="size-8 text-primary" />
+          <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-black text-white dark:bg-white dark:text-black">
+            <Wallet className="size-8" />
           </div>
-          <CardTitle className="font-bold text-3xl">Welcome Back</CardTitle>
-          <CardDescription>
-            Connect your wallet to login to SecureDocs
+          <CardTitle className="font-bold text-3xl">Chào mừng trở lại</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">
+            Kết nối ví của bạn để truy cập SecureDocs
           </CardDescription>
         </CardHeader>
 
@@ -223,9 +223,9 @@ export default function LoginPage() {
           {/* Wallet Address Display */}
           {wallet && (
             <div className="space-y-2">
-              <Label>Connected Wallet</Label>
-              <div className="rounded-lg border border-border bg-muted p-3">
-                <p className="truncate font-mono text-muted-foreground text-sm">
+              <Label>Ví đã kết nối</Label>
+              <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-700 dark:bg-zinc-900">
+                <p className="truncate font-mono text-sm text-gray-600 dark:text-gray-400">
                   {wallet}
                 </p>
               </div>
@@ -234,13 +234,13 @@ export default function LoginPage() {
 
           {/* Status Message */}
           {status !== "idle" && status !== "error" && (
-            <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <div className="flex items-center gap-3 rounded-lg border-2 border-black bg-gray-100 p-4 dark:border-white dark:bg-zinc-900">
               {status === "success" ? (
-                <CheckCircle className="size-5 text-green-600" />
+                <CheckCircle className="size-5 text-black dark:text-white" />
               ) : (
-                <Loader2 className="size-5 animate-spin text-primary" />
+                <Loader2 className="size-5 animate-spin text-black dark:text-white" />
               )}
-              <p className="font-medium text-blue-900 text-sm">
+              <p className="font-medium text-black text-sm dark:text-white">
                 {getStatusMessage()}
               </p>
             </div>
@@ -248,25 +248,25 @@ export default function LoginPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-              <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
+            <div className="flex items-start gap-3 rounded-lg border-2 border-red-500 bg-red-50 p-4 dark:bg-red-950/30">
+              <AlertCircle className="mt-0.5 size-5 shrink-0 text-red-600 dark:text-red-400" />
               <div className="flex-1">
-                <p className="font-medium text-red-900 text-sm">Error</p>
-                <p className="mt-1 text-red-700 text-sm">{error}</p>
+                <p className="font-bold text-red-900 text-sm dark:text-red-300">Lỗi</p>
+                <p className="mt-1 text-red-700 text-sm dark:text-red-400">{error}</p>
               </div>
             </div>
           )}
 
           {/* MetaMask Not Detected Warning */}
           {!hasMetaMask && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-600" />
+            <div className="flex items-start gap-3 rounded-lg border-2 border-black bg-gray-100 p-4 dark:border-white dark:bg-zinc-900">
+              <AlertCircle className="mt-0.5 size-5 shrink-0" />
               <div className="flex-1">
-                <p className="font-medium text-amber-900 text-sm">
-                  MetaMask Required
+                <p className="font-bold text-sm">
+                  Yêu cầu MetaMask
                 </p>
-                <p className="mt-1 text-amber-700 text-sm">
-                  Please install MetaMask extension to continue.
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  Vui lòng cài đặt tiện ích mở rộng MetaMask để tiếp tục.
                 </p>
               </div>
             </div>
@@ -274,7 +274,7 @@ export default function LoginPage() {
 
           {/* Connect Button */}
           <Button
-            className="w-full"
+            className="w-full border-2 border-black bg-black text-white hover:bg-gray-800 dark:border-white dark:bg-white dark:text-black dark:hover:bg-gray-200"
             disabled={!hasMetaMask || (status !== "idle" && status !== "error")}
             onClick={connectWallet}
             size="lg"
@@ -284,7 +284,7 @@ export default function LoginPage() {
                 return (
                   <>
                     <CheckCircle className="mr-2 size-5" />
-                    Success!
+                    Thành công!
                   </>
                 );
               }
@@ -292,7 +292,7 @@ export default function LoginPage() {
                 return (
                   <>
                     <Wallet className="mr-2 size-5" />
-                    Connect MetaMask
+                    Kết nối MetaMask
                   </>
                 );
               }
@@ -306,13 +306,13 @@ export default function LoginPage() {
           </Button>
 
           {/* Register Link */}
-          <div className="text-center text-muted-foreground text-sm">
-            Don't have an account?{" "}
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+            Chưa có tài khoản?{" "}
             <Link
-              className="font-medium text-primary hover:underline"
+              className="font-bold text-black underline hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
               href="/auth/register"
             >
-              Register here
+              Đăng ký tại đây
             </Link>
           </div>
         </CardContent>

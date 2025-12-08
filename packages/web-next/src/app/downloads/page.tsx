@@ -30,30 +30,30 @@ function getStatusBadge(status: string) {
     case "success":
       return (
         <Badge
-          className="flex w-fit items-center gap-1 bg-green-600"
-          variant="default"
+          className="flex w-fit items-center gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-900"
+          variant="outline"
         >
           <CheckCircle className="size-3" />
-          Success
+          Thành công
         </Badge>
       );
     case "failed":
       return (
-        <Badge className="flex w-fit items-center gap-1" variant="destructive">
+        <Badge className="flex w-fit items-center gap-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-900" variant="outline">
           <XCircle className="size-3" />
-          Failed
+          Thất bại
         </Badge>
       );
     case "interrupted":
       return (
-        <Badge className="flex w-fit items-center gap-1" variant="secondary">
+        <Badge className="flex w-fit items-center gap-1 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700" variant="outline">
           <Clock className="size-3" />
-          Interrupted
+          Gián đoạn
         </Badge>
       );
     default:
       return (
-        <Badge className="flex w-fit items-center gap-1" variant="outline">
+        <Badge className="flex w-fit items-center gap-1 text-gray-600 border-gray-200 dark:text-gray-400 dark:border-gray-800" variant="outline">
           {status}
         </Badge>
       );
@@ -81,47 +81,48 @@ function DownloadsTable({
 
   if (downloads.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <DownloadIcon className="mb-4 size-12 text-muted-foreground" />
-        <h3 className="mb-2 font-semibold text-lg">No downloads yet</h3>
-        <p className="text-muted-foreground text-sm">
-          Your download history will appear here once you start downloading
-          files.
+      <div className="flex flex-col items-center justify-center py-24 text-center border rounded-lg border-dashed border-gray-300 dark:border-neutral-800">
+        <DownloadIcon className="mb-4 size-12 text-gray-400 dark:text-gray-600" />
+        <h3 className="mb-2 font-bold text-lg text-black dark:text-white">Chưa có lượt tải xuống</h3>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
+          Lịch sử tải xuống của bạn sẽ xuất hiện ở đây khi bạn bắt đầu tải xuống tệp.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-xl border border-gray-200 dark:border-neutral-800 overflow-hidden">
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>File Name</TableHead>
-            <TableHead>Downloaded At</TableHead>
-            <TableHead>IP Address</TableHead>
-            <TableHead>Status</TableHead>
+        <TableHeader className="bg-gray-50 dark:bg-neutral-900">
+          <TableRow className="border-gray-200 dark:border-neutral-800 hover:bg-transparent">
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Tên tệp</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Thời gian tải</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Địa chỉ IP</TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Trạng thái</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {downloads.map((download) => (
-            <TableRow key={download.id}>
-              <TableCell className="font-medium">
+            <TableRow key={download.id} className="border-gray-100 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800/50">
+              <TableCell className="font-medium text-black dark:text-white">
                 <div className="flex items-center gap-2">
-                  {getFileIcon(download.file?.fileName)}
+                  <div className="rounded-lg bg-gray-100 dark:bg-neutral-800 p-2">
+                    {getFileIcon(download.file?.fileName)}
+                  </div>
                   <div className="flex flex-col">
-                    <span>{download.file?.fileName || "Unknown file"}</span>
+                    <span className="font-medium">{download.file?.fileName || "Unknown file"}</span>
                     {download.file && (
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-gray-500 text-xs mt-0.5">
                         {download.file.fileType}
                       </span>
                     )}
                   </div>
                 </div>
               </TableCell>
-              <TableCell>{formatDate(download.downloadTimestamp)}</TableCell>
+              <TableCell className="text-gray-600 dark:text-gray-400">{formatDate(download.downloadTimestamp)}</TableCell>
               <TableCell>
-                <code className="rounded bg-muted px-2 py-1 text-xs">
+                <code className="rounded border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-900 px-2 py-1 text-xs font-mono text-gray-600 dark:text-gray-400">
                   {download.ipAddress}
                 </code>
               </TableCell>
@@ -166,7 +167,7 @@ export default function DownloadsPage() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to load download history"
+          : "Không thể tải lịch sử tải xuống"
       );
     } finally {
       setLoading(false);
@@ -178,20 +179,20 @@ export default function DownloadsPage() {
   }, [fetchDownloads]);
 
   return (
-    <AppLayout breadcrumbs={["Downloads"]}>
-      <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <AppLayout breadcrumbs={["Tải xuống"]}>
+      <div className="space-y-6 p-4 md:p-6 lg:p-8 min-h-screen bg-white dark:bg-neutral-950 text-black dark:text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-bold text-3xl tracking-tight">
-              Download History
+            <h1 className="font-bold text-3xl tracking-tight text-black dark:text-white">
+              Lịch sử tải xuống
             </h1>
-            <p className="mt-2 text-muted-foreground">
-              Track all your file downloads and their status
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              Theo dõi tất cả các tệp tải xuống của bạn và trạng thái của chúng
             </p>
           </div>
           {(pagination?.total ?? 0) > 0 && (
-            <Badge className="px-4 py-2 text-base" variant="secondary">
-              Total Downloads: {pagination?.total ?? 0}
+            <Badge className="px-4 py-2 text-sm bg-gray-100 text-gray-900 dark:bg-neutral-800 dark:text-gray-100 border border-gray-200 dark:border-neutral-700" variant="secondary">
+              Tổng lượt tải: {pagination?.total ?? 0}
             </Badge>
           )}
         </div>
@@ -205,19 +206,21 @@ export default function DownloadsPage() {
               onClick={() => fetchDownloads(page - 1)}
               size="sm"
               variant="outline"
+              className="border-gray-200 dark:border-neutral-800"
             >
-              Previous
+              Trước
             </Button>
-            <span className="text-muted-foreground text-sm">
-              Page {page} of {pagination?.totalPages ?? 0}
+            <span className="text-gray-600 dark:text-gray-400 text-sm">
+              Trang {page} / {pagination?.totalPages ?? 0}
             </span>
             <Button
               disabled={page === pagination.totalPages}
               onClick={() => fetchDownloads(page + 1)}
               size="sm"
               variant="outline"
+              className="border-gray-200 dark:border-neutral-800"
             >
-              Next
+              Sau
             </Button>
           </div>
         )}
