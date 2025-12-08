@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import WagmiProviderWrapper from "@/components/wagmi-provider";
+import { SelectedFileProvider } from "@/contexts/SelectedFileContext";
+import { UnifiedSidebarProvider } from "@/contexts/UnifiedSidebarContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +37,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WagmiProviderWrapper>{children}</WagmiProviderWrapper>
+        <WagmiProviderWrapper>
+          <UnifiedSidebarProvider>
+            <SelectedFileProvider>{children}</SelectedFileProvider>
+          </UnifiedSidebarProvider>
+        </WagmiProviderWrapper>
         <Toaster />
       </body>
     </html>

@@ -129,7 +129,14 @@ export class AccessGrantService {
 
   async findAll(
     userId: string,
-    { fileId, granteeId, status, page = 1, limit = 20 }: QueryAccessGrantDto
+    {
+      fileId,
+      granteeId,
+      type,
+      status,
+      page = 1,
+      limit = 20,
+    }: QueryAccessGrantDto
   ) {
     const { skip, take } = getOffsetPagination(page, limit);
     const where: Prisma.AccessGrantWhereInput = {
@@ -145,6 +152,14 @@ export class AccessGrantService {
       where.status = {
         name: status,
       };
+    }
+
+    if (type) {
+      if (type === "given") {
+        where.grantorId = userId;
+      } else if (type === "received") {
+        where.granteeId = userId;
+      }
     }
 
     const [grants, total] = await Promise.all([

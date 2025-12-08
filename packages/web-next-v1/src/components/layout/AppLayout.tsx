@@ -1,13 +1,12 @@
 "use client";
 
-import { PanelRightOpen } from "lucide-react";
-import { useEffect, useState } from "react";
-import FileDetailsSidebar from "@/components/dashboard/FileDetailsSidebar";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import UnifiedDetailsSidebar from "@/components/dashboard/UnifiedDetailsSidebar";
 import {
   SelectedFileProvider,
   useSelectedFile,
 } from "@/contexts/SelectedFileContext";
+import { useUnifiedSidebar } from "@/contexts/UnifiedSidebarContext";
 import { useStorage } from "@/hooks/useStorage";
 import { useUser } from "@/hooks/useUser";
 import AppHeader from "./AppHeader";
@@ -37,21 +36,25 @@ function AppLayoutContent({
   } = useStorage();
   const { user, loading: userLoading } = useUser();
   const { selectedFile, setSelectedFile } = useSelectedFile();
-  const [isDetailsSidebarOpen, setIsDetailsSidebarOpen] = useState(false);
+  const {
+    isOpen: isSidebarOpen,
+    showFileDetails,
+    closeSidebar,
+  } = useUnifiedSidebar();
 
   // Auto open sidebar when file is selected
   useEffect(() => {
     if (selectedFile && showDetailsSidebar) {
-      setIsDetailsSidebarOpen(true);
+      showFileDetails(selectedFile);
     }
-  }, [selectedFile, showDetailsSidebar]);
+  }, [selectedFile, showDetailsSidebar, showFileDetails]);
 
-  // ESC key to deselect file and close sidebar
+  // ESC key to close sidebar and deselect file
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (isDetailsSidebarOpen) {
-          setIsDetailsSidebarOpen(false);
+        if (isSidebarOpen) {
+          closeSidebar();
         }
         if (selectedFile) {
           setSelectedFile(null);
@@ -61,7 +64,7 @@ function AppLayoutContent({
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isDetailsSidebarOpen, selectedFile, setSelectedFile]);
+  }, [isSidebarOpen, selectedFile, setSelectedFile, closeSidebar]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -96,45 +99,10 @@ function AppLayoutContent({
         <div className="flex flex-1 overflow-hidden">
           <main className="relative flex-1 overflow-y-auto">
             {children}
-
-            {/* Toggle Details Sidebar Button - Hidden when sidebar is open */}
-            {showDetailsSidebar && !isDetailsSidebarOpen && (
-              <Button
-                className="fixed right-4 bottom-4 z-50 size-12 shadow-lg md:size-14"
-                onClick={() => setIsDetailsSidebarOpen(true)}
-                size="icon"
-                title="Show file details"
-              >
-                <PanelRightOpen className="size-5 md:size-6" />
-              </Button>
-            )}
           </main>
 
-          {/* Right Sidebar - File Details - Responsive */}
-          {showDetailsSidebar && isDetailsSidebarOpen && (
-            <>
-              {/* Overlay for mobile/tablet - only on smaller screens */}
-              <button
-                aria-label="Close sidebar"
-                className="fixed inset-0 z-40 bg-black/50 xl:hidden"
-                onClick={() => setIsDetailsSidebarOpen(false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setIsDetailsSidebarOpen(false);
-                  }
-                }}
-                type="button"
-              />
-
-              {/* Sidebar - slide from right on mobile, inline on xl+ */}
-              <div className="fixed top-0 right-0 bottom-0 z-50 xl:relative xl:top-auto xl:bottom-auto xl:z-auto">
-                <FileDetailsSidebar
-                  isOpen={isDetailsSidebarOpen}
-                  onCloseAction={() => setIsDetailsSidebarOpen(false)}
-                />
-              </div>
-            </>
-          )}
+          {/* Right Sidebar - Unified Details - Responsive */}
+          {showDetailsSidebar && isSidebarOpen && <UnifiedDetailsSidebar />}
         </div>
       </div>
     </div>

@@ -26,8 +26,9 @@ export type CreateShareData = {
 };
 
 export type RevokeShareData = {
-  revokeReason?: string;
-  revokeSignature: string;
+  message: string; // SIWE message string
+  signature: string; // Signature of the message
+  reason?: string; // Optional reason for revoke
 };
 
 /**
