@@ -10,7 +10,6 @@ import {
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { Roles } from "src/common/decorators/roles.decorator";
 import { QueryUserDto } from "./dto/query-user.dto";
 import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
 import { UserService } from "./user.service";
@@ -44,7 +43,6 @@ export class UserController {
   }
 
   @Get()
-  @Roles("admin")
   async findAll(@Query() dto: QueryUserDto) {
     return await this.userService.findAll(dto);
   }
