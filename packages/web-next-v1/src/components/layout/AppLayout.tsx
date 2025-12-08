@@ -1,7 +1,6 @@
 "use client";
 
 import { PanelRightOpen } from "lucide-react";
-import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import FileDetailsSidebar from "@/components/dashboard/FileDetailsSidebar";
 import { Button } from "@/components/ui/button";
@@ -15,13 +14,17 @@ import AppHeader from "./AppHeader";
 import AppSidebar from "./AppSidebar";
 
 type AppLayoutProps = {
-  children: ReactNode;
+  children: React.ReactNode;
+  title?: string;
+  description?: string;
   breadcrumbs?: string[];
   showDetailsSidebar?: boolean;
 };
 
 function AppLayoutContent({
   children,
+  title,
+  description,
   breadcrumbs,
   showDetailsSidebar = true,
 }: AppLayoutProps) {
@@ -67,7 +70,14 @@ function AppLayoutContent({
         {/* normalize storage shape for sidebar */}
         <AppSidebar
           loading={storageLoading}
-          storage={storage ?? { storageUsed, storageLimit, usagePercentage }}
+          storage={
+            storage ?? {
+              storageUsed,
+              storageLimit,
+              storageRemaining: Math.max(storageLimit - storageUsed, 0),
+              usagePercentage,
+            }
+          }
         />
       </div>
 
@@ -76,7 +86,9 @@ function AppLayoutContent({
         {/* Header */}
         <AppHeader
           breadcrumbs={breadcrumbs}
+          description={description}
           loading={userLoading}
+          title={title}
           user={user}
         />
 
@@ -118,7 +130,7 @@ function AppLayoutContent({
               <div className="fixed top-0 right-0 bottom-0 z-50 xl:relative xl:top-auto xl:bottom-auto xl:z-auto">
                 <FileDetailsSidebar
                   isOpen={isDetailsSidebarOpen}
-                  onClose={() => setIsDetailsSidebarOpen(false)}
+                  onCloseAction={() => setIsDetailsSidebarOpen(false)}
                 />
               </div>
             </>

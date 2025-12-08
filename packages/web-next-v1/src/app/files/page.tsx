@@ -149,22 +149,12 @@ export default function FilesPage() {
   };
 
   return (
-    <AppLayout breadcrumbs={["My Files"]}>
+    <AppLayout
+      breadcrumbs={["My Files"]}
+      description="Upload and manage your encrypted files"
+      title="My Files"
+    >
       <div className="space-y-6 p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-bold text-2xl text-foreground">My Files</h2>
-            <p className="text-muted-foreground text-sm">
-              Upload and manage your encrypted files
-            </p>
-          </div>
-          <Button onClick={() => setIsUploadDialogOpen(true)} size="lg">
-            <Upload className="mr-2 size-5" />
-            Upload File
-          </Button>
-        </div>
-
         {/* Tabs */}
         <Tabs
           defaultValue="uploaded"
@@ -178,16 +168,13 @@ export default function FilesPage() {
               <TabsTrigger value="received">Received Files</TabsTrigger>
             </TabsList>
 
-            {/* Search */}
-            {/* <div className="relative w-64">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search files..."
-                type="search"
-              />
-            </div> */}
+            {/* Upload Button */}
+            <div className="flex items-center justify-end">
+              <Button onClick={() => setIsUploadDialogOpen(true)} size="lg">
+                <Upload className="mr-2 size-5" />
+                Upload File
+              </Button>
+            </div>
           </div>
 
           {/* Uploaded Files Tab */}
@@ -215,6 +202,8 @@ export default function FilesPage() {
                   files={files}
                   loading={loading}
                   onFileDeletedAction={fetchFiles}
+                  onShareAction={handleShareFile}
+                  sectionTitle="My Uploads"
                 />
 
                 {/* Pagination */}
@@ -267,6 +256,7 @@ export default function FilesPage() {
                   loading={loading}
                   onFileDeletedAction={fetchFiles}
                   onShareAction={handleShareFile}
+                  sectionTitle="Received Files"
                 />
 
                 {/* Pagination */}

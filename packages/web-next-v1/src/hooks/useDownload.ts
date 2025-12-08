@@ -1,7 +1,7 @@
 import { useState } from "react";
 import util from "tweetnacl-util";
 import { downloadApi } from "@/lib/api";
-import { KeyManager } from "@/lib/crypto/key-manager";
+import { decryptMessage, loadIdentity } from "@/lib/crypto/key-manager";
 
 export const useDownload = () => {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -34,7 +34,7 @@ export const useDownload = () => {
       };
 
       updateProgress("Loading user identity...");
-      const identity = await KeyManager.loadIdentity();
+      const identity = await loadIdentity();
       if (!identity) {
         throw new Error("Identity not found. Please login first.");
       }
@@ -76,7 +76,7 @@ export const useDownload = () => {
 
       // Step 4: Decrypt the File Key
       updateProgress("Decrypting file key...");
-      const decryptedKeyBase64 = KeyManager.decryptMessage(
+      const decryptedKeyBase64 = decryptMessage(
         encryptedKey,
         ownerPublicKey, // Sender's public key (owner or grantor)
         identity.privateKey // My private key

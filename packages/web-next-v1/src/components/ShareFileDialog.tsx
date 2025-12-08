@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useShare } from "@/hooks/useShare";
 import { fileApi } from "@/lib/api";
+import { searchUserByEmail } from "@/lib/userApi";
+import { isValidEmail } from "@/lib/validation";
 import type { File as FileType } from "@/types/api";
 
 type ShareFileDialogProps = {
@@ -32,16 +34,15 @@ export function ShareFileDialog({
   onCloseAction,
   onSuccessAction,
 }: ShareFileDialogProps) {
-  const [recipientAddress, setRecipientAddress] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
   const [recipientInfo, setRecipientInfo] = useState<{
     username: string;
     publicKey: string;
+    walletAddress: string;
   } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [expiresAt, setExpiresAt] = useState("");
-  const [contractAddress, setContractAddress] = useState(
-    process.env.NEXT_PUBLIC_FILE_SHARE_CONTRACT
-  );
+  const contractAddress = process.env.NEXT_PUBLIC_FILE_SHARE_CONTRACT || "";
   const [shareProgress, setShareProgress] = useState(0);
   const [shareStep, setShareStep] = useState("");
   const [shareSuccess, setShareSuccess] = useState(false);
@@ -49,42 +50,30 @@ export function ShareFileDialog({
   const { isSharing, shareFile } = useShare();
 
   const handleSearchRecipient = async () => {
-    if (!recipientAddress || recipientAddress.length !== 42) {
-      toast.error("Please enter a valid Ethereum address");
+    if (!isValidEmail(recipientEmail)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
     setIsSearching(true);
+    setRecipientInfo(null);
+
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:2412"}/api/users/wallet/${recipientAddress}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-          },
-        }
-      );
+      const authToken = localStorage.getItem("auth_token") || "";
+      const userData = await searchUserByEmail(recipientEmail, authToken);
 
-      if (!response.ok) {
-        throw new Error("User not found");
-      }
-
-      const data = await response.json();
-      setRecipientInfo({
-        username: data.data.username,
-        publicKey: data.data.publicKey,
-      });
-      toast.success("Recipient found!");
+      setRecipientInfo(userData);
+      toast.success(`Found: ${userData.username || recipientEmail}`);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to find recipient"
-      );
+      console.error("Search recipient error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to find recipient";
+      toast.error(errorMessage);
       setRecipientInfo(null);
     } finally {
       setIsSearching(false);
     }
   };
-
   const handleShare = async () => {
     if (!file) {
       return;
@@ -111,20 +100,21 @@ export function ShareFileDialog({
           encryptedKeyOwner: fileDetails.file.encryptedKeyOwner,
           cid: fileDetails.file.cid,
         },
-        recipientWalletAddress: recipientAddress,
+        recipientWalletAddress: recipientInfo.walletAddress,
         recipientPublicKey: recipientInfo.publicKey,
-        contractAddress: contractAddress ?? "",
+        contractAddress,
         expiresAt: expiresAt || undefined,
         onProgress: (step) => {
           setShareStep(step);
-          // Simplified progress tracking
+          // Optimized progress tracking (signature first, then fast operations)
           const progressMap: Record<string, number> = {
-            "Loading identity": 15,
-            Decrypting: 30,
-            Encrypting: 45,
-            blockchain: 60,
-            confirmation: 80,
-            "access grant": 95,
+            "Loading identity": 10,
+            "Preparing signature": 20,
+            "Waiting for signature": 30,
+            Decrypting: 50,
+            Encrypting: 65,
+            "Submitting to blockchain": 75,
+            "Saving access grant": 90,
             completed: 100,
           };
           const matchedKey = Object.keys(progressMap).find((key) =>
@@ -139,6 +129,13 @@ export function ShareFileDialog({
       setShareSuccess(true);
       toast.success("File shared successfully!");
 
+      // Show info about blockchain confirmation
+      setTimeout(() => {
+        toast.info("Blockchain confirmation is processing in the background", {
+          duration: 5000,
+        });
+      }, 1000);
+
       setTimeout(() => {
         onSuccessAction?.();
         handleClose();
@@ -151,7 +148,7 @@ export function ShareFileDialog({
   };
 
   const handleClose = () => {
-    setRecipientAddress("");
+    setRecipientEmail("");
     setRecipientInfo(null);
     setExpiresAt("");
     setShareProgress(0);
@@ -170,35 +167,23 @@ export function ShareFileDialog({
         <DialogHeader>
           <DialogTitle>Share File</DialogTitle>
           <DialogDescription>
-            Share "{file.fileName}" with another user securely
+            Share "{file.fileName}" with another user securely. You'll be asked
+            to sign a message to authorize this action.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Contract Address */}
+          {/* Recipient Email */}
           <div className="space-y-2">
-            <Label htmlFor="contractAddress">
-              Smart Contract Address (Optional)
-            </Label>
-            <Input
-              disabled={isSharing}
-              id="contractAddress"
-              onChange={(e) => setContractAddress(e.target.value)}
-              placeholder="0x..."
-              value={contractAddress}
-            />
-          </div>
-
-          {/* Recipient Wallet Address */}
-          <div className="space-y-2">
-            <Label htmlFor="recipientAddress">Recipient Wallet Address</Label>
+            <Label htmlFor="recipientEmail">Recipient Email Address</Label>
             <div className="flex gap-2">
               <Input
                 disabled={isSharing}
-                id="recipientAddress"
-                onChange={(e) => setRecipientAddress(e.target.value)}
-                placeholder="0x..."
-                value={recipientAddress}
+                id="recipientEmail"
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="user@example.com"
+                type="email"
+                value={recipientEmail}
               />
               <Button
                 disabled={isSharing || isSearching}
@@ -224,13 +209,16 @@ export function ShareFileDialog({
                       {recipientInfo.username}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      {recipientAddress}
+                      {recipientEmail}
+                    </p>
+                    <p className="truncate text-muted-foreground text-xs">
+                      {recipientInfo.walletAddress}
                     </p>
                   </div>
                   <Button
                     onClick={() => {
                       setRecipientInfo(null);
-                      setRecipientAddress("");
+                      setRecipientEmail("");
                     }}
                     size="icon"
                     variant="ghost"

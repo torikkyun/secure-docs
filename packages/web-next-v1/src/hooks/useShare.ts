@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { accessGrantApi } from "@/lib/api";
-import { KeyManager } from "@/lib/crypto/key-manager";
+import {
+  decryptMessage,
+  encryptMessage,
+  loadIdentity,
+} from "@/lib/crypto/key-manager";
 
 export const useShare = () => {
   const [isSharing, setIsSharing] = useState(false);
@@ -44,14 +48,44 @@ export const useShare = () => {
     try {
       // Step 1: Load owner's identity
       onProgress?.("Loading identity...");
-      const identity = await KeyManager.loadIdentity();
+      const identity = await loadIdentity();
       if (!identity) {
         throw new Error("Identity not found. Please login first.");
       }
 
-      // Step 2: Decrypt file key (encryptedKeyOwner)
+      // Step 2: Prepare SIWE-compliant message and sign FIRST (better UX)
+      onProgress?.("Preparing signature request...");
+      const domain = window.location.host;
+      const issuedAt = new Date().toISOString();
+      const nonce = Math.random().toString(36).substring(2, 15);
+
+      // SIWE-compliant message format
+      const siweMessage = `${domain} wants you to sign in with your Ethereum account:
+${identity.publicKey}
+
+Grant file access to: ${recipientWalletAddress}
+
+URI: ${window.location.origin}
+Version: 1
+Chain ID: 1
+Nonce: ${nonce}
+Issued At: ${issuedAt}
+Resources:
+- ipfs://${fileDetails.cid}`;
+
+      onProgress?.("Waiting for signature...");
+      const { signMessage } = await import("wagmi/actions");
+      const { config } = await import("@/lib/wagmi-config");
+      const signature = await signMessage(config, { message: siweMessage });
+
+      // Step 3: Decrypt file key
       onProgress?.("Decrypting file key...");
-      const aesKeyBase64 = KeyManager.decryptMessage(
+      console.log("Decrypting with:", {
+        encryptedKeyOwner: `${fileDetails.encryptedKeyOwner?.substring(0, 50)}...`,
+        ownerPublicKey: `${identity.publicKey?.substring(0, 50)}...`,
+      });
+
+      const aesKeyBase64 = decryptMessage(
         fileDetails.encryptedKeyOwner,
         identity.publicKey, // Sender is owner (self)
         identity.privateKey // Receiver is owner (self)
@@ -65,16 +99,26 @@ export const useShare = () => {
 
       // Step 3: Re-encrypt for recipient
       onProgress?.("Encrypting key for recipient...");
-      const encryptedKeyGrantee = KeyManager.encryptMessage(
+      console.log("Re-encrypting for recipient:", {
+        recipientPublicKey: `${recipientPublicKey?.substring(0, 50)}...`,
+        aesKeyLength: aesKeyBase64?.length,
+      });
+
+      const encryptedKeyGrantee = encryptMessage(
         aesKeyBase64,
         recipientPublicKey, // Recipient's public key
         identity.privateKey // Sender's private key (owner)
       );
 
-      // Step 4: Create blockchain transaction
-      onProgress?.("Creating blockchain transaction...");
+      if (!encryptedKeyGrantee) {
+        throw new Error(
+          "Failed to encrypt key for recipient. Invalid public key format."
+        );
+      }
+
+      // Step 4: Create blockchain transaction (non-blocking)
+      onProgress?.("Submitting to blockchain...");
       const { writeContract } = await import("wagmi/actions");
-      const { config } = await import("@/lib/wagmi-config");
       const { FileShareABI } = await import("@/abis/FileShareABI");
 
       const hash = await writeContract(config, {
@@ -84,13 +128,8 @@ export const useShare = () => {
         args: [recipientWalletAddress as `0x${string}`, fileDetails.cid],
       });
 
-      // Step 5: Wait for transaction confirmation
-      onProgress?.("Waiting for blockchain confirmation...");
-      const { waitForTransactionReceipt } = await import("wagmi/actions");
-      await waitForTransactionReceipt(config, { hash });
-
-      // Step 6: Create access grant in backend
-      onProgress?.("Creating access grant...");
+      // Step 5: Save to backend immediately (don't wait for confirmation)
+      onProgress?.("Saving access grant...");
       const backendToken = localStorage.getItem("auth_token");
       if (!backendToken) {
         throw new Error("Authentication token not found");
@@ -101,9 +140,19 @@ export const useShare = () => {
         granteeWalletAddress: recipientWalletAddress,
         encryptedKeyGrantee,
         txHash: hash,
-        signature: "", // TODO: Implement signature if needed
+        signature,
         expiresAt,
       });
+
+      // Fire-and-forget: Wait for confirmation in background
+      const { waitForTransactionReceipt } = await import("wagmi/actions");
+      waitForTransactionReceipt(config, { hash })
+        .then(() => {
+          console.log("✅ Blockchain confirmation received:", hash);
+        })
+        .catch((err) => {
+          console.error("⚠️ Blockchain confirmation failed:", err);
+        });
 
       onProgress?.("Share completed successfully!");
       setIsSharing(false);

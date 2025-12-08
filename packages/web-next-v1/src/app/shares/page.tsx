@@ -1,15 +1,11 @@
 "use client";
 
-import {
-  CheckCircle,
-  Clock,
-  ExternalLink,
-  FileText,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, Clock, ExternalLink, XCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import FileTable from "@/components/dashboard/FileTable";
 import AppLayout from "@/components/layout/AppLayout";
+import { ShareFileDialog } from "@/components/ShareFileDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,11 +26,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { accessGrantApi } from "@/lib/api";
+import { accessGrantApi, fileApi } from "@/lib/api";
 import { formatBytes, formatDate } from "@/lib/formatters";
-import type { AccessGrant } from "@/types/api";
-
-/* formatBytes and formatDate moved to `@/lib/formatters` */
+import getFileIcon from "@/lib/getFileIcon";
+import type { AccessGrant, File as FileType } from "@/types/api";
 
 function getStatusBadge(status: string, expiresAt: string | null) {
   if (status === "revoked") {
@@ -92,7 +87,7 @@ function SharesTable({
   if (grants.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <FileText className="mb-4 size-12 text-muted-foreground" />
+        {getFileIcon(null, "mb-4 size-12 text-muted-foreground")}
         <h3 className="mb-2 font-semibold text-lg">No shares found</h3>
         <p className="text-muted-foreground text-sm">
           {type === "given"
@@ -124,7 +119,7 @@ function SharesTable({
             <TableRow key={grant.id}>
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
-                  <FileText className="size-4 text-primary" />
+                  {getFileIcon(grant.file?.fileName, "size-4 text-primary")}
                   {grant.file?.fileName || "Unknown file"}
                 </div>
               </TableCell>
@@ -193,6 +188,8 @@ export default function SharesPage() {
   const [grantsReceived, setGrantsReceived] = useState<AccessGrant[]>([]);
   const [loadingGiven, setLoadingGiven] = useState(true);
   const [loadingReceived, setLoadingReceived] = useState(true);
+  const [myFiles, setMyFiles] = useState<FileType[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
 
   const fetchGrantsGiven = useCallback(async () => {
     try {
@@ -228,8 +225,41 @@ export default function SharesPage() {
     fetchGrantsReceived();
   }, [fetchGrantsGiven, fetchGrantsReceived]);
 
+  const fetchMyFiles = useCallback(async () => {
+    try {
+      setLoadingFiles(true);
+      const res = await fileApi.findAll({ limit: 100 });
+      setMyFiles(res.files || []);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load files"
+      );
+      setMyFiles([]);
+    } finally {
+      setLoadingFiles(false);
+    }
+  }, []);
+
+  // Fetch files when on 'given' tab
+  useEffect(() => {
+    if (activeTab === "given") {
+      fetchMyFiles();
+    }
+  }, [activeTab, fetchMyFiles]);
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingRevokeId, setPendingRevokeId] = useState<string | null>(null);
+
+  // Share flow state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedFileToShare, setSelectedFileToShare] =
+    useState<FileType | null>(null);
+
+  // Handler for share action from FileTable
+  const handleShareFromTable = (file: FileType) => {
+    setSelectedFileToShare(file);
+    setShareDialogOpen(true);
+  };
 
   const handleRevoke = (grantId: string) => {
     setPendingRevokeId(grantId);
@@ -257,18 +287,21 @@ export default function SharesPage() {
     }
   };
 
-  return (
-    <AppLayout breadcrumbs={["Shares"]}>
-      <div className="space-y-6 p-4 md:p-6 lg:p-8">
-        <div>
-          <h1 className="font-bold text-3xl tracking-tight">
-            Shares Management
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Manage files you've shared and files shared with you
-          </p>
-        </div>
+  const handleShareSuccess = () => {
+    // refresh grants after successful share
+    fetchGrantsGiven();
+  };
 
+  return (
+    <AppLayout
+      breadcrumbs={["Shares"]}
+      description="Manage files you've shared and files shared with you"
+      title="Shares Management"
+    >
+      <div className="space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-lg">Shares</h2>
+        </div>
         <Tabs
           onValueChange={(v) => setActiveTab(v as "given" | "received")}
           value={activeTab}
@@ -279,12 +312,28 @@ export default function SharesPage() {
           </TabsList>
 
           <TabsContent className="mt-6" value="given">
-            <SharesTable
-              grants={grantsGiven}
-              loading={loadingGiven}
-              onRevoke={handleRevoke}
-              type="given"
-            />
+            <div className="space-y-6">
+              <SharesTable
+                grants={grantsGiven}
+                loading={loadingGiven}
+                onRevoke={handleRevoke}
+                type="given"
+              />
+
+              {/* Show FileTable for easy sharing */}
+              <div className="rounded-lg border bg-card p-6">
+                <h3 className="mb-4 font-semibold text-lg">
+                  Quick Share - My Files
+                </h3>
+                <FileTable
+                  files={myFiles}
+                  loading={loadingFiles}
+                  onFileDeletedAction={fetchMyFiles}
+                  onShareAction={handleShareFromTable}
+                  sectionTitle=""
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent className="mt-6" value="received">
@@ -318,6 +367,14 @@ export default function SharesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Share dialog (per-file) */}
+        <ShareFileDialog
+          file={selectedFileToShare}
+          isOpen={shareDialogOpen}
+          onCloseAction={() => setShareDialogOpen(false)}
+          onSuccessAction={handleShareSuccess}
+        />
       </div>
     </AppLayout>
   );

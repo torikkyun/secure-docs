@@ -1,7 +1,6 @@
 "use client";
 
 import { Download, Eye, Share2, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +40,7 @@ type FileTableProps = {
   loading?: boolean;
   onFileDeletedAction?: () => void;
   onShareAction?: (file: FileType) => void;
+  sectionTitle?: string;
 };
 
 export default function FileTable({
@@ -48,8 +48,8 @@ export default function FileTable({
   loading = false,
   onFileDeletedAction,
   onShareAction,
+  sectionTitle = "Recent Files",
 }: FileTableProps) {
-  const router = useRouter();
   const { selectedFile, setSelectedFile, setIsLoading } = useSelectedFile();
   const { downloadFile } = useDownload();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -98,7 +98,7 @@ export default function FileTable({
     if (onShareAction) {
       onShareAction(file);
     } else {
-      router.push(`/files/${file.id}/share`);
+      toast.error("Share action is not available");
     }
   };
 
@@ -170,7 +170,9 @@ export default function FileTable({
       <div className="space-y-5">
         <div className="flex items-center justify-between border-border border-t pt-6">
           <div className="flex items-center gap-3">
-            <h3 className="font-bold text-foreground text-lg">Recent Files</h3>
+            <h3 className="font-bold text-foreground text-lg">
+              {sectionTitle}
+            </h3>
           </div>
         </div>
         <div className="flex items-center justify-center rounded-lg border border-border bg-card p-12">
@@ -185,7 +187,7 @@ export default function FileTable({
       {/* Section Header */}
       <div className="flex flex-col gap-3 border-border border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="font-bold text-foreground text-lg">Recent Files</h3>
+          <h3 className="font-bold text-foreground text-lg">{sectionTitle}</h3>
           <Badge className="bg-primary/20 text-primary" variant="secondary">
             {files.length} Total
           </Badge>

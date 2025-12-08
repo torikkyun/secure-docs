@@ -21,12 +21,15 @@ import { SearchBar } from "./SearchBar";
 
 type AppHeaderProps = {
   title?: string;
+  description?: string;
   breadcrumbs?: string[];
   user?: User | null;
   loading?: boolean;
 };
 
 export default function AppHeader({
+  title,
+  description,
   breadcrumbs = ["Dashboard"],
   user,
   loading,
@@ -140,25 +143,34 @@ export default function AppHeader({
   return (
     <div className="border-border border-b bg-card px-8 py-6">
       <div className="flex items-center justify-between gap-4">
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm">
-          {breadcrumbs.map((crumb, index) => (
-            <div className="flex items-center gap-2" key={crumb}>
-              {index > 0 && (
-                <ChevronRight className="size-4 text-muted-foreground" />
-              )}
-              <span
-                className={
-                  index === breadcrumbs.length - 1
-                    ? "font-semibold text-foreground"
-                    : "cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
-                }
-              >
-                {crumb}
-              </span>
-            </div>
-          ))}
-        </div>
+        {/* Title & Description or Breadcrumbs */}
+        {title ? (
+          <div>
+            <h2 className="font-bold text-2xl text-foreground">{title}</h2>
+            {description && (
+              <p className="text-muted-foreground text-sm">{description}</p>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm">
+            {breadcrumbs.map((crumb, index) => (
+              <div className="flex items-center gap-2" key={crumb}>
+                {index > 0 && (
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                )}
+                <span
+                  className={
+                    index === breadcrumbs.length - 1
+                      ? "font-semibold text-foreground"
+                      : "cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                  }
+                >
+                  {crumb}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* User Profile */}
         {localLoading && (

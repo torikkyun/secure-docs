@@ -4,7 +4,6 @@ import {
   Calendar,
   ChevronRight,
   Copy,
-  FileText,
   HardDrive,
   Hash,
   User,
@@ -16,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSelectedFile } from "@/contexts/SelectedFileContext";
 import { formatBytes, formatDate } from "@/lib/formatters";
+import getFileIcon from "@/lib/getFileIcon";
 
 type FileDetailsSidebarProps = {
   isOpen: boolean;
@@ -93,7 +93,7 @@ export default function FileDetailsSidebar({
           <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
             <div className="flex items-start gap-3">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <FileText className="size-6 text-primary" />
+                {getFileIcon(selectedFile.fileName, "size-6 text-primary")}
               </div>
               <div className="flex-1 overflow-hidden">
                 <h4 className="truncate font-semibold text-foreground">

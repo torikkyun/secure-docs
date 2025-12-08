@@ -178,23 +178,19 @@ export default function DownloadsPage() {
   }, [fetchDownloads]);
 
   return (
-    <AppLayout breadcrumbs={["Downloads"]}>
+    <AppLayout
+      breadcrumbs={["Downloads"]}
+      description="Track all your file downloads and their status"
+      title="Download History"
+    >
       <div className="space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-3xl tracking-tight">
-              Download History
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Track all your file downloads and their status
-            </p>
-          </div>
-          {(pagination?.total ?? 0) > 0 && (
+        {(pagination?.total ?? 0) > 0 && (
+          <div className="flex justify-end">
             <Badge className="px-4 py-2 text-base" variant="secondary">
               Total Downloads: {pagination?.total ?? 0}
             </Badge>
-          )}
-        </div>
+          </div>
+        )}
 
         <DownloadsTable downloads={downloads} loading={loading} />
 

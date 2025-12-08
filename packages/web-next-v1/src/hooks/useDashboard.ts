@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { dashboardApi } from "@/lib/api";
 import type { DashboardStats, File } from "@/types/api";
 
@@ -34,22 +34,22 @@ export function useRecentFiles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchFiles() {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await dashboardApi.getRecentFiles(8);
-        setFiles(response.files || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch files");
-      } finally {
-        setLoading(false);
-      }
+  const fetchFiles = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await dashboardApi.getRecentFiles(8);
+      setFiles(response.files || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch files");
+    } finally {
+      setLoading(false);
     }
-
-    fetchFiles();
   }, []);
 
-  return { files, loading, error, refetch: () => setFiles([]) };
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
+  return { files, loading, error, refetch: fetchFiles };
 }

@@ -188,4 +188,30 @@ export class UserService {
 
     return serializeBigInt(user);
   }
+
+  async findByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        walletAddress: true,
+        username: true,
+        email: true,
+        publicKey: true,
+        storageUsed: true,
+        storageLimit: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
+        role: { select: { name: true } },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException("Không tìm thấy người dùng với email này");
+    }
+
+    return serializeBigInt(user);
+  }
 }

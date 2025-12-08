@@ -1,7 +1,7 @@
 // Custom hooks for file upload functionality
 import { useState } from "react";
 import util from "tweetnacl-util";
-import { KeyManager } from "@/lib/crypto/key-manager";
+import { encryptMessage, loadIdentity } from "@/lib/crypto/key-manager";
 
 export const useUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -36,7 +36,7 @@ export const useUpload = () => {
       }
 
       // 1. Load User Identity (for encrypting the key)
-      const identity = await KeyManager.loadIdentity();
+      const identity = await loadIdentity();
       if (!identity) {
         throw new Error(
           "User identity not found. Please register/login first to generate keys."
@@ -57,8 +57,7 @@ export const useUpload = () => {
       // Calculate SHA-256 hash of original file
       const hashBuffer = await subtle.digest("SHA-256", fileArrayBuffer);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const fileHash =
-        "0x" + hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+      const fileHash = `0x${hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")}`;
 
       const iv = window.crypto.getRandomValues(new Uint8Array(12));
       const cipherBuffer = await subtle.encrypt(
@@ -105,7 +104,7 @@ export const useUpload = () => {
       const exportedKeyBase64 = util.encodeBase64(new Uint8Array(exportedKey));
 
       // Encrypt: Sender = Self, Recipient = Self
-      const encryptedKeyOwner = KeyManager.encryptMessage(
+      const encryptedKeyOwner = encryptMessage(
         exportedKeyBase64,
         identity.publicKey,
         identity.privateKey

@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStorage } from "@/hooks/useStorage";
 import { userApi } from "@/lib/api";
-import { KeyManager } from "@/lib/crypto/key-manager";
+import { recoverIdentity, saveIdentity } from "@/lib/crypto/key-manager";
 import { formatBytes } from "@/lib/formatters";
 import type { User } from "@/types/api";
 
@@ -113,8 +113,8 @@ export default function SettingsPage() {
     setRecoveryStatus({ type: null, message: "" });
 
     try {
-      const identity = await KeyManager.recoverIdentity(mnemonic.trim());
-      await KeyManager.saveIdentity(identity);
+      const identity = await recoverIdentity(mnemonic.trim());
+      await saveIdentity(identity);
 
       setRecoveryStatus({
         type: "success",
@@ -138,16 +138,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppLayout breadcrumbs={["Settings"]} showDetailsSidebar={false}>
+    <AppLayout
+      breadcrumbs={["Settings"]}
+      description="Manage your account settings and preferences"
+      showDetailsSidebar={false}
+      title="Settings"
+    >
       <div className="space-y-6 p-8">
-        {/* Header */}
-        <div>
-          <h1 className="font-bold text-3xl text-neutral-900">Settings</h1>
-          <p className="mt-2 text-neutral-600 text-sm">
-            Manage your account settings and preferences
-          </p>
-        </div>
-
         {/* Tabs */}
         <Tabs className="w-full" defaultValue="account">
           <TabsList className="grid w-full max-w-md grid-cols-2">

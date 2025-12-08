@@ -53,4 +53,9 @@ export class UserController {
   async getUserByWallet(@Param("address") address: string) {
     return await this.userService.findByWallet(address);
   }
+
+  @Get("email/:email")
+  async getUserByEmail(@Param("email") email: string) {
+    return await this.userService.findByEmail(email);
+  }
 }
