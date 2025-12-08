@@ -1,6 +1,7 @@
 import { parseArgs } from "node:util";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "generated/prisma/client";
+import { hashPassword } from "src/common/utils/hash.util";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -28,17 +29,27 @@ async function main() {
         create: { name: "user" },
       });
 
-      // Seed users
-      // await prisma.user.upsert({
-      //   where: { email: "admin@example.com" },
-      //   update: {},
-      //   create: {
-      //     email: "admin@gmail.com",
-      //     password: await bcrypt.hash("Thisisapassword123", 10),
-      //     name: "Admin",
-      //     rolename: adminRole.name,
-      //   },
-      // });
+      // Seed admin user (with dummy wallet/public key)
+      const adminRole = await prisma.role.findUnique({
+        where: { name: "admin" },
+      });
+
+      if (adminRole) {
+        await prisma.user.upsert({
+          where: { email: "admin@secure-docs.io" },
+          update: {},
+          create: {
+            email: "admin@secure-docs.io",
+            username: "admin",
+            walletAddress: "0x0000000000000000000000000000000000000000", // Dummy wallet
+            publicKey: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", // Dummy public key (base64, 32 bytes)
+            password: hashPassword("Admin@123"), // Default password
+            roleId: adminRole.id,
+            storageLimit: BigInt(10_737_418_240), // 10GB for admin
+            isActive: true,
+          },
+        });
+      }
 
       // Seed FileStatus
       await prisma.fileStatus.upsert({

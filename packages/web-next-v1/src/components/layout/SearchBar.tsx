@@ -18,6 +18,8 @@ type SearchBarProps = {
   searchInputRef: RefObject<HTMLInputElement | null>;
   setShowFiltersAction?: (show: boolean) => void;
   filterActive?: boolean;
+  hideFilters?: boolean;
+  onFileSelect?: (file: File) => void;
 };
 
 // Format bytes into human readable string
@@ -50,8 +52,21 @@ export function SearchBar({
   searchInputRef,
   setShowFiltersAction,
   filterActive = false,
+  hideFilters = false,
+  onFileSelect,
 }: SearchBarProps) {
   const router = useRouter();
+
+  const handleFileClick = (file: File) => {
+    setResultsOpenAction(false);
+    setQueryAction("");
+
+    if (onFileSelect) {
+      onFileSelect(file);
+    } else {
+      router.push(`/files/${file.id}`);
+    }
+  };
 
   return (
     <div className="relative">
@@ -69,7 +84,9 @@ export function SearchBar({
         {/* Clear Button (left of filter) */}
         {query && (
           <Button
-            className="absolute right-12 size-7 transition-all hover:bg-destructive/10 hover:text-destructive"
+            className={`absolute size-7 transition-all hover:bg-destructive/10 hover:text-destructive ${
+              hideFilters ? "right-3" : "right-12"
+            }`}
             onClick={() => {
               setQueryAction("");
               setResultsOpenAction(false);
@@ -84,7 +101,7 @@ export function SearchBar({
         )}
 
         {/* Filter Toggle Button (rightmost) */}
-        {typeof setShowFiltersAction === "function" && (
+        {!hideFilters && typeof setShowFiltersAction === "function" && (
           <Button
             className={`absolute right-3 size-7 transition-all ${
               filterActive ? "bg-primary/10 text-primary" : "hover:bg-accent/10"
@@ -117,7 +134,7 @@ export function SearchBar({
               ))}
             </div>
           )}
-          {!resultsLoading && query && results.length === 0 && (
+          {!resultsLoading && query && (!results || results.length === 0) && (
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-muted/50">
                 <FolderOpen className="size-8 text-muted-foreground" />
@@ -130,7 +147,7 @@ export function SearchBar({
               </p>
             </div>
           )}
-          {!resultsLoading && results.length > 0 && (
+          {!resultsLoading && results && results.length > 0 && (
             <div>
               <div className="border-border border-b bg-muted/30 px-4 py-2">
                 <p className="font-medium text-muted-foreground text-xs">
@@ -142,17 +159,11 @@ export function SearchBar({
                   <li key={r.id}>
                     <button
                       className="group flex w-full items-center gap-4 border-border border-b px-4 py-3 text-left transition-all last:border-b-0 hover:bg-accent/50"
-                      onClick={() => {
-                        setResultsOpenAction(false);
-                        setQueryAction("");
-                        router.push(`/files/${r.id}`);
-                      }}
+                      onClick={() => handleFileClick(r)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setResultsOpenAction(false);
-                          setQueryAction("");
-                          router.push(`/files/${r.id}`);
+                          handleFileClick(r);
                         }
                       }}
                       tabIndex={0}
@@ -185,7 +196,7 @@ export function SearchBar({
                   </li>
                 ))}
               </ul>
-              {results.length >= 10 && (
+              {results && results.length >= 10 && (
                 <div className="border-border border-t bg-muted/30 px-4 py-2 text-center">
                   <p className="text-muted-foreground text-xs">
                     Showing first 10 results. Refine your search for more

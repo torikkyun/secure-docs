@@ -144,6 +144,7 @@ export class FileService {
 
   async findAll(
     userId: string,
+    userRole: string,
     {
       page = 1,
       limit = 20,
@@ -160,15 +161,24 @@ export class FileService {
     if (search) {
       where.fileName = { contains: search, mode: "insensitive" };
     }
-    if (type === "uploaded") {
+
+    // Admin can search all files, regular users are restricted
+    const isAdmin = userRole === "admin";
+
+    if (type === "all" && isAdmin) {
+      // Admin searching all files - no owner/grantee filter
+    } else if (type === "uploaded") {
       where.ownerId = userId;
-    } else {
+    } else if (type === "received") {
       where.grants = {
         some: {
           granteeId: userId,
           status: { name: "active" },
         },
       };
+    } else if (!isAdmin) {
+      // Non-admin users cannot use type="all", default to uploaded
+      where.ownerId = userId;
     }
     const [files, total] = await Promise.all([
       this.prisma.file.findMany({
@@ -185,6 +195,13 @@ export class FileService {
           status: {
             select: {
               name: true,
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              username: true,
+              walletAddress: true,
             },
           },
         },

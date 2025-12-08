@@ -1,3 +1,5 @@
+import { getAuthToken, isTokenExpired, logout } from "@/lib/auth/token-manager";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 type FetchOptions = {
@@ -10,7 +12,23 @@ function getToken(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
-  return localStorage.getItem("auth_token");
+
+  const token = getAuthToken();
+
+  // Check if token is expired
+  if (token && isTokenExpired(token)) {
+    // Token expired, logout user
+    logout();
+
+    // Redirect to login if not already there
+    if (window.location.pathname !== "/auth/login") {
+      window.location.href = "/auth/login";
+    }
+
+    return null;
+  }
+
+  return token;
 }
 
 async function request<T>(
@@ -42,6 +60,20 @@ async function request<T>(
     const error = await response.json().catch(() => ({
       message: "Request failed",
     }));
+
+    // Handle 401 Unauthorized - token invalid, expired, or user banned
+    if (response.status === 401) {
+      logout();
+
+      // Redirect to login if not already there
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/auth/login"
+      ) {
+        window.location.href = "/auth/login";
+      }
+    }
+
     throw new Error(error.message || `HTTP ${response.status}`);
   }
 

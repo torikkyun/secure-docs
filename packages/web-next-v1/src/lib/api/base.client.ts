@@ -3,6 +3,8 @@
  * Single source of truth cho API configuration
  */
 
+import { getAuthToken, isTokenExpired, logout } from "@/lib/auth/token-manager";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export type ApiResponse<T> = {
@@ -38,13 +40,29 @@ type RequestOptions = {
 };
 
 /**
- * Get auth token từ localStorage
+ * Get auth token từ localStorage và validate expiry
  */
 function getToken(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
-  return localStorage.getItem("auth_token");
+
+  const token = getAuthToken();
+
+  // Check if token is expired
+  if (token && isTokenExpired(token)) {
+    // Token expired, logout user
+    logout();
+
+    // Redirect to login if not already there
+    if (window.location.pathname !== "/auth/login") {
+      window.location.href = "/auth/login";
+    }
+
+    return null;
+  }
+
+  return token;
 }
 
 /**
@@ -83,11 +101,26 @@ async function request<T>(
 
     // Handle errors
     if (!response.ok) {
-      throw new ApiClientError(
+      const apiError = new ApiClientError(
         response.status,
         result.message || `HTTP ${response.status}`,
         result.error
       );
+
+      // Handle 401 Unauthorized - token invalid, expired, or user banned
+      if (response.status === 401) {
+        logout();
+
+        // Redirect to login if not already there
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/auth/login"
+        ) {
+          window.location.href = "/auth/login";
+        }
+      }
+
+      throw apiError;
     }
 
     // Unwrap NestJS TransformInterceptor response

@@ -32,6 +32,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
       throw new UnauthorizedException("Token không hợp lệ hoặc đã hết hạn");
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên."
+      );
+    }
+
     if (!sessionId) {
       throw new UnauthorizedException(
         "Session không được tìm thấy trong token"

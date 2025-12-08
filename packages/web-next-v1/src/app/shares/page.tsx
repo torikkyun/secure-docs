@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, Clock, Eye, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Download, Eye, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { signMessage } from "wagmi/actions";
@@ -43,6 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSelectedFile } from "@/contexts/SelectedFileContext";
 import { useUnifiedSidebar } from "@/contexts/UnifiedSidebarContext";
+import { useDownload } from "@/hooks/useDownload";
 import { loadIdentity } from "@/lib/crypto/key-manager";
 import { formatBytes, formatDate } from "@/lib/formatters";
 import getFileIcon from "@/lib/getFileIcon";
@@ -88,6 +89,7 @@ function SharesTable({
   onRevoke,
   selectedGrant,
   onSelectGrant,
+  onDownload,
 }: {
   grants: AccessGrant[];
   loading: boolean;
@@ -95,6 +97,7 @@ function SharesTable({
   onRevoke?: (id: string) => void;
   selectedGrant: AccessGrant | null;
   onSelectGrant: (grant: AccessGrant) => void;
+  onDownload?: (grant: AccessGrant) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   if (loading) {
@@ -261,6 +264,19 @@ function SharesTable({
                             <Eye className="mr-2 size-4" />
                             View Details
                           </DropdownMenuItem>
+                          {type === "received" &&
+                            grant.status.name === "active" &&
+                            onDownload && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDownload(grant);
+                                }}
+                              >
+                                <Download className="mr-2 size-4" />
+                                Download
+                              </DropdownMenuItem>
+                            )}
                           {type === "given" &&
                             grant.status.name === "active" &&
                             onRevoke && (
@@ -288,6 +304,14 @@ function SharesTable({
                     <Eye className="mr-2 size-4" />
                     View Details
                   </ContextMenuItem>
+                  {type === "received" &&
+                    grant.status.name === "active" &&
+                    onDownload && (
+                      <ContextMenuItem onClick={() => onDownload(grant)}>
+                        <Download className="mr-2 size-4" />
+                        Download
+                      </ContextMenuItem>
+                    )}
                   {type === "given" &&
                     grant.status.name === "active" &&
                     onRevoke && (
@@ -322,6 +346,7 @@ export default function SharesPage() {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { setSelectedFile } = useSelectedFile();
+  const { downloadFile } = useDownload();
   const {
     content,
     isOpen: sidebarOpen,
@@ -528,6 +553,31 @@ Resources:
     fetchGrantsGiven();
   };
 
+  const handleDownloadFile = async (grant: AccessGrant) => {
+    if (!grant.file) {
+      toast.error("File information not available");
+      return;
+    }
+
+    const loadingToast = toast.loading(
+      `Preparing ${grant.file.fileName} for download`
+    );
+
+    try {
+      await downloadFile(grant.file.id, (step) => {
+        toast.loading(step, { id: loadingToast });
+      });
+
+      toast.success(`${grant.file.fileName} downloaded successfully`, {
+        id: loadingToast,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Download failed", {
+        id: loadingToast,
+      });
+    }
+  };
+
   return (
     <AppLayout
       breadcrumbs={["Shares"]}
@@ -579,6 +629,7 @@ Resources:
               <SharesTable
                 grants={grantsReceived}
                 loading={loadingReceived}
+                onDownload={handleDownloadFile}
                 onSelectGrant={handleSelectGrant}
                 selectedGrant={selectedGrant}
                 type="received"

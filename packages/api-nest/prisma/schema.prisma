@@ -20,6 +20,7 @@ model User {
   username        String        @map("username") @db.VarChar(100)
   email           String        @unique @map("email") @db.VarChar(255)
   publicKey       String        @map("public_key") @db.Text
+  password        String?       @map("password") @db.VarChar(255)
   storageUsed     BigInt        @default(0) @map("storage_used")
   storageLimit    BigInt        @default(1073741824) @map("storage_limit")
   isActive        Boolean       @default(true) @map("is_active")

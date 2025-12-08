@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
@@ -11,9 +12,11 @@ import { ethers } from "ethers";
 import { Request } from "express";
 import { Role } from "generated/prisma/client";
 import { SiweMessage } from "siwe";
+import { comparePassword } from "src/common/utils/hash.util";
 import extractIpAndUserAgent from "src/common/utils/request.util";
 import { PrismaService } from "src/database/prisma.service";
 import { AuditService } from "../audit/audit.service";
+import { AdminLoginDto } from "./dto/admin-login.dto";
 import { LoginWalletDto } from "./dto/login-wallet.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { NonceService } from "./nonce.service";
@@ -119,6 +122,11 @@ export class AuthService {
     if (!user) {
       throw new ConflictException("Địa chỉ ví chưa được đăng ký");
     }
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên."
+      );
+    }
     const jwtConfig = this.config.get("jwt");
     const expiresIn = jwtConfig.expiration;
     const expiresMs = this.parseExpirationToMs(String(expiresIn));
@@ -195,6 +203,11 @@ export class AuthService {
       default:
         return value * 1000;
     }
+  }
+
+  private calculateExpiration(exp: string): Date {
+    const ms = this.parseExpirationToMs(exp);
+    return new Date(Date.now() + ms);
   }
 
   private async verifySiweMessage(
@@ -325,5 +338,89 @@ export class AuthService {
         expiresAt: new Date(),
       },
     });
+  }
+
+  async adminLogin({ email, password }: AdminLoginDto, req: Request) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { role: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException("Email hoặc mật khẩu không đúng");
+    }
+
+    if (!user.password) {
+      throw new UnauthorizedException(
+        "Tài khoản này không hỗ trợ đăng nhập bằng mật khẩu"
+      );
+    }
+
+    if (user.role.name !== "admin") {
+      throw new UnauthorizedException("Chỉ admin mới có thể đăng nhập");
+    }
+
+    const isPasswordValid = comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Email hoặc mật khẩu không đúng");
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException("Tài khoản đã bị vô hiệu hóa");
+    }
+
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+    const expiresIn = this.config.get("jwt.expiresIn") ?? "24h";
+    const expiresAt = this.calculateExpiration(expiresIn);
+    const sessionId = randomUUID();
+
+    const session = await this.prisma.userSession.create({
+      data: {
+        id: sessionId,
+        userId: user.id,
+        sessionToken: "",
+        walletAddress: user.walletAddress,
+        signature: "",
+        ipAddress,
+        userAgent,
+        expiresAt,
+      },
+    });
+
+    const token = this.jwtService.sign({
+      id: user.id,
+      role: user.role.name,
+      sessionId: session.id,
+    });
+
+    await this.prisma.userSession.update({
+      where: { id: session.id },
+      data: { sessionToken: token },
+    });
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
+    await this.auditService.log({
+      userId: user.id,
+      eventType: "USER_LOGIN",
+      eventData: { method: "admin_password" },
+      ipAddress,
+      userAgent,
+    });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role.name,
+      },
+      token,
+      expiresIn,
+      expiresAt: expiresAt.toISOString(),
+    };
   }
 }

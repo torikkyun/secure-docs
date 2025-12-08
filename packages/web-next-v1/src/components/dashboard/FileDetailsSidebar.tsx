@@ -22,7 +22,14 @@ type FileDetailsSidebarProps = {
   onCloseAction?: () => void;
 };
 
-function truncateHash(hash: string, start = 8, end = 8): string {
+function truncateHash(
+  hash: string | undefined | null,
+  start = 8,
+  end = 8
+): string {
+  if (!hash) {
+    return "N/A";
+  }
   if (hash.length <= start + end) {
     return hash;
   }
@@ -108,7 +115,7 @@ export default function FileDetailsSidebar({
               className="bg-green-500/10 text-green-600"
               variant="secondary"
             >
-              {selectedFile.status.name}
+              {selectedFile.status?.name || "Unknown"}
             </Badge>
           </div>
 
@@ -149,11 +156,13 @@ export default function FileDetailsSidebar({
                 <div className="flex-1 overflow-hidden">
                   <p className="text-foreground text-sm">Owner</p>
                   <p className="truncate text-muted-foreground text-xs">
-                    {selectedFile.owner.username}
+                    {selectedFile.owner?.username || "Unknown"}
                   </p>
-                  <p className="truncate text-muted-foreground text-xs">
-                    {truncateHash(selectedFile.owner.walletAddress)}
-                  </p>
+                  {selectedFile.owner?.walletAddress && (
+                    <p className="truncate text-muted-foreground text-xs">
+                      {truncateHash(selectedFile.owner.walletAddress)}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

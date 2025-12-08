@@ -4,6 +4,7 @@ import { Request } from "express";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { Public } from "src/common/decorators/public.decorator";
 import { AuthService } from "./auth.service";
+import { AdminLoginDto } from "./dto/admin-login.dto";
 import { LoginWalletDto } from "./dto/login-wallet.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { NonceService } from "./nonce.service";
@@ -53,5 +54,11 @@ export class AuthController {
       await this.authService.logoutBySessionId(sessionId, req);
       return { message: "Đăng xuất thành công" };
     }
+  }
+
+  @Post("admin/login")
+  @Public()
+  adminLogin(@Body() dto: AdminLoginDto, @Req() req: Request) {
+    return this.authService.adminLogin(dto, req);
   }
 }

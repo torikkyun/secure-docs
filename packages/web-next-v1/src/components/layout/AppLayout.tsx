@@ -9,6 +9,7 @@ import {
 import { useUnifiedSidebar } from "@/contexts/UnifiedSidebarContext";
 import { useStorage } from "@/hooks/useStorage";
 import { useUser } from "@/hooks/useUser";
+import AdminSidebar from "./AdminSidebar";
 import AppHeader from "./AppHeader";
 import AppSidebar from "./AppSidebar";
 
@@ -18,6 +19,7 @@ type AppLayoutProps = {
   description?: string;
   breadcrumbs?: string[];
   showDetailsSidebar?: boolean;
+  variant?: "user" | "admin"; // Add variant to switch between user and admin layouts
 };
 
 function AppLayoutContent({
@@ -26,6 +28,7 @@ function AppLayoutContent({
   description,
   breadcrumbs,
   showDetailsSidebar = true,
+  variant = "user", // Default to user layout
 }: AppLayoutProps) {
   const {
     storage,
@@ -70,18 +73,22 @@ function AppLayoutContent({
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
       <div className="hidden lg:block">
-        {/* normalize storage shape for sidebar */}
-        <AppSidebar
-          loading={storageLoading}
-          storage={
-            storage ?? {
-              storageUsed,
-              storageLimit,
-              storageRemaining: Math.max(storageLimit - storageUsed, 0),
-              usagePercentage,
+        {variant === "admin" ? (
+          <AdminSidebar />
+        ) : (
+          /* normalize storage shape for sidebar */
+          <AppSidebar
+            loading={storageLoading}
+            storage={
+              storage ?? {
+                storageUsed,
+                storageLimit,
+                storageRemaining: Math.max(storageLimit - storageUsed, 0),
+                usagePercentage,
+              }
             }
-          }
-        />
+          />
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -97,9 +104,7 @@ function AppLayoutContent({
 
         {/* Scrollable Content with Right Sidebar */}
         <div className="flex flex-1 overflow-hidden">
-          <main className="relative flex-1 overflow-y-auto">
-            {children}
-          </main>
+          <main className="relative flex-1 overflow-y-auto">{children}</main>
 
           {/* Right Sidebar - Unified Details - Responsive */}
           {showDetailsSidebar && isSidebarOpen && <UnifiedDetailsSidebar />}

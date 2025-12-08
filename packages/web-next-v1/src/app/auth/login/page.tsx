@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { setAuthToken } from "@/lib/auth/token-manager";
 
 type Status =
   | "idle"
@@ -163,18 +164,23 @@ export default function LoginPage() {
         }
       );
 
-      const data = (await res.json()).data as {
+      const responseData = await res.json();
+      const data = responseData.data as {
         token?: string;
         message?: string;
       };
 
       if (!res.ok) {
+        // Check if user is banned (status 401 with specific message)
+        if (res.status === 401 && responseData.message) {
+          throw new Error(responseData.message);
+        }
         throw new Error(data.message || "Login failed");
       }
 
-      // Save token to localStorage
+      // Save token to localStorage using token manager
       if (data.token) {
-        localStorage.setItem("auth_token", data.token);
+        setAuthToken(data.token);
       }
 
       setStatus("success");

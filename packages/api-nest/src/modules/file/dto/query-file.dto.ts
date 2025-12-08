@@ -5,10 +5,10 @@ import { OffsetPaginationQueryDto } from "src/common/dto/offset-pagination-query
 export class QueryFileDto extends OffsetPaginationQueryDto {
   @IsOptional()
   @ApiPropertyOptional({
-    enum: ["uploaded", "received"],
+    enum: ["uploaded", "received", "all"],
     default: "uploaded",
   })
-  type?: "uploaded" | "received";
+  type?: "uploaded" | "received" | "all";
 
   @IsOptional()
   @ApiPropertyOptional()

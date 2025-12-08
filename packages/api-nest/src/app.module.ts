@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD, Reflector } from "@nestjs/core";
+import { AdminGuard } from "./common/guards/admin.guard";
 import { JwtGuard } from "./common/guards/jwt.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import configuration from "./config/configuration";
@@ -13,13 +14,14 @@ import { RedisModule } from "./infrastructure/cache/redis.module";
 import { HealthModule } from "./infrastructure/health/health.module";
 import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { AccessGrantModule } from "./modules/access-grant/access-grant.module";
+import { AdminModule } from "./modules/admin/admin.module";
 import { AuditModule } from "./modules/audit/audit.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { DownloadModule } from "./modules/download/download.module";
 import { FileModule } from "./modules/file/file.module";
 import { UserModule } from "./modules/user/user.module";
 
-const guards = [JwtGuard, RolesGuard];
+const guards = [JwtGuard, RolesGuard, AdminGuard];
 
 @Module({
   imports: [
@@ -36,6 +38,7 @@ const guards = [JwtGuard, RolesGuard];
     DownloadModule,
     AccessGrantModule,
     AuditModule,
+    AdminModule,
   ],
   providers: [
     ...guards.map((Guard) => ({

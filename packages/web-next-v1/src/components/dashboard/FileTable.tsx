@@ -41,6 +41,7 @@ type FileTableProps = {
   onFileDeletedAction?: () => void;
   onShareAction?: (file: FileType) => void;
   sectionTitle?: string;
+  isReceivedFiles?: boolean;
 };
 
 export default function FileTable({
@@ -49,6 +50,7 @@ export default function FileTable({
   onFileDeletedAction,
   onShareAction,
   sectionTitle = "Recent Files",
+  isReceivedFiles = false,
 }: FileTableProps) {
   const { selectedFile, setSelectedFile, setIsLoading } = useSelectedFile();
   const { downloadFile } = useDownload();
@@ -291,15 +293,17 @@ export default function FileTable({
                             <Eye className="mr-2 size-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShareFile(file);
-                            }}
-                          >
-                            <Share2 className="mr-2 size-4" />
-                            Share File
-                          </DropdownMenuItem>
+                          {!isReceivedFiles && (
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShareFile(file);
+                              }}
+                            >
+                              <Share2 className="mr-2 size-4" />
+                              Share File
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
@@ -309,17 +313,21 @@ export default function FileTable({
                             <Download className="mr-2 size-4" />
                             Download
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteFile(file);
-                            }}
-                          >
-                            <Trash2 className="mr-2 size-4" />
-                            Delete
-                          </DropdownMenuItem>
+                          {!isReceivedFiles && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteFile(file);
+                                }}
+                              >
+                                <Trash2 className="mr-2 size-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -330,22 +338,28 @@ export default function FileTable({
                     <Eye className="mr-2 size-4" />
                     View Details
                   </ContextMenuItem>
-                  <ContextMenuItem onClick={() => handleShareFile(file)}>
-                    <Share2 className="mr-2 size-4" />
-                    Share File
-                  </ContextMenuItem>
+                  {!isReceivedFiles && (
+                    <ContextMenuItem onClick={() => handleShareFile(file)}>
+                      <Share2 className="mr-2 size-4" />
+                      Share File
+                    </ContextMenuItem>
+                  )}
                   <ContextMenuItem onClick={() => handleDownloadFile(file)}>
                     <Download className="mr-2 size-4" />
                     Download
                   </ContextMenuItem>
-                  <ContextMenuSeparator />
-                  <ContextMenuItem
-                    className="text-red-600 focus:text-red-600"
-                    onClick={() => handleDeleteFile(file)}
-                  >
-                    <Trash2 className="mr-2 size-4" />
-                    Delete
-                  </ContextMenuItem>
+                  {!isReceivedFiles && (
+                    <>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem
+                        className="text-red-600 focus:text-red-600"
+                        onClick={() => handleDeleteFile(file)}
+                      >
+                        <Trash2 className="mr-2 size-4" />
+                        Delete
+                      </ContextMenuItem>
+                    </>
+                  )}
                 </ContextMenuContent>
               </ContextMenu>
             ))}

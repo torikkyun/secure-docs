@@ -5,10 +5,14 @@ import FileTable from "@/components/dashboard/FileTable";
 import StatsCards from "@/components/dashboard/StatsCards";
 import AppLayout from "@/components/layout/AppLayout";
 import { ShareFileDialog } from "@/components/ShareFileDialog";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useDashboardStats, useRecentFiles } from "@/hooks/useDashboard";
 import type { File as FileType } from "@/types/api";
 
 export default function DashboardPage() {
+  // Protect route - redirect to login if not authenticated
+  useAuthGuard();
+
   const { stats, loading: statsLoading } = useDashboardStats();
   const { files, loading: filesLoading, refetch } = useRecentFiles();
 

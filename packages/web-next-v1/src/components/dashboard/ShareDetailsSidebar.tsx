@@ -25,7 +25,14 @@ type ShareDetailsSidebarProps = {
   onCloseAction?: () => void;
 };
 
-function truncateHash(hash: string, start = 8, end = 8): string {
+function truncateHash(
+  hash: string | undefined | null,
+  start = 8,
+  end = 8
+): string {
+  if (!hash) {
+    return "N/A";
+  }
   if (hash.length <= start + end) {
     return hash;
   }

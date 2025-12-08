@@ -50,8 +50,11 @@ export class FileController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: { id: string }, @Query() dto: QueryFileDto) {
-    return this.filesService.findAll(user.id, dto);
+  findAll(
+    @CurrentUser() user: { id: string; role: { name: string } },
+    @Query() dto: QueryFileDto
+  ) {
+    return this.filesService.findAll(user.id, user.role.name, dto);
   }
 
   @Get(":id")

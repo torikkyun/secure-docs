@@ -253,6 +253,7 @@ export default function FilesPage() {
               <div className="space-y-4">
                 <FileTable
                   files={files}
+                  isReceivedFiles={true}
                   loading={loading}
                   onFileDeletedAction={fetchFiles}
                   onShareAction={handleShareFile}

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSelectedFile } from "@/contexts/SelectedFileContext";
 import { fileApi, userApi } from "@/lib/api";
 import type { File, User } from "@/types/api";
 import { FilterPanel } from "./FilterPanel";
@@ -44,15 +45,43 @@ export default function AppHeader({
   const [resultsOpen, setResultsOpen] = useState(false);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [filterType, setFilterType] = useState<"all" | "uploaded" | "received">(
-    "uploaded"
-  );
+
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { setSelectedFile, setIsLoading } = useSelectedFile();
   const initials = localUser?.username
     ? localUser.username.substring(0, 2).toUpperCase()
     : "";
   const avatarUrl = (localUser as unknown as { avatarUrl?: string })?.avatarUrl;
+
+  // Check if user is admin to set default filter
+  const isAdmin = localUser?.role?.name === "admin";
+
+  // Admin defaults to "all", regular users default to "uploaded"
+  const [filterType, setFilterType] = useState<"all" | "uploaded" | "received">(
+    isAdmin ? "all" : "uploaded"
+  );
+
+  console.log("Is Admin:", isAdmin, "Filter Type:", filterType);
+
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      try {
+        setIsLoading(true);
+        // Fetch full file details including fileHash, cid, encryptedKeyOwner
+        const response = await fileApi.findOne(file.id);
+        const fullFileDetails = response?.file || file;
+        setSelectedFile(fullFileDetails);
+      } catch (error) {
+        console.error("Error fetching file details:", error);
+        // Fallback to basic file info from search
+        setSelectedFile(file);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setSelectedFile, setIsLoading]
+  );
 
   const performSearch = useCallback(
     (searchQuery: string, overrideType?: "all" | "uploaded" | "received") => {
@@ -64,14 +93,21 @@ export default function AppHeader({
         search: searchQuery,
       };
       const typeToUse = overrideType ?? filterType;
-      if (typeToUse && typeToUse !== "all") {
+
+      // Admin can use any type (including "all"), regular users restricted to uploaded/received
+      if (isAdmin) {
         params.type = typeToUse;
+      } else {
+        // Regular users cannot use "all", fallback to "uploaded"
+        params.type = typeToUse !== "all" ? typeToUse : "uploaded";
       }
+
+      console.log("Search params:", params, "typeToUse:", typeToUse);
 
       return fileApi
         .findAll(params)
         .then((res) => {
-          const items = res.files || [];
+          const items = Array.isArray(res?.files) ? res.files : [];
           setResults(items);
           setResultsOpen(true);
         })
@@ -82,7 +118,7 @@ export default function AppHeader({
         })
         .finally(() => setResultsLoading(false));
     },
-    [filterType]
+    [filterType, isAdmin]
   );
 
   useEffect(() => {
@@ -116,6 +152,18 @@ export default function AppHeader({
       mounted = false;
     };
   }, [user]);
+
+  // Update filterType when admin status changes
+  useEffect(() => {
+    if (!localLoading && localUser) {
+      const shouldBeAdmin = localUser.role?.name === "admin";
+      if (shouldBeAdmin && filterType !== "all") {
+        setFilterType("all");
+      } else if (!shouldBeAdmin && filterType === "all") {
+        setFilterType("uploaded");
+      }
+    }
+  }, [localUser, localLoading, filterType]);
 
   useEffect(() => {
     // debounce search
@@ -249,13 +297,14 @@ export default function AppHeader({
               <DropdownMenuItem
                 className="cursor-pointer text-destructive focus:text-destructive"
                 onClick={() => {
-                  // Clear token and redirect to login
+                  // Clear token and redirect to appropriate login page
                   try {
                     localStorage.removeItem("auth_token");
                   } catch {
                     /* ignore */
                   }
-                  router.push("/auth/login");
+                  // Check if user is admin, redirect to admin login page
+                  router.push(isAdmin ? "/admin/login" : "/auth/login");
                 }}
               >
                 <LogOut className="mr-2 size-4" />
@@ -270,6 +319,8 @@ export default function AppHeader({
       <div className="relative mt-4">
         <SearchBar
           filterActive={filterType !== "all"}
+          hideFilters={isAdmin}
+          onFileSelect={handleFileSelect}
           query={query}
           results={results}
           resultsLoading={resultsLoading}
@@ -277,27 +328,29 @@ export default function AppHeader({
           searchInputRef={searchInputRef}
           setQueryAction={setQuery}
           setResultsOpenAction={setResultsOpen}
-          setShowFiltersAction={setShowFilters}
+          setShowFiltersAction={isAdmin ? undefined : setShowFilters}
         />
-        <FilterPanel
-          filterType={filterType}
-          onApplyAction={(applied) => {
-            if (applied) {
-              setFilterType(applied);
-            }
-            if (query) {
-              performSearch(query, applied);
-            }
-            setShowFilters(false);
-          }}
-          onResetAction={() => {
-            // Reset only closes the panel and clears the panel selection.
-            // The actual filter in the parent is only updated when Apply is clicked.
-          }}
-          setFilterTypeAction={setFilterType}
-          setShowFiltersAction={setShowFilters}
-          showFilters={showFilters}
-        />
+        {!isAdmin && (
+          <FilterPanel
+            filterType={filterType}
+            onApplyAction={(applied) => {
+              if (applied) {
+                setFilterType(applied);
+              }
+              if (query) {
+                performSearch(query, applied);
+              }
+              setShowFilters(false);
+            }}
+            onResetAction={() => {
+              // Reset only closes the panel and clears the panel selection.
+              // The actual filter in the parent is only updated when Apply is clicked.
+            }}
+            setFilterTypeAction={setFilterType}
+            setShowFiltersAction={setShowFilters}
+            showFilters={showFilters}
+          />
+        )}
       </div>
     </div>
   );
