@@ -53,15 +53,6 @@ export function useStorage() {
   const storageAvailable =
     storage && storageLimit - storageUsed >= 0 ? storageLimit - storageUsed : 0;
 
-  console.log("useStorage:", {
-    storage,
-    storageUsed,
-    storageLimit,
-    usagePercentage,
-    storageAvailable,
-    isLoading,
-    error,
-  });
   return {
     storage,
     storageUsed,

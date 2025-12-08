@@ -82,29 +82,7 @@ export default function AppHeader({
   }, [query, performSearch]);
 
   return (
-    <div className="border-gray-200 dark:border-neutral-800 border-b bg-white dark:bg-neutral-900 px-8 py-6">
-      <div className="flex items-center justify-between gap-4">
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-sm">
-          {breadcrumbs.map((crumb, index) => (
-            <div className="flex items-center gap-2" key={crumb}>
-              {index > 0 && (
-                <ChevronRight className="size-4 text-gray-400 dark:text-gray-600" />
-              )}
-              <span
-                className={
-                  index === breadcrumbs.length - 1
-                    ? "font-semibold text-black dark:text-white"
-                    : "cursor-pointer text-gray-600 dark:text-gray-400 transition-colors hover:text-black dark:hover:text-white"
-                }
-              >
-                {crumb}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
+    <div className="border-gray-200 dark:border-neutral-800 border-b bg-white dark:bg-neutral-900 p-3">
       {/* Search Bar with Filters */}
       <div className="relative mt-4">
         <SearchBar

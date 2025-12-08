@@ -57,11 +57,11 @@ export function SearchBar({
     <div className="relative">
       {/* Search Input */}
       <div className="relative flex items-center">
-        <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 z-10 size-5 text-muted-foreground transition-colors" />
+        <Search className="pointer-events-none absolute top-1/2 left-4 z-10 size-5 text-gray-600 dark:text-gray-400 transition-colors -translate-y-1/2" />
         <input
-          className="peer h-12 w-full rounded-xl border-2 border-input bg-background/50 pr-14 pl-12 text-sm shadow-sm backdrop-blur-sm transition-all placeholder:text-muted-foreground hover:border-muted-foreground/50 focus:border-primary focus:bg-background focus:shadow-md focus:outline-none"
+          className="peer h-12 w-full rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 pr-14 pl-12 text-sm text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-500 transition-all hover:border-gray-300 dark:hover:border-neutral-600 focus:border-black dark:focus:border-white focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
           onChange={(e) => setQueryAction(e.target.value)}
-          placeholder="Search files by name or content..."
+          placeholder="Tìm kiếm tệp theo tên hoặc nội dung..."
           ref={searchInputRef}
           type="text"
           value={query}
@@ -69,14 +69,14 @@ export function SearchBar({
         {/* Clear Button (left of filter) */}
         {query && (
           <Button
-            className="absolute right-12 size-7 transition-all hover:bg-destructive/10 hover:text-destructive"
+            className="absolute right-12 size-7 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
             onClick={() => {
               setQueryAction("");
               setResultsOpenAction(false);
               searchInputRef.current?.focus();
             }}
             size="icon"
-            title="Clear search"
+            title="Xóa tìm kiếm"
             variant="ghost"
           >
             <X className="size-4" />
@@ -86,24 +86,23 @@ export function SearchBar({
         {/* Filter Toggle Button (rightmost) */}
         {typeof setShowFiltersAction === "function" && (
           <Button
-            className={`absolute right-3 size-7 transition-all ${
-              filterActive ? "bg-primary/10 text-primary" : "hover:bg-accent/10"
-            }`}
+            className={`absolute right-3 size-7 transition-all ${filterActive
+                ? "bg-black dark:bg-white text-white dark:text-black"
+                : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-neutral-800"
+              }`}
             onClick={() => setShowFiltersAction?.(true)}
             size="icon"
-            title="Open filters"
+            title="Mở bộ lọc"
             variant="ghost"
           >
-            <SlidersHorizontal
-              className={`size-4 ${filterActive ? "text-primary" : "text-muted-foreground"}`}
-            />
+            <SlidersHorizontal className="size-4" />
           </Button>
         )}
       </div>
 
       {/* Search Results Dropdown */}
       {(resultsOpen || query) && (
-        <div className="slide-in-from-top-2 absolute top-full left-0 z-50 mt-3 w-full animate-in overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+        <div className="absolute top-full left-0 z-50 mt-3 w-full rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg overflow-hidden animate-in slide-in-from-top-2">
           {resultsLoading && (
             <div className="space-y-2 p-4">
               {[1, 2, 3].map((i) => (
@@ -119,29 +118,29 @@ export function SearchBar({
           )}
           {!resultsLoading && query && results.length === 0 && (
             <div className="flex flex-col items-center justify-center p-8 text-center">
-              <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-muted/50">
-                <FolderOpen className="size-8 text-muted-foreground" />
+              <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-gray-100 dark:bg-neutral-800">
+                <FolderOpen className="size-8 text-gray-400 dark:text-gray-600" />
               </div>
-              <p className="mb-1 font-semibold text-foreground text-sm">
-                No files found
+              <p className="mb-1 font-semibold text-black dark:text-white text-sm">
+                Không tìm thấy tệp
               </p>
-              <p className="text-muted-foreground text-xs">
-                Try adjusting your search or filters
+              <p className="text-gray-600 dark:text-gray-400 text-xs">
+                Thử điều chỉnh tìm kiếm hoặc bộ lọc
               </p>
             </div>
           )}
           {!resultsLoading && results.length > 0 && (
             <div>
-              <div className="border-border border-b bg-muted/30 px-4 py-2">
-                <p className="font-medium text-muted-foreground text-xs">
-                  Found {results.length} result{results.length !== 1 ? "s" : ""}
+              <div className="border-b border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50 px-4 py-2">
+                <p className="font-medium text-gray-600 dark:text-gray-400 text-xs">
+                  Tìm thấy {results.length} kết quả{results.length !== 1 ? "" : ""}
                 </p>
               </div>
               <ul className="max-h-[400px] overflow-y-auto">
                 {results.map((r) => (
                   <li key={r.id}>
                     <button
-                      className="group flex w-full items-center gap-4 border-border border-b px-4 py-3 text-left transition-all last:border-b-0 hover:bg-accent/50"
+                      className="group flex w-full items-center gap-4 border-b border-gray-200 dark:border-neutral-700 px-4 py-3 text-left transition-all last:border-b-0 hover:bg-gray-50 dark:hover:bg-neutral-800/50"
                       onClick={() => {
                         setResultsOpenAction(false);
                         setQueryAction("");
@@ -158,24 +157,24 @@ export function SearchBar({
                       tabIndex={0}
                       type="button"
                     >
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary/10 to-primary/5 transition-all group-hover:from-primary/20 group-hover:to-primary/10">
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-neutral-800 transition-all group-hover:bg-gray-200 dark:group-hover:bg-neutral-700">
                         {getFileIcon(r.fileName)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-foreground text-sm transition-colors group-hover:text-primary">
+                        <p className="truncate font-medium text-black dark:text-white text-sm transition-colors group-hover:text-gray-600 dark:group-hover:text-gray-400">
                           {r.fileName}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-gray-600 dark:text-gray-400 text-xs">
                             {formatSize(r.fileSize)}
                           </span>
                           {r.uploadTimestamp && (
                             <>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-gray-400 dark:text-gray-600">•</span>
+                              <span className="text-gray-600 dark:text-gray-400 text-xs">
                                 {new Date(
                                   r.uploadTimestamp
-                                ).toLocaleDateString()}
+                                ).toLocaleDateString("vi-VN")}
                               </span>
                             </>
                           )}
@@ -186,10 +185,9 @@ export function SearchBar({
                 ))}
               </ul>
               {results.length >= 10 && (
-                <div className="border-border border-t bg-muted/30 px-4 py-2 text-center">
-                  <p className="text-muted-foreground text-xs">
-                    Showing first 10 results. Refine your search for more
-                    specific results.
+                <div className="border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50 px-4 py-2 text-center">
+                  <p className="text-gray-600 dark:text-gray-400 text-xs">
+                    Hiển thị 10 kết quả đầu tiên. Tinh chỉnh tìm kiếm để có kết quả chính xác hơn.
                   </p>
                 </div>
               )}

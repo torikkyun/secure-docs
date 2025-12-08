@@ -1,10 +1,9 @@
 "use client";
 
-import { PanelRightOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import FileDetailsSidebar from "@/components/dashboard/FileDetailsSidebar";
-import { Button } from "@/components/ui/button";
 import {
   SelectedFileProvider,
   useSelectedFile,
@@ -35,6 +34,7 @@ function AppLayoutContent({
   const { user, loading: userLoading } = useUser();
   const { selectedFile, setSelectedFile } = useSelectedFile();
   const [isDetailsSidebarOpen, setIsDetailsSidebarOpen] = useState(false);
+  const router = useRouter();
 
   // Auto open sidebar when file is selected
   useEffect(() => {
@@ -42,6 +42,13 @@ function AppLayoutContent({
       setIsDetailsSidebarOpen(true);
     }
   }, [selectedFile, showDetailsSidebar]);
+
+  // Auth check
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, userLoading, router]);
 
   // ESC key to deselect file and close sidebar
   useEffect(() => {
@@ -60,6 +67,10 @@ function AppLayoutContent({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isDetailsSidebarOpen, selectedFile, setSelectedFile]);
 
+  if (!userLoading && !user) {
+    return null;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
@@ -67,35 +78,29 @@ function AppLayoutContent({
         {/* normalize storage shape for sidebar */}
         <AppSidebar
           loading={storageLoading}
-          storage={storage ?? { storageUsed, storageLimit, usagePercentage }}
+          storage={
+            storage ?? {
+              storageUsed,
+              storageLimit,
+              usagePercentage,
+              storageRemaining: storageLimit - storageUsed,
+            }
+          }
+          user={user}
         />
       </div>
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <AppHeader
-          breadcrumbs={breadcrumbs}
-          loading={userLoading}
-          user={user}
-        />
+        <AppHeader breadcrumbs={breadcrumbs} />
 
         {/* Scrollable Content with Right Sidebar */}
         <div className="flex flex-1 overflow-hidden">
           <main className="relative flex-1 overflow-y-auto">
             {children}
 
-            {/* Toggle Details Sidebar Button - Hidden when sidebar is open */}
-            {showDetailsSidebar && !isDetailsSidebarOpen && (
-              <Button
-                className="fixed right-4 bottom-4 z-50 size-12 shadow-lg md:size-14"
-                onClick={() => setIsDetailsSidebarOpen(true)}
-                size="icon"
-                title="Show file details"
-              >
-                <PanelRightOpen className="size-5 md:size-6" />
-              </Button>
-            )}
+
           </main>
 
           {/* Right Sidebar - File Details - Responsive */}
