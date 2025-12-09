@@ -169,110 +169,103 @@ export default function AppSidebar({
       </nav>
 
       {/* Storage Used Section */}
-      <div className="flex flex-1 flex-col justify-between px-3">
-        <div>
-          <div className="mt-4 border-gray-200 dark:border-neutral-800 border-t px-4 py-4">
-            {loading && (
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="size-9 rounded-lg" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-3 w-20" />
-                    <Skeleton className="h-4 w-24" />
-                  </div>
+      <div className="mt-auto flex flex-col gap-3 p-3">
+        {/* Storage Used Section */}
+        <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+          {loading && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="size-9 rounded-lg" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-24" />
                 </div>
-                <Skeleton className="h-2 w-full rounded-full" />
-                <Skeleton className="h-3 w-32" />
               </div>
-            )}
-            {!loading && (
-              <div className="mt-4 space-y-3">
-                {/* Header with Icon */}
-                <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-gray-100 dark:bg-neutral-800">
-                    <HardDrive className="size-5 text-black dark:text-white" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-600 dark:text-gray-400 text-xs">
-                      Dung lượng đã dùng
-                    </p>
-                    <p className="font-bold text-base text-black dark:text-white leading-tight">
-                      {formatBytes(used)}
-                    </p>
-                  </div>
+              <Skeleton className="h-2 w-full rounded-full" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          )}
+          {!loading && (
+            <div className="space-y-3">
+              {/* Header with Icon */}
+              <div className="flex items-center gap-3">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gray-200 dark:bg-neutral-800 dark:ring-neutral-700">
+                  <HardDrive className="size-4 text-black dark:text-white" />
                 </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-500 text-xs dark:text-gray-400">
+                    Dung lượng
+                  </p>
+                  <p className="font-bold text-black text-sm dark:text-white leading-tight">
+                    {formatBytes(used)} <span className="font-normal text-gray-400">/ {formatBytes(limit)}</span>
+                  </p>
+                </div>
+              </div>
 
-                {/* Progress Bar */}
-                <div className="space-y-1.5">
-                  <Progress className="h-2 bg-gray-100 dark:bg-neutral-800" value={percentage} />
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-600 dark:text-gray-400 text-xs">
-                      {formatBytes(limit)} tổng cộng
-                    </p>
-                    <p className="font-medium text-black dark:text-white text-xs">
-                      {Math.round(percentage)}%
-                    </p>
-                  </div>
+              {/* Progress Bar */}
+              <div className="space-y-1">
+                <Progress className="h-1.5 bg-gray-200 dark:bg-neutral-800" value={percentage} />
+                <div className="flex items-center justify-end">
+                  <p className="font-medium text-gray-500 text-xs dark:text-gray-400">
+                    {Math.round(percentage)}% đã dùng
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* User Profile Section */}
-        <div className="px-3 pb-4">
-          <div>
-            {userLoading && (
-              <div className="space-y-2.5">
-                <Skeleton className="h-14 w-full rounded-lg" />
-                <Skeleton className="h-9 w-full rounded-lg" />
-              </div>
-            )}
-            {!userLoading && localUser && (
-              <div className="space-y-2">
-                {/* User Info Box */}
-                <div className="rounded-lg bg-white dark:bg-neutral-800 p-3 flex items-center gap-3 border border-gray-200 dark:border-neutral-700">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-black dark:bg-white flex-shrink-0 font-semibold">
-                    <span className="text-white dark:text-black text-xs">
-                      {initials}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-black dark:text-white text-sm truncate">
-                      {localUser.username}
-                    </p>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs truncate">
-                      {localUser.email}
-                    </p>
-                  </div>
+        <div>
+          {userLoading && (
+            <div className="space-y-2.5">
+              <Skeleton className="h-14 w-full rounded-lg" />
+              <Skeleton className="h-9 w-full rounded-lg" />
+            </div>
+          )}
+          {!userLoading && localUser && (
+            <div className="space-y-2">
+              {/* User Info Box */}
+              <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="flex size-9 flex-shrink-0 items-center justify-center rounded-lg bg-black font-bold text-white dark:bg-white dark:text-black">
+                  <span className="text-xs">{initials}</span>
                 </div>
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => router.push("/settings")}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gray-100 dark:bg-neutral-800 px-2 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-neutral-700 font-medium text-xs transition-colors"
-                  >
-                    <Settings className="size-3.5" />
-                    <span>Cài đặt</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      try {
-                        localStorage.removeItem("auth_token");
-                      } catch {
-                        /* ignore */
-                      }
-                      router.push("/auth/login");
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-black/5 dark:bg-white/10 px-2 py-2 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/20 font-medium text-xs transition-colors"
-                  >
-                    <LogOut className="size-3.5" />
-                    <span>Đăng xuất</span>
-                  </button>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-black text-sm dark:text-white">
+                    {localUser.username}
+                  </p>
+                  <p className="truncate text-gray-500 text-xs dark:text-gray-400">
+                    {localUser.email}
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => router.push("/settings")}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-medium text-gray-700 text-xs transition-colors hover:bg-gray-50 dark:border-neutral-800 dark:bg-neutral-900 dark:text-gray-300 dark:hover:bg-neutral-800"
+                >
+                  <Settings className="size-3.5" />
+                  <span>Cài đặt</span>
+                </button>
+                <button
+                  onClick={() => {
+                    try {
+                      localStorage.removeItem("auth_token");
+                    } catch {
+                      /* ignore */
+                    }
+                    router.push("/auth/login");
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 font-medium text-red-600 text-xs transition-colors hover:bg-red-50 hover:border-red-100 hover:text-red-700 dark:border-neutral-800 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-800"
+                >
+                  <LogOut className="size-3.5" />
+                  <span>Thoát</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </aside>
