@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-1dd606216cfe4dc050e1d818149f16ab8da84826",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/FileShare.sol": "project/contracts/FileShare.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/FileShare.sol": {
+        "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.28;\n\ncontract FileShare {\n    event FileShared(\n        address indexed sender,\n        address indexed receiver,\n        string cid,\n        uint256 timestamp\n    );\n\n    function shareFile(address receiver, string memory cid) public {\n        emit FileShared(msg.sender, receiver, cid, block.timestamp);\n    }\n}\n"
+      }
+    }
+  }
+}

@@ -1,4 +1,6 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { extname } from 'node:path';
 import {
   BadRequestException,
   ForbiddenException,
@@ -41,6 +43,64 @@ export class FileService {
     };
   }
 
+  async handleFileUpload(
+    ownerId: string,
+    file: Express.Multer.File,
+    { encryptedKeyOwner }: UploadFileDto,
+    ipAddress: string,
+    userAgent: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Không có file được upload');
+    }
+
+    // Check storage limit
+    const user = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { storageUsed: true, storageLimit: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Người dùng không tồn tại');
+    }
+
+    const remaining = BigInt(user.storageLimit) - BigInt(user.storageUsed);
+    const fileSizeBigInt = BigInt(file.size);
+
+    if (fileSizeBigInt > remaining) {
+      throw new BadRequestException('Không đủ dung lượng lưu trữ');
+    }
+
+    // Calculate file hash
+    const fileBuffer = readFileSync(file.path);
+    const fileHash = createHash('sha256').update(fileBuffer).digest('hex');
+
+    // Get file info
+    const originalFileName = file.originalname;
+    const fileName = file.filename;
+    const filePath = file.path;
+    const fileSize = file.size;
+    const mimeType = file.mimetype;
+    const fileType = extname(originalFileName).substring(1).toLowerCase();
+
+    // Create file record
+    return await this.createFile(
+      ownerId,
+      {
+        fileName,
+        originalFileName,
+        filePath,
+        fileSize,
+        fileType,
+        mimeType,
+        fileHash,
+        encryptedKeyOwner,
+      },
+      ipAddress,
+      userAgent,
+    );
+  }
+
   async createFile(
     ownerId: string,
     {
@@ -52,7 +112,16 @@ export class FileService {
       mimeType,
       fileHash,
       encryptedKeyOwner,
-    }: UploadFileDto,
+    }: {
+      fileName: string;
+      originalFileName: string;
+      filePath: string;
+      fileSize: number;
+      fileType: string;
+      mimeType: string;
+      fileHash: string;
+      encryptedKeyOwner: string;
+    },
     ipAddress: string,
     userAgent: string,
   ) {
