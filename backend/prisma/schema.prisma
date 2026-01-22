@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String        @id @default(uuid()) @map("id") @db.Uuid
+  roleId          String        @map("role_id") @db.Uuid
+  username        String        @map("username") @db.VarChar(100)
+  email           String        @unique @map("email") @db.VarChar(255)
+  password        String        @map("password") @db.VarChar(255)
+  passcode        String        @map("passcode") @db.VarChar(6)
+  storageUsed     BigInt        @default(0) @map("storage_used")
+  storageLimit    BigInt        @default(1073741824) @map("storage_limit")
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  lastLoginAt     DateTime?     @map("last_login_at")
+  // Relations
+  role            Role          @relation("UserRoles", fields: [roleId], references: [id])
+  files           File[]        @relation("UserFiles")
+  grantsGiven     AccessGrant[] @relation("Grantor")
+  grantsReceived  AccessGrant[] @relation("Grantee")
+  downloads       Download[]
+  auditLogs       AuditLog[]    @relation("AuditLogUser")
+  auditLogsTarget AuditLog[]    @relation("AuditLogTargetUser")
+  sessions        UserSession[]
+
+  @@map("users")
+}
+
+model File {
+  id                String        @id @default(uuid()) @map("id") @db.Uuid
+  ownerId           String        @map("owner_id") @db.Uuid
+  fileName          String        @map("file_name") @db.VarChar(255)
+  originalFileName  String        @map("original_file_name") @db.VarChar(255)
+  filePath          String        @map("file_path") @db.Text
+  fileSize          BigInt        @map("file_size")
+  fileType          String        @map("file_type") @db.VarChar(100)
+  mimeType          String        @map("mime_type") @db.VarChar(100)
+  fileHash          String        @unique @map("file_hash") @db.VarChar(64)
+  encryptedKeyOwner String        @map("encrypted_key_owner") @db.Text
+  uploadTimestamp   DateTime      @default(now()) @map("upload_timestamp")
+  statusId          String        @map("status_id") @db.Uuid
+  // Relations
+  owner             User          @relation("UserFiles", fields: [ownerId], references: [id])
+  status            FileStatus    @relation(fields: [statusId], references: [id])
+  grants            AccessGrant[]
+  downloads         Download[]
+  auditLogs         AuditLog[]
+
+  @@map("files")
+}
+
+model AccessGrant {
+  id                  String            @id @default(uuid()) @map("id") @db.Uuid
+  fileId              String            @map("file_id") @db.Uuid
+  grantorId           String            @map("grantor_id") @db.Uuid
+  granteeId           String            @map("grantee_id") @db.Uuid
+  encryptedKeyGrantee String            @map("encrypted_key_grantee") @db.Text
+  grantedAt           DateTime          @default(now()) @map("granted_at")
+  expiresAt           DateTime?         @map("expires_at")
+  statusId            String            @map("status_id") @db.Uuid
+  revokedAt           DateTime?         @map("revoked_at")
+  revokeReason        String?           @map("revoke_reason")
+  // Relations
+  file                File              @relation(fields: [fileId], references: [id])
+  grantor             User              @relation("Grantor", fields: [grantorId], references: [id])
+  grantee             User              @relation("Grantee", fields: [granteeId], references: [id])
+  status              AccessGrantStatus @relation(fields: [statusId], references: [id])
+  downloads           Download[]
+
+  @@unique([fileId, granteeId], name: "idx_unique_grant")
+  @@map("access_grants")
+}
+
+model Download {
+  id                String         @id @default(uuid()) @map("id") @db.Uuid
+  fileId            String         @map("file_id") @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
+  accessGrantId     String?        @map("access_grant_id") @db.Uuid
+  downloadTimestamp DateTime       @default(now()) @map("download_timestamp")
+  ipAddress         String         @map("ip_address") @db.VarChar(45)
+  userAgent         String         @map("user_agent") @db.Text
+  statusId          String         @map("status_id") @db.Uuid
+  errorMessage      String?        @map("error_message")
+  // Relations
+  file              File           @relation(fields: [fileId], references: [id])
+  user              User           @relation(fields: [userId], references: [id])
+  accessGrant       AccessGrant?   @relation(fields: [accessGrantId], references: [id])
+  status            DownloadStatus @relation(fields: [statusId], references: [id])
+
+  @@map("downloads")
+}
+
+model AuditLog {
+  id           String    @id @default(uuid()) @map("id") @db.Uuid
+  eventTypeId  String    @map("event_type_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  fileId       String?   @map("file_id") @db.Uuid
+  targetUserId String?   @map("target_user_id") @db.Uuid
+  eventData    Json      @map("event_data")
+  txHash       String?   @map("tx_hash") @db.VarChar(66)
+  ipAddress    String    @map("ip_address") @db.VarChar(45)
+  userAgent    String    @map("user_agent") @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at")
+  // Relations
+  user         User      @relation("AuditLogUser", fields: [userId], references: [id])
+  file         File?     @relation(fields: [fileId], references: [id])
+  targetUser   User?     @relation("AuditLogTargetUser", fields: [targetUserId], references: [id])
+  eventType    EventType @relation(fields: [eventTypeId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model EventType {
+  id          String     @id @default(uuid()) @map("id") @db.Uuid
+  name        String     @unique @map("name") @db.VarChar(50)
+  description String?    @map("description")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  auditLogs   AuditLog[]
+
+  @@map("event_types")
+}
+
+model UserSession {
+  id             String   @id @default(uuid()) @map("id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  sessionToken   String   @unique @map("session_token") @db.Text
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  userAgent      String?  @map("user_agent") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  expiresAt      DateTime @map("expires_at")
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  isActive       Boolean  @default(true) @map("is_active")
+  // Relations
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@map("user_sessions")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @map("id") @db.Uuid
+  name        String   @unique @map("name")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  users       User[]   @relation("UserRoles")
+
+  @@map("roles")
+}
+
+model FileStatus {
+  id          String   @id @default(uuid()) @map("id") @db.Uuid
+  name        String   @unique @map("name")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  files       File[]
+
+  @@map("file_status")
+}
+
+model AccessGrantStatus {
+  id          String        @id @default(uuid()) @map("id") @db.Uuid
+  name        String        @unique @map("name")
+  description String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  grants      AccessGrant[]
+
+  @@map("access_grant_status")
+}
+
+model DownloadStatus {
+  id          String     @id @default(uuid()) @map("id") @db.Uuid
+  name        String     @unique @map("name")
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  downloads   Download[]
+
+  @@map("download_status")
+}
