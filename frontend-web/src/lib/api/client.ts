@@ -1,6 +1,7 @@
 import { getAuthToken, isTokenExpired, logout } from "@/lib/auth/token-manager";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 type FetchOptions = {
   method?: string;
@@ -33,13 +34,17 @@ function getToken(): string | null {
 
 async function request<T>(
   endpoint: string,
-  options: FetchOptions = {}
+  options: FetchOptions = {},
 ): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...options.headers,
   };
+
+  // Only set Content-Type to application/json if body is NOT FormData
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -51,7 +56,10 @@ async function request<T>(
   };
 
   if (options.body) {
-    config.body = JSON.stringify(options.body);
+    config.body =
+      options.body instanceof FormData
+        ? options.body
+        : JSON.stringify(options.body);
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);

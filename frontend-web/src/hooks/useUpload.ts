@@ -2,68 +2,55 @@
 import { useState } from "react";
 import util from "tweetnacl-util";
 import { encryptMessage, loadIdentity } from "@/lib/crypto/key-manager";
+import { fileApi } from "@/lib/api";
 
 export const useUpload = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   /**
-   * Uploads a File to Pinata and then sends metadata to backend.
+   * Encrypts a File and uploads it to the Backend.
    * @param file File to upload
-   * @param options.pinataJwt Pinata JWT for authentication
-   * @param options.backendToken Optional backend Bearer token
    */
-  const uploadFile = async (
-    file: File,
-    options: {
-      pinataJwt: string;
-      backendToken?: string;
-      metadata?: {
-        fileHash?: string;
-        cid?: string;
-        fileName?: string;
-        fileSize?: number;
-        fileType?: string | null;
-        encryptedKeyOwner?: string;
-        pinSize?: number;
-        pinService?: string;
-      };
-    }
-  ) => {
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
     try {
-      if (!options?.pinataJwt) {
-        throw new Error("Pinata JWT is required for pinning");
-      }
-
       // 1. Load User Identity (for encrypting the key)
       const identity = await loadIdentity();
       if (!identity) {
         throw new Error(
-          "User identity not found. Please register/login first to generate keys."
+          "User identity not found. Please register/login first to generate keys.",
         );
       }
 
-      // 2. Generate AES-GCM key (File Key)
+      // 2. Prepare upload (Check quota)
+      const prepareRes = await fileApi.prepareUpload({
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type || undefined,
+      });
+
+      if (!prepareRes.canUpload) {
+        throw new Error(
+          prepareRes.message || "Cannot upload file. Check storage quota.",
+        );
+      }
+
+      // 3. Generate AES-GCM key (File Key)
       const subtle = window.crypto.subtle;
       const aesKey = await subtle.generateKey(
         { name: "AES-GCM", length: 256 },
         true,
-        ["encrypt", "decrypt"]
+        ["encrypt", "decrypt"],
       );
 
-      // 3. Encrypt File Content
+      // 4. Encrypt File Content
       const fileArrayBuffer = await file.arrayBuffer();
-
-      // Calculate SHA-256 hash of original file
-      const hashBuffer = await subtle.digest("SHA-256", fileArrayBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const fileHash = `0x${hashArray.map((b) => b.toString(16).padStart(2, "0")).join("")}`;
 
       const iv = window.crypto.getRandomValues(new Uint8Array(12));
       const cipherBuffer = await subtle.encrypt(
         { name: "AES-GCM", iv },
         aesKey,
-        fileArrayBuffer
+        fileArrayBuffer,
       );
 
       // Prepend IV to ciphertext
@@ -76,81 +63,27 @@ export const useUpload = () => {
         type: "application/octet-stream",
       });
 
-      // 4. Upload Encrypted File to Pinata
-      const form = new FormData();
-      form.append("file", encryptedFile);
-
-      const pinRes = await fetch(
-        "https://api.pinata.cloud/pinning/pinFileToIPFS",
-        {
-          method: "POST",
-          body: form,
-          headers: {
-            Authorization: `Bearer ${options.pinataJwt}`,
-          },
-        }
-      );
-
-      if (!pinRes.ok) {
-        const text = await pinRes.text();
-        throw new Error(`Pinata upload failed: ${pinRes.status} ${text}`);
-      }
-
-      const pinData = await pinRes.json();
-      const cid = pinData?.IpfsHash || pinData?.ipfsHash || pinData?.hash;
-
       // 5. Encrypt the AES Key for the Owner (Self) using KeyManager
+      // We encrypt the symmetric key with the user's asymmetric public key
+      // so only they (with their private key) can decrypt it.
       const exportedKey = await subtle.exportKey("raw", aesKey);
       const exportedKeyBase64 = util.encodeBase64(new Uint8Array(exportedKey));
 
-      // Encrypt: Sender = Self, Recipient = Self
       const encryptedKeyOwner = encryptMessage(
         exportedKeyBase64,
         identity.publicKey,
-        identity.privateKey
+        identity.privateKey,
       );
 
-      // 6. Send Metadata to Backend
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2412";
-
-      const md = options.metadata;
-
-      const payload = {
-        fileHash: md?.fileHash ?? fileHash,
-        cid: md?.cid ?? cid,
-        fileName: md?.fileName ?? file.name,
-        fileSize: md?.fileSize ?? file.size,
-        fileType: md?.fileType ?? (file.type || null),
-        encryptedKeyOwner: md?.encryptedKeyOwner ?? encryptedKeyOwner,
-        pinSize: md?.pinSize ?? file.size,
-        pinService: md?.pinService ?? "pinata",
-        metadata: { pinnedFrom: "pinata", originalName: file.name },
-      };
-
-      const backendRes = await fetch(`${apiUrl}/api/files/upload`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(options.backendToken
-            ? { Authorization: `Bearer ${options.backendToken}` }
-            : {}),
-        },
-        body: JSON.stringify(payload),
+      // 6. Upload Encrypted File to Backend
+      // The backend will handle IPFS upload or local storage
+      const result = await fileApi.upload({
+        file: encryptedFile,
+        encryptedKeyOwner,
       });
 
-      const backendData = await backendRes.json().catch(() => null);
-
-      if (!backendRes.ok) {
-        throw new Error(
-          `Backend upload failed: ${backendRes.status} ${JSON.stringify(backendData)}`
-        );
-      }
-
       setIsUploading(false);
-      return {
-        pinData,
-        backend: { status: backendRes.status, body: backendData },
-      };
+      return result;
     } catch (err) {
       setIsUploading(false);
       throw err;

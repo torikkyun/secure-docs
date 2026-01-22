@@ -1,6 +1,6 @@
 export type User = {
   id: string;
-  walletAddress: string;
+  walletAddress?: string;
   username: string;
   email: string;
   publicKey: string;
@@ -18,8 +18,10 @@ export type File = {
   id: string;
   ownerId: string;
   fileHash: string;
-  cid: string;
+  cid?: string;
   fileName: string;
+  originalFileName: string;
+  mimeType: string;
   fileSize: number;
   fileType: string;
   uploadTimestamp: string;
@@ -29,7 +31,8 @@ export type File = {
   };
   owner?: {
     username: string;
-    walletAddress: string;
+    walletAddress?: string;
+    email?: string;
   };
 };
 

@@ -120,7 +120,6 @@ export class DownloadService {
 
     return {
       downloadId: download.id,
-      filePath: file.filePath,
       fileName: file.fileName,
       originalFileName: file.originalFileName,
       fileType: file.fileType,
@@ -129,6 +128,30 @@ export class DownloadService {
       fileHash: file.fileHash,
       encryptedKey,
       ownerPublicKey: file.owner.publicKey,
+    };
+  }
+
+  async getFileForDownload(userId: string, downloadId: string) {
+    const download = await this.prisma.download.findUnique({
+      where: { id: downloadId },
+      include: {
+        file: true,
+      },
+    });
+
+    if (!download) {
+      throw new NotFoundException('Không tìm thấy thông tin download');
+    }
+
+    if (download.userId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền download file này');
+    }
+
+    return {
+      filePath: download.file.filePath,
+      originalFileName: download.file.originalFileName,
+      mimeType: download.file.mimeType,
+      fileSize: download.file.fileSize,
     };
   }
 

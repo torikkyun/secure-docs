@@ -58,24 +58,27 @@ export const fileApi = {
   findOne: (id: string) =>
     ApiClient.get<{ file: File; isOwner: boolean }>(`/api/files/${id}`),
 
-  prepareUpload: (fileSize: number) =>
+  prepareUpload: (data: {
+    fileName: string;
+    fileSize: number;
+    fileType?: string;
+  }) =>
     ApiClient.post<{
       canUpload: boolean;
       message?: string;
       remainingStorage?: string;
       uploadId?: string;
-    }>("/api/files/prepare-upload", { fileSize }),
+    }>("/api/files/prepare-upload", data),
 
   upload: (data: {
-    fileHash: string;
-    cid: string;
-    fileName: string;
-    fileSize: number;
-    fileType: string;
+    file: globalThis.File; // Use browser File type
     encryptedKeyOwner: string;
-    pinSize: number;
-    pinService: string;
-  }) => ApiClient.post<File>("/api/files/upload", data),
+  }) => {
+    const formData = new FormData();
+    formData.append("file", data.file);
+    formData.append("encryptedKeyOwner", data.encryptedKeyOwner);
+    return ApiClient.post<File>("/api/files/upload", formData);
+  },
 
   delete: (id: string) =>
     ApiClient.delete<{ message: string }>(`/api/files/${id}`),
@@ -108,20 +111,21 @@ export const accessGrantApi = {
 
   create: (data: {
     fileId: string;
-    granteeWalletAddress: string;
+    granteeEmail: string;
     encryptedKeyGrantee: string;
-    txHash: string;
-    signature: string;
     expiresAt?: string;
-  }) => ApiClient.post<AccessGrant>("/api/access-grants", data),
+    passcode: string;
+  }) =>
+    ApiClient.post<{
+      grantId: string;
+      grant: AccessGrant;
+      message: string;
+    }>("/api/access-grants", data),
 
-  revoke: (
-    id: string,
-    data: { revokeReason?: string; revokeSignature: string }
-  ) =>
+  revoke: (id: string, data: { revokeReason?: string }) =>
     ApiClient.post<{ message: string }>(
       `/api/access-grants/${id}/revoke`,
-      data
+      data,
     ),
 };
 
@@ -148,15 +152,19 @@ export const downloadApi = {
   },
 
   request: (fileId: string) =>
-    ApiClient.post<{ downloadId: string; decryptedKey: string; cid: string }>(
-      "/api/downloads/request",
-      { fileId }
-    ),
+    ApiClient.post<{
+      downloadId: string;
+      encryptedKey: string;
+      ownerPublicKey: string;
+      fileName: string;
+      originalFileName: string;
+      fileType: string;
+    }>("/api/downloads/request", { fileId }),
 
   complete: (downloadId: string, success: boolean, errorMessage?: string) =>
     ApiClient.post<{ message: string }>(
       `/api/downloads/${downloadId}/complete`,
-      { success, errorMessage }
+      { success, errorMessage },
     ),
 };
 

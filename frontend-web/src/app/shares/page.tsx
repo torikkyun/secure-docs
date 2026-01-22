@@ -191,11 +191,16 @@ function SharesTable({
                               : "bg-primary/10 group-hover:bg-primary/15"
                           }`}
                         >
-                          {getFileIcon(grant.file?.fileName)}
+                          {getFileIcon(
+                            grant.file?.originalFileName ||
+                              grant.file?.fileName,
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-foreground group-hover:text-primary">
-                            {grant.file?.fileName || "Unknown file"}
+                            {grant.file?.originalFileName ||
+                              grant.file?.fileName ||
+                              "Unknown file"}
                           </p>
                           <p className="truncate text-muted-foreground text-xs">
                             {grant.file?.fileSize
@@ -364,7 +369,7 @@ export default function SharesPage() {
       setGrantsGiven(response.grants);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load shares"
+        error instanceof Error ? error.message : "Failed to load shares",
       );
     } finally {
       setLoadingGiven(false);
@@ -378,7 +383,7 @@ export default function SharesPage() {
       setGrantsReceived(response.grants);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load shares"
+        error instanceof Error ? error.message : "Failed to load shares",
       );
     } finally {
       setLoadingReceived(false);
@@ -398,7 +403,7 @@ export default function SharesPage() {
       setMyFiles(res.files || []);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load files"
+        error instanceof Error ? error.message : "Failed to load files",
       );
       setMyFiles([]);
     } finally {
@@ -469,7 +474,7 @@ export default function SharesPage() {
   const createRevokeMessage = (
     grantId: string,
     granteeAddress: string,
-    publicKey: string
+    publicKey: string,
   ) => {
     const domain = window.location.host;
     const issuedAt = new Date().toISOString();
@@ -497,7 +502,7 @@ Resources:
       toast.error("Signature request was rejected");
     } else {
       toast.error(
-        error instanceof Error ? error.message : "Failed to revoke access"
+        error instanceof Error ? error.message : "Failed to revoke access",
       );
     }
   };
@@ -524,7 +529,7 @@ Resources:
       const revokeMessage = createRevokeMessage(
         grant.id,
         grant.grantee?.walletAddress || "unknown",
-        identity.publicKey
+        identity.publicKey,
       );
 
       toast.info("Please sign the revoke request in your wallet");
@@ -559,16 +564,15 @@ Resources:
       return;
     }
 
-    const loadingToast = toast.loading(
-      `Preparing ${grant.file.fileName} for download`
-    );
+    const fileName = grant.file.originalFileName || grant.file.fileName;
+    const loadingToast = toast.loading(`Preparing ${fileName} for download`);
 
     try {
       await downloadFile(grant.file.id, (step) => {
         toast.loading(step, { id: loadingToast });
       });
 
-      toast.success(`${grant.file.fileName} downloaded successfully`, {
+      toast.success(`${fileName} downloaded successfully`, {
         id: loadingToast,
       });
     } catch (error) {

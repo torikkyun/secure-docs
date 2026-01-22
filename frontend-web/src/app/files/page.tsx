@@ -26,7 +26,7 @@ import type { File as FileType } from "@/types/api";
 
 export default function FilesPage() {
   const [activeTab, setActiveTab] = useState<"uploaded" | "received">(
-    "uploaded"
+    "uploaded",
   );
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -106,22 +106,15 @@ export default function FilesPage() {
       setUploadSuccess(false);
       setUploadProgress(10);
 
-      // Get Pinata JWT from environment or localStorage
-      const pinataJwt = process.env.NEXT_PUBLIC_PINATA_JWT;
-      if (!pinataJwt) {
-        throw new Error("Pinata JWT not configured");
-      }
+      // Get Pinata JWT - Removed as upload is now direct to backend
 
       // Get auth token from localStorage
-      const backendToken = localStorage.getItem("auth_token") || undefined;
+      // const backendToken = localStorage.getItem("auth_token") || undefined; // Handled by API client
 
       setUploadProgress(30);
 
       // Upload file
-      await uploadFile(selectedFile, {
-        pinataJwt,
-        backendToken,
-      });
+      await uploadFile(selectedFile);
 
       setUploadProgress(100);
       setUploadSuccess(true);

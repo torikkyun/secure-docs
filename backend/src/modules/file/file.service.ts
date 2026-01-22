@@ -213,7 +213,7 @@ export class FileService {
       status: { name: 'active' },
     };
     if (search) {
-      where.fileName = { contains: search, mode: 'insensitive' };
+      where.originalFileName = { contains: search, mode: 'insensitive' };
     }
 
     // Admin can search all files, regular users are restricted

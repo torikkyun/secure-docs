@@ -8,8 +8,10 @@ import { STORAGE_KEYS } from "@/lib/constants";
  * JWT Payload structure
  */
 type JWTPayload = {
-  userId: string;
-  walletAddress: string;
+  id: string; // Changed from userId to id to match backend
+  role?: { name: string };
+  sessionId?: string;
+  walletAddress?: string; // made optional
   iat: number; // issued at (seconds)
   exp: number; // expiry (seconds)
 };
@@ -175,7 +177,7 @@ export function logout(): void {
  */
 export function setupTokenExpiryCheck(
   onExpired: () => void,
-  checkInterval = 60_000 // 1 minute
+  checkInterval = 60_000, // 1 minute
 ): () => void {
   const intervalId = setInterval(() => {
     if (!isAuthenticated()) {

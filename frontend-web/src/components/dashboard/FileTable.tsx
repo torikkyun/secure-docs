@@ -89,7 +89,7 @@ export default function FileTable({
       setSelectedFile(response.file);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to load file details"
+        error instanceof Error ? error.message : "Failed to load file details",
       );
     } finally {
       setIsLoading(false);
@@ -105,16 +105,15 @@ export default function FileTable({
   };
 
   const handleDownloadFile = async (file: FileType) => {
-    const loadingToast = toast.loading(
-      `Preparing ${file.fileName} for download`
-    );
+    const fileName = file.originalFileName || file.fileName;
+    const loadingToast = toast.loading(`Preparing ${fileName} for download`);
 
     try {
       await downloadFile(file.id, (step) => {
         toast.loading(step, { id: loadingToast });
       });
 
-      toast.success(`${file.fileName} downloaded successfully`, {
+      toast.success(`${fileName} downloaded successfully`, {
         id: loadingToast,
       });
     } catch (error) {
@@ -125,20 +124,21 @@ export default function FileTable({
   };
 
   const handleDeleteFile = async (file: FileType) => {
+    const fileName = file.originalFileName || file.fileName;
     // biome-ignore lint: User confirmation required for delete
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${file.fileName}"?`
+      `Are you sure you want to delete "${fileName}"?`,
     );
     if (!confirmed) {
       return;
     }
 
-    const loadingToast = toast.loading(`Removing ${file.fileName}`);
+    const loadingToast = toast.loading(`Removing ${fileName}`);
 
     try {
       await fileApi.delete(file.id);
 
-      toast.success(`${file.fileName} has been removed`, {
+      toast.success(`${fileName} has been removed`, {
         id: loadingToast,
       });
 
@@ -148,7 +148,7 @@ export default function FileTable({
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete file",
-        { id: loadingToast }
+        { id: loadingToast },
       );
     }
   };
@@ -235,11 +235,11 @@ export default function FileTable({
                               : "bg-primary/10 group-hover:bg-primary/15"
                           }`}
                         >
-                          {getFileIcon(file.fileName)}
+                          {getFileIcon(file.originalFileName || file.fileName)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-foreground group-hover:text-primary">
-                            {file.fileName}
+                            {file.originalFileName || file.fileName}
                           </p>
                           <p className="truncate text-muted-foreground text-xs md:hidden">
                             {formatBytes(file.fileSize)} •{" "}

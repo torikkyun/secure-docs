@@ -130,7 +130,7 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async login({ email, password }: LoginDto, req: Request) {
+  async login({ email, password, passcode }: LoginDto, req: Request) {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { role: true },
@@ -149,6 +149,10 @@ export class AuthService implements OnModuleInit {
     const isPasswordValid = comparePassword(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    }
+
+    if (passcode !== user.passcode) {
+      throw new UnauthorizedException('Mã bảo mật không chính xác');
     }
 
     const jwtConfig = this.config.get<{ expiration: string }>('jwt')!;

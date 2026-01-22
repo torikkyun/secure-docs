@@ -7,9 +7,9 @@ import { validateUserData } from "./validation";
 
 export async function searchUserByEmail(
   email: string,
-  authToken: string
+  authToken: string,
 ): Promise<UserSearchResult> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2412";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const url = `${apiUrl}/api/users/email/${encodeURIComponent(email)}`;
 
   console.log("Fetching user from:", url);
@@ -51,13 +51,13 @@ export async function searchUserByEmail(
  */
 export async function searchUsersByEmail(
   query: string,
-  authToken: string
+  authToken: string,
 ): Promise<UserSearchResult[]> {
   if (!query || query.length < 2) {
     return [];
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:2412";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const url = `${apiUrl}/api/users?search=${encodeURIComponent(query)}&limit=5`;
 
   try {

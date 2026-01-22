@@ -1,6 +1,15 @@
-import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { DownloadService } from './download.service';
 import { CompleteDownloadDto } from './dto/complete-download.dto';
@@ -33,6 +42,24 @@ export class DownloadController {
     @Req() req: Request,
   ) {
     return await this.downloadService.requestDownload(user.id, dto, req);
+  }
+
+  @Get(':id/content')
+  async downloadContent(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const { filePath, originalFileName, mimeType, fileSize } =
+      await this.downloadService.getFileForDownload(user.id, id);
+
+    res.set({
+      'Content-Type': mimeType,
+      'Content-Disposition': `attachment; filename="${originalFileName}"`,
+      'Content-Length': fileSize.toString(),
+    });
+
+    res.sendFile(filePath, { root: '.' });
   }
 
   @Post(':id/complete')

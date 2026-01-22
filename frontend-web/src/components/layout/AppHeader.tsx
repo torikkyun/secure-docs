@@ -59,7 +59,7 @@ export default function AppHeader({
 
   // Admin defaults to "all", regular users default to "uploaded"
   const [filterType, setFilterType] = useState<"all" | "uploaded" | "received">(
-    isAdmin ? "all" : "uploaded"
+    isAdmin ? "all" : "uploaded",
   );
 
   console.log("Is Admin:", isAdmin, "Filter Type:", filterType);
@@ -80,7 +80,7 @@ export default function AppHeader({
         setIsLoading(false);
       }
     },
-    [setSelectedFile, setIsLoading]
+    [setSelectedFile, setIsLoading],
   );
 
   const performSearch = useCallback(
@@ -118,7 +118,7 @@ export default function AppHeader({
         })
         .finally(() => setResultsLoading(false));
     },
-    [filterType, isAdmin]
+    [filterType, isAdmin],
   );
 
   useEffect(() => {
@@ -279,15 +279,17 @@ export default function AppHeader({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 rounded-md bg-muted/50 px-3 py-2">
-                  <p className="font-medium text-muted-foreground text-xs">
-                    Wallet Address
-                  </p>
-                  <p className="mt-0.5 font-mono text-foreground text-xs">
-                    {localUser.walletAddress.substring(0, 8)}...
-                    {localUser.walletAddress.substring(34)}
-                  </p>
-                </div>
+                {localUser.walletAddress && (
+                  <div className="mt-3 rounded-md bg-muted/50 px-3 py-2">
+                    <p className="font-medium text-muted-foreground text-xs">
+                      Wallet Address
+                    </p>
+                    <p className="mt-0.5 font-mono text-foreground text-xs">
+                      {localUser.walletAddress.substring(0, 8)}...
+                      {localUser.walletAddress.substring(34)}
+                    </p>
+                  </div>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="cursor-pointer">

@@ -43,13 +43,14 @@ export function ShareFileDialog({
 }: ShareFileDialogProps) {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [recipientInfo, setRecipientInfo] = useState<UserSearchResult | null>(
-    null
+    null,
   );
   const [suggestions, setSuggestions] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [expiryTime, setExpiryTime] = useState("23:59");
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [passcode, setPasscode] = useState<string>("");
   const contractAddress = process.env.NEXT_PUBLIC_FILE_SHARE_CONTRACT || "";
   const [shareProgress, setShareProgress] = useState(0);
   const [shareStep, setShareStep] = useState("");
@@ -126,7 +127,7 @@ export function ShareFileDialog({
         const combinedDate = new Date(expiryDate);
         combinedDate.setHours(
           Number.parseInt(hours, 10),
-          Number.parseInt(minutes, 10)
+          Number.parseInt(minutes, 10),
         );
         expiresAt = combinedDate.toISOString();
       }
@@ -135,27 +136,23 @@ export function ShareFileDialog({
         fileId: file.id,
         fileDetails: {
           encryptedKeyOwner: fileDetails.file.encryptedKeyOwner,
-          cid: fileDetails.file.cid,
         },
-        recipientWalletAddress: recipientInfo.walletAddress,
+        recipientEmail: recipientInfo.email || "",
         recipientPublicKey: recipientInfo.publicKey,
-        contractAddress,
+        passcode,
         expiresAt,
         onProgress: (step) => {
           setShareStep(step);
-          // Optimized progress tracking (signature first, then fast operations)
+          // Optimized progress tracking
           const progressMap: Record<string, number> = {
             "Loading identity": 10,
-            "Preparing signature": 20,
-            "Waiting for signature": 30,
-            Decrypting: 50,
-            Encrypting: 65,
-            "Submitting to blockchain": 75,
-            "Saving access grant": 90,
+            Decrypting: 30,
+            Encrypting: 60,
+            "Saving access grant": 80,
             completed: 100,
           };
           const matchedKey = Object.keys(progressMap).find((key) =>
-            step.includes(key)
+            step.includes(key),
           );
           if (matchedKey) {
             setShareProgress(progressMap[matchedKey]);
@@ -165,13 +162,6 @@ export function ShareFileDialog({
 
       setShareSuccess(true);
       toast.success("File shared successfully!");
-
-      // Show info about blockchain confirmation
-      setTimeout(() => {
-        toast.info("Blockchain confirmation is processing in the background", {
-          duration: 5000,
-        });
-      }, 1000);
 
       setTimeout(() => {
         onSuccessAction?.();
@@ -191,6 +181,7 @@ export function ShareFileDialog({
     setExpiryDate(undefined);
     setExpiryTime("23:59");
     setDatePickerOpen(false);
+    setPasscode("");
     setShareProgress(0);
     setShareStep("");
     setShareSuccess(false);
@@ -267,7 +258,7 @@ export function ShareFileDialog({
                   </div>
                   <ul className="max-h-60 overflow-y-auto">
                     {suggestions.map((user) => (
-                      <li key={user.walletAddress}>
+                      <li key={user.id || user.email}>
                         <button
                           className="group flex w-full items-center gap-3 border-border border-b px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-accent/50"
                           onClick={() => handleSelectUser(user)}
@@ -328,6 +319,19 @@ export function ShareFileDialog({
               </CardContent>
             </Card>
           )}
+
+          {/* Security Passcode */}
+          <div className="space-y-2">
+            <Label htmlFor="passcode">Security Passcode (Required)</Label>
+            <Input
+              id="passcode"
+              type="password"
+              placeholder="Enter your security passcode"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              disabled={isSharing}
+            />
+          </div>
 
           {/* Expiry Date & Time (Optional) */}
           <div className="space-y-2">

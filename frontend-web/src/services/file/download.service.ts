@@ -39,7 +39,7 @@ async function fetchFromIPFS(cid: string): Promise<ArrayBuffer> {
  */
 export async function downloadFile(
   fileId: string,
-  options: DownloadOptions = {}
+  options: DownloadOptions = {},
 ): Promise<DownloadResult> {
   const { onProgress } = options;
 
@@ -83,7 +83,7 @@ export async function downloadFile(
     const aesKey = await fileEncryptionService.importKey(decryptedKey);
     const decryptedData = await fileEncryptionService.decryptFile(
       new Uint8Array(encryptedData),
-      aesKey
+      aesKey,
     );
 
     // Stage 4: Complete download
@@ -139,7 +139,7 @@ export function triggerBrowserDownload(blob: Blob, fileName: string): void {
  */
 export async function downloadAndSaveFile(
   fileId: string,
-  options: DownloadOptions = {}
+  options: DownloadOptions = {},
 ): Promise<void> {
   const result = await downloadFile(fileId, options);
   triggerBrowserDownload(result.blob, result.fileName);

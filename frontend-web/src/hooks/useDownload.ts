@@ -1,6 +1,9 @@
 import { useState } from "react";
+import nacl from "tweetnacl";
 import util from "tweetnacl-util";
 import { downloadApi } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api/client";
+import { getAuthToken } from "@/lib/auth/token-manager";
 import { decryptMessage, loadIdentity } from "@/lib/crypto/key-manager";
 
 export const useDownload = () => {
@@ -12,7 +15,7 @@ export const useDownload = () => {
    * Downloads and decrypts a file by:
    * 1. Loading user identity
    * 2. Requesting download metadata from backend
-   * 3. Fetching encrypted file from IPFS
+   * 3. Fetching encrypted file from Backend
    * 4. Decrypting the file key
    * 5. Decrypting the file content
    * 6. Triggering browser download
@@ -20,14 +23,14 @@ export const useDownload = () => {
    */
   const downloadFile = async (
     fileId: string,
-    onProgress?: (step: string) => void
+    onProgress?: (step: string) => void,
   ) => {
     setIsDownloading(true);
     setError(null);
     setProgress("Starting download...");
 
     try {
-      // Step 1: Load Identity
+      // Step 1: Loading User Identity
       const updateProgress = (msg: string) => {
         setProgress(msg);
         onProgress?.(msg);
@@ -44,47 +47,79 @@ export const useDownload = () => {
       const response = await downloadApi.request(fileId);
       const {
         downloadId,
-        cid,
         encryptedKey,
         ownerPublicKey,
         fileName,
+        originalFileName,
         fileType,
       } = response as unknown as {
         downloadId: string;
-        cid: string;
         encryptedKey: string;
         ownerPublicKey: string;
         fileName: string;
+        originalFileName: string;
         fileType: string;
       };
 
-      updateProgress(`Metadata received. CID: ${cid}`);
+      updateProgress("Metadata received.");
 
-      // Step 3: Fetch Encrypted File from IPFS
-      updateProgress("Fetching encrypted file from IPFS...");
-      const gateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY;
-      const ipfsRes = await fetch(`${gateway}/${cid}`);
-
-      if (!ipfsRes.ok) {
-        throw new Error(`Failed to fetch from IPFS: ${ipfsRes.statusText}`);
+      // Step 3: Fetch Encrypted File from Backend
+      updateProgress("Fetching encrypted file from Backend...");
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error("No authentication token found");
       }
 
-      const encryptedFileBuffer = await ipfsRes.arrayBuffer();
+      const fileRes = await fetch(
+        `${API_BASE_URL}/api/downloads/${downloadId}/content`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!fileRes.ok) {
+        throw new Error(`Failed to fetch file: ${fileRes.statusText}`);
+      }
+
+      const encryptedFileBuffer = await fileRes.arrayBuffer();
       updateProgress(
-        `File fetched. Size: ${encryptedFileBuffer.byteLength} bytes`
+        `File fetched. Size: ${encryptedFileBuffer.byteLength} bytes`,
       );
 
       // Step 4: Decrypt the File Key
       updateProgress("Decrypting file key...");
-      const decryptedKeyBase64 = decryptMessage(
-        encryptedKey,
-        ownerPublicKey, // Sender's public key (owner or grantor)
-        identity.privateKey // My private key
+
+      // Cleanup strings
+      const cleanOwnerPublicKey = ownerPublicKey.trim();
+      const cleanEncryptedKey = encryptedKey.trim();
+
+      console.log("[useDownload] Starting key decryption...");
+
+      // Attempt 1: Try decrypting using the provided owner public key
+      let decryptedKeyBase64 = decryptMessage(
+        cleanEncryptedKey,
+        cleanOwnerPublicKey,
+        identity.privateKey,
       );
 
+      // Attempt 2: Fallback (Self-Healing)
+      if (!decryptedKeyBase64 && cleanOwnerPublicKey !== identity.publicKey) {
+        console.warn(
+          "Decryption with owner key failed. Retrying with local identity key...",
+        );
+        decryptedKeyBase64 = decryptMessage(
+          cleanEncryptedKey,
+          identity.publicKey,
+          identity.privateKey,
+        );
+      }
+
       if (!decryptedKeyBase64) {
+        console.error("[useDownload] Decryption failed.");
         throw new Error(
-          "Failed to decrypt file key. Permission denied or wrong key."
+          "Decryption failed. This file may have been encrypted with a different key pair that is no longer available (e.g., if you re-registered or cleared browser data).",
         );
       }
 
@@ -104,26 +139,31 @@ export const useDownload = () => {
         new Uint8Array(aesKeyRaw),
         { name: "AES-GCM" },
         false,
-        ["decrypt"]
+        ["decrypt"],
       );
 
       const decryptedBuffer = await subtle.decrypt(
         { name: "AES-GCM", iv: new Uint8Array(iv) },
         aesKey,
-        ciphertext
+        ciphertext,
       );
 
       updateProgress("File content decrypted.");
 
       // Step 6: Trigger Download
       updateProgress("Preparing download...");
+      let finalFileName = originalFileName || fileName;
+      if (finalFileName.toLowerCase().endsWith(".enc")) {
+        finalFileName = finalFileName.slice(0, -4);
+      }
+
       const blob = new Blob([decryptedBuffer], {
         type: fileType || "application/octet-stream",
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileName;
+      a.download = finalFileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

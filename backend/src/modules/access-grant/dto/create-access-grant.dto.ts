@@ -27,4 +27,9 @@ export class CreateAccessGrantDto {
   @IsNotEmpty()
   @ApiProperty()
   expiresAt: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty()
+  passcode: string;
 }

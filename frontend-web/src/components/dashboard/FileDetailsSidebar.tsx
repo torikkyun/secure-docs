@@ -25,7 +25,7 @@ type FileDetailsSidebarProps = {
 function truncateHash(
   hash: string | undefined | null,
   start = 8,
-  end = 8
+  end = 8,
 ): string {
   if (!hash) {
     return "N/A";
@@ -100,11 +100,14 @@ export default function FileDetailsSidebar({
           <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
             <div className="flex items-start gap-3">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                {getFileIcon(selectedFile.fileName, "size-6 text-primary")}
+                {getFileIcon(
+                  selectedFile.originalFileName || selectedFile.fileName,
+                  "size-6 text-primary",
+                )}
               </div>
               <div className="flex-1 overflow-hidden">
                 <h4 className="truncate font-semibold text-foreground">
-                  {selectedFile.fileName}
+                  {selectedFile.originalFileName || selectedFile.fileName}
                 </h4>
                 <p className="text-muted-foreground text-xs">
                   {selectedFile.fileType || "Unknown type"}
@@ -198,22 +201,24 @@ export default function FileDetailsSidebar({
             </div>
 
             {/* CID */}
-            <div className="space-y-2">
-              <p className="text-foreground text-sm">IPFS CID</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded bg-muted px-2 py-1 font-mono text-muted-foreground text-xs">
-                  {selectedFile.cid}
-                </code>
-                <Button
-                  className="size-6 shrink-0"
-                  onClick={() => copyToClipboard(selectedFile.cid)}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <Copy className="size-3" />
-                </Button>
+            {selectedFile.cid && (
+              <div className="space-y-2">
+                <p className="text-foreground text-sm">IPFS CID</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate rounded bg-muted px-2 py-1 font-mono text-muted-foreground text-xs">
+                    {selectedFile.cid}
+                  </code>
+                  <Button
+                    className="size-6 shrink-0"
+                    onClick={() => copyToClipboard(selectedFile.cid!)}
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <Copy className="size-3" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

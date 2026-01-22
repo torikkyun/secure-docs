@@ -13,9 +13,10 @@ export function isValidBase64(str: string): boolean {
 }
 
 export type UserSearchResult = {
+  id: string;
   username: string;
   publicKey: string;
-  walletAddress: string;
+  walletAddress?: string;
   email?: string;
 };
 
@@ -24,10 +25,15 @@ export function validateUserData(userData: Record<string, unknown>): {
   error?: string;
   data?: UserSearchResult;
 } {
+  const id = userData.id as string | undefined;
   const publicKey = userData.publicKey as string | undefined;
   const walletAddress = userData.walletAddress as string | undefined;
   const username = userData.username as string | undefined;
   const email = userData.email as string | undefined;
+
+  if (!id) {
+    return { valid: false, error: "User ID is missing" };
+  }
 
   if (!publicKey) {
     return {
@@ -36,9 +42,10 @@ export function validateUserData(userData: Record<string, unknown>): {
     };
   }
 
-  if (!walletAddress) {
-    return { valid: false, error: "User does not have a wallet address" };
-  }
+  // Wallet address is now optional for frontend logic
+  // if (!walletAddress) {
+  //   return { valid: false, error: "User does not have a wallet address" };
+  // }
 
   if (!isValidBase64(publicKey)) {
     return {
@@ -50,6 +57,7 @@ export function validateUserData(userData: Record<string, unknown>): {
   return {
     valid: true,
     data: {
+      id,
       username: username || "Unknown",
       publicKey,
       walletAddress,

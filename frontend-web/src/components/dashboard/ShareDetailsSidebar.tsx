@@ -28,7 +28,7 @@ type ShareDetailsSidebarProps = {
 function truncateHash(
   hash: string | undefined | null,
   start = 8,
-  end = 8
+  end = 8,
 ): string {
   if (!hash) {
     return "N/A";
@@ -120,13 +120,16 @@ export default function ShareDetailsSidebar({
             <div className="flex items-start gap-3">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 {getFileIcon(
-                  selectedGrant.file?.fileName,
-                  "size-6 text-primary"
+                  selectedGrant.file?.originalFileName ||
+                    selectedGrant.file?.fileName,
+                  "size-6 text-primary",
                 )}
               </div>
               <div className="flex-1 overflow-hidden">
                 <h4 className="truncate font-semibold text-foreground">
-                  {selectedGrant.file?.fileName || "Unknown file"}
+                  {selectedGrant.file?.originalFileName ||
+                    selectedGrant.file?.fileName ||
+                    "Unknown file"}
                 </h4>
                 <p className="text-muted-foreground text-xs">
                   {selectedGrant.file?.fileType || "Unknown type"}
@@ -147,7 +150,7 @@ export default function ShareDetailsSidebar({
               <span className="text-muted-foreground">Status</span>
               {getStatusBadge(
                 selectedGrant.status.name,
-                selectedGrant.expiresAt
+                selectedGrant.expiresAt,
               )}
             </div>
           </div>
@@ -180,7 +183,7 @@ export default function ShareDetailsSidebar({
                         ? selectedGrant.grantee?.walletAddress || ""
                         : selectedGrant.grantor?.walletAddress || "",
                       6,
-                      4
+                      4,
                     )}
                   </p>
                 </div>
@@ -190,7 +193,7 @@ export default function ShareDetailsSidebar({
                     copyToClipboard(
                       type === "given"
                         ? selectedGrant.grantee?.walletAddress || ""
-                        : selectedGrant.grantor?.walletAddress || ""
+                        : selectedGrant.grantor?.walletAddress || "",
                     )
                   }
                   size="icon"
@@ -297,7 +300,7 @@ export default function ShareDetailsSidebar({
                         {truncateHash(
                           selectedGrant.file.owner.walletAddress,
                           6,
-                          4
+                          4,
                         )}
                       </p>
                     </div>
@@ -305,7 +308,7 @@ export default function ShareDetailsSidebar({
                       className="size-6 shrink-0"
                       onClick={() =>
                         copyToClipboard(
-                          selectedGrant.file?.owner?.walletAddress || ""
+                          selectedGrant.file?.owner?.walletAddress || "",
                         )
                       }
                       size="icon"

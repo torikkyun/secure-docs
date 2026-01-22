@@ -31,10 +31,20 @@ export class AccessGrantService {
       granteeEmail,
       encryptedKeyGrantee,
       expiresAt,
+      passcode,
     }: CreateAccessGrantDto,
     ipAddress: string,
     userAgent: string,
   ) {
+    const grantor = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!grantor) throw new NotFoundException('User not found');
+
+    if (grantor.passcode !== passcode) {
+      throw new ForbiddenException('Mã bảo mật không chính xác');
+    }
+
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
