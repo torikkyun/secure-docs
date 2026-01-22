@@ -1,64 +1,46 @@
-import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { Request } from "express";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { Public } from "src/common/decorators/public.decorator";
-import { AuthService } from "./auth.service";
-import { AdminLoginDto } from "./dto/admin-login.dto";
-import { LoginWalletDto } from "./dto/login-wallet.dto";
-import { RegisterDto } from "./dto/register.dto";
-import { NonceService } from "./nonce.service";
+import { Body, Controller, Post, Req } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
+import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
-@Controller("api/auth")
-@ApiTags("auth")
+@Controller('api/auth')
+@ApiTags('auth')
 export class AuthController {
-  private readonly authService: AuthService;
-  private readonly nonceService: NonceService;
-  constructor(authService: AuthService, nonceService: NonceService) {
-    this.authService = authService;
-    this.nonceService = nonceService;
-  }
+  constructor(private readonly authService: AuthService) {}
 
-  @Post("register")
+  @Post('register')
   @Public()
   register(@Body() dto: RegisterDto, @Req() req: Request) {
     return this.authService.register(dto, req);
   }
 
-  @Post("login")
+  @Post('login')
   @Public()
-  login(@Body() dto: LoginWalletDto, @Req() req: Request) {
-    return this.authService.loginWithWallet(dto, req);
+  login(@Body() dto: LoginDto, @Req() req: Request) {
+    return this.authService.login(dto, req);
   }
 
-  @Get("nonce/:wallet")
-  @Public()
-  async getNonce(@Param("wallet") wallet: string) {
-    const { nonce, expiresAt } = await this.nonceService.createNonceFor(wallet);
-    return {
-      nonce,
-      issuedAt: new Date().toISOString(),
-      expiresAt: new Date(expiresAt).toISOString(),
-    };
-  }
-
-  @Post("logout")
+  @Post('logout')
   @ApiBearerAuth()
   async logout(
     @CurrentUser()
     user: { id: string; role: { name: string }; sessionId: string },
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const sessionId = user.sessionId;
     if (sessionId) {
       await this.authService.logoutBySessionId(sessionId, req);
-      return { message: "Đăng xuất thành công" };
+      return { message: 'Đăng xuất thành công' };
     }
   }
 
-  @Post("admin/login")
-  @Public()
-  adminLogin(@Body() dto: AdminLoginDto, @Req() req: Request) {
-    return this.authService.adminLogin(dto, req);
-  }
+  // @Post('admin/login')
+  // @Public()
+  // adminLogin(@Body() dto: AdminLoginDto, @Req() req: Request) {
+  //   return this.authService.adminLogin(dto, req);
+  // }
 }

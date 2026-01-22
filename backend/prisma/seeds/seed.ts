@@ -30,23 +30,23 @@ async function main() {
         create: { name: 'user' },
       });
 
-      // Seed admin user (with dummy wallet/public key)
+      // Seed admin user
       const adminRole = await prisma.role.findUnique({
         where: { name: 'admin' },
       });
 
       if (adminRole) {
         await prisma.user.upsert({
-          where: { email: 'admin@secure-docs.io' },
+          where: { email: 'admin@gmail.com' },
           update: {},
           create: {
-            email: 'admin@secure-docs.io',
+            email: 'admin@gmail.com',
             username: 'admin',
-            walletAddress: '0x0000000000000000000000000000000000000000', // Dummy wallet
-            publicKey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', // Dummy public key (base64, 32 bytes)
-            password: hashPassword('Admin@123'), // Default password
+            password: hashPassword('admin@123'),
+            passcode: '123456',
+            publicKey: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=', // Dummy public key for encryption
             roleId: adminRole.id,
-            storageLimit: BigInt(10_737_418_240), // 10GB for admin
+            storageLimit: BigInt(1073741824),
             isActive: true,
           },
         });
@@ -99,18 +99,6 @@ async function main() {
         where: { name: 'failed' },
         update: {},
         create: { name: 'failed', description: 'Download thất bại' },
-      });
-
-      // Seed IpfsPinStatus
-      await prisma.ipfsPinStatus.upsert({
-        where: { name: 'pinned' },
-        update: {},
-        create: { name: 'pinned', description: 'Đã được pin' },
-      });
-      await prisma.ipfsPinStatus.upsert({
-        where: { name: 'unpinned' },
-        update: {},
-        create: { name: 'unpinned', description: 'Không còn được pin' },
       });
 
       // Seed EventType
