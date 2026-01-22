@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsNumber, IsOptional, IsString } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CompleteDownloadDto {
   @IsBoolean()
@@ -18,7 +18,7 @@ export class CompleteDownloadDto {
   @IsOptional()
   @IsString()
   @ApiPropertyOptional({
-    example: "Network error",
+    example: 'Network error',
   })
   errorMessage?: string;
 }

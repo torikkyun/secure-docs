@@ -1,9 +1,9 @@
-import { Injectable } from "@nestjs/common";
-import { serializeBigInt } from "src/common/utils/bigint.util";
-import { hashPassword } from "src/common/utils/hash.util";
-import { PrismaService } from "src/database/prisma.service";
-import { CreateUserDto } from "./dto/create-user.dto";
-import { UpdateUserDto } from "./dto/update-user.dto";
+import { Injectable } from '@nestjs/common';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
+import { hashPassword } from 'src/common/utils/hash.util';
+import { PrismaService } from 'src/database/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -29,7 +29,7 @@ export class AdminService {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.user.count(),
     ]);
@@ -53,7 +53,7 @@ export class AdminService {
         grantsReceived: true,
         sessions: {
           where: { isActive: true },
-          orderBy: { lastActivityAt: "desc" },
+          orderBy: { lastActivityAt: 'desc' },
         },
       },
     });
@@ -62,20 +62,20 @@ export class AdminService {
 
   async createUser(dto: CreateUserDto) {
     const userRole = await this.prisma.role.findUnique({
-      where: { name: "user" },
+      where: { name: 'user' },
     });
 
     if (!userRole) {
-      throw new Error("User role not found");
+      throw new Error('User role not found');
     }
 
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         username: dto.username,
-        walletAddress: dto.walletAddress,
+        password: hashPassword(dto.password),
+        passcode: dto.passcode,
         publicKey: dto.publicKey,
-        password: dto.password ? hashPassword(dto.password) : null,
         roleId: userRole.id,
       },
       include: { role: true },
@@ -169,7 +169,7 @@ export class AdminService {
             },
           },
         },
-        orderBy: { uploadTimestamp: "desc" },
+        orderBy: { uploadTimestamp: 'desc' },
       }),
       this.prisma.file.count(),
     ]);
@@ -212,7 +212,7 @@ export class AdminService {
           },
           status: true,
         },
-        orderBy: { grantedAt: "desc" },
+        orderBy: { grantedAt: 'desc' },
       }),
       this.prisma.accessGrant.count(),
     ]);
@@ -242,7 +242,7 @@ export class AdminService {
           },
           eventType: true,
         },
-        orderBy: { timestamp: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.auditLog.count(),
     ]);

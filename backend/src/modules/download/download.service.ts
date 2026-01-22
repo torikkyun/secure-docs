@@ -2,17 +2,17 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { Request } from "express";
-import { Prisma } from "generated/prisma/client";
-import { serializeBigInt } from "src/common/utils/bigint.util";
-import { getOffsetPagination } from "src/common/utils/pagination.util";
-import extractIpAndUserAgent from "src/common/utils/request.util";
-import { PrismaService } from "src/database/prisma.service";
-import { AuditService } from "../audit/audit.service";
-import { CompleteDownloadDto } from "./dto/complete-download.dto";
-import { QueryDownloadDto } from "./dto/query-download.dto";
-import { RequestDownloadDto } from "./dto/request-download.dto";
+} from '@nestjs/common';
+import { Request } from 'express';
+import { Prisma } from 'generated/prisma/client';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
+import { getOffsetPagination } from 'src/common/utils/pagination.util';
+import extractIpAndUserAgent from 'src/common/utils/request.util';
+import { PrismaService } from 'src/database/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import { CompleteDownloadDto } from './dto/complete-download.dto';
+import { QueryDownloadDto } from './dto/query-download.dto';
+import { RequestDownloadDto } from './dto/request-download.dto';
 
 @Injectable()
 export class DownloadService {
@@ -27,17 +27,19 @@ export class DownloadService {
   async requestDownload(
     userId: string,
     { fileId }: RequestDownloadDto,
-    req: Request
+    req: Request,
   ) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
       select: {
         id: true,
-        cid: true,
-        fileHash: true,
         fileName: true,
+        originalFileName: true,
+        filePath: true,
         fileType: true,
+        mimeType: true,
         fileSize: true,
+        fileHash: true,
         encryptedKeyOwner: true,
         ownerId: true,
         owner: {
@@ -48,10 +50,10 @@ export class DownloadService {
       },
     });
     if (!file) {
-      throw new NotFoundException("Không tìm thấy file");
+      throw new NotFoundException('Không tìm thấy file');
     }
     let accessGrantId: string | null = null;
-    let encryptedKey = "";
+    let encryptedKey = '';
     if (file.ownerId === userId) {
       encryptedKey = file.encryptedKeyOwner;
     } else {
@@ -74,23 +76,23 @@ export class DownloadService {
           encryptedKeyGrantee: true,
         },
       });
-      if (!grant || grant.status.name !== "active") {
+      if (!grant || grant.status.name !== 'active') {
         throw new ForbiddenException(
-          "Bạn không có quyền truy cập vào file này"
+          'Bạn không có quyền truy cập vào file này',
         );
       }
       if (grant.expiresAt && new Date() > grant.expiresAt) {
-        throw new ForbiddenException("Quyền truy cập của bạn đã hết hạn");
+        throw new ForbiddenException('Quyền truy cập của bạn đã hết hạn');
       }
       accessGrantId = grant.id;
       encryptedKey = grant.encryptedKeyGrantee;
     }
     const { ipAddress, userAgent } = extractIpAndUserAgent(req);
     const status = await this.prisma.downloadStatus.findUnique({
-      where: { name: "pending" },
+      where: { name: 'pending' },
     });
     if (!status) {
-      throw new NotFoundException("Không tìm thấy trạng thái download");
+      throw new NotFoundException('Không tìm thấy trạng thái download');
     }
     const download = await this.prisma.download.create({
       data: {
@@ -106,10 +108,10 @@ export class DownloadService {
     // Audit Log: FILE_DOWNLOAD
     await this.auditService.log({
       userId,
-      eventType: "FILE_DOWNLOAD",
+      eventType: 'FILE_DOWNLOAD',
       fileId,
       eventData: {
-        fileName: file.fileName,
+        fileName: file.originalFileName,
         downloadId: download.id,
       },
       ipAddress,
@@ -118,11 +120,13 @@ export class DownloadService {
 
     return {
       downloadId: download.id,
-      cid: file.cid,
-      fileHash: file.fileHash,
+      filePath: file.filePath,
       fileName: file.fileName,
+      originalFileName: file.originalFileName,
       fileType: file.fileType,
+      mimeType: file.mimeType,
       fileSize: file.fileSize.toString(),
+      fileHash: file.fileHash,
       encryptedKey,
       ownerPublicKey: file.owner.publicKey,
     };
@@ -131,24 +135,24 @@ export class DownloadService {
   async completeDownload(
     userId: string,
     downloadId: string,
-    { success, errorMessage }: CompleteDownloadDto
+    { success, errorMessage }: CompleteDownloadDto,
   ) {
     const download = await this.prisma.download.findUnique({
       where: { id: downloadId },
     });
     if (!download) {
-      throw new NotFoundException("Không tìm thấy bản ghi download");
+      throw new NotFoundException('Không tìm thấy bản ghi download');
     }
     if (download.userId !== userId) {
       throw new ForbiddenException(
-        "Bạn không có quyền cập nhật bản ghi download"
+        'Bạn không có quyền cập nhật bản ghi download',
       );
     }
     const status = await this.prisma.downloadStatus.findUnique({
-      where: { name: success ? "success" : "failed" },
+      where: { name: success ? 'success' : 'failed' },
     });
     if (!status) {
-      throw new NotFoundException("Không tìm thấy trạng thái download");
+      throw new NotFoundException('Không tìm thấy trạng thái download');
     }
     const updatedDownload = await this.prisma.download.update({
       where: { id: downloadId },
@@ -165,7 +169,7 @@ export class DownloadService {
 
   async findAll(
     userId: string,
-    { search, page = 1, limit = 10 }: QueryDownloadDto
+    { search, page = 1, limit = 10 }: QueryDownloadDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
     const where: Prisma.DownloadWhereInput = {
@@ -200,13 +204,15 @@ export class DownloadService {
             select: {
               id: true,
               fileName: true,
+              originalFileName: true,
               fileType: true,
+              mimeType: true,
               fileSize: true,
             },
           },
         },
         orderBy: {
-          downloadTimestamp: "desc",
+          downloadTimestamp: 'desc',
         },
         take,
         skip,
@@ -241,7 +247,9 @@ export class DownloadService {
           select: {
             id: true,
             fileName: true,
+            originalFileName: true,
             fileType: true,
+            mimeType: true,
             fileSize: true,
           },
         },
@@ -252,7 +260,7 @@ export class DownloadService {
               select: {
                 id: true,
                 email: true,
-                walletAddress: true,
+                username: true,
               },
             },
             status: {
@@ -266,7 +274,7 @@ export class DownloadService {
       },
     });
     if (!download) {
-      throw new NotFoundException("Không tìm thấy bản ghi download");
+      throw new NotFoundException('Không tìm thấy bản ghi download');
     }
 
     return serializeBigInt(download);

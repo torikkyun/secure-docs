@@ -4,15 +4,15 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { Prisma } from "generated/prisma/client";
-import { serializeBigInt } from "src/common/utils/bigint.util";
-import { getOffsetPagination } from "src/common/utils/pagination.util";
-import { PrismaService } from "src/database/prisma.service";
-import { AuditService } from "../audit/audit.service";
-import { CreateAccessGrantDto } from "./dto/create-access-grant.dto";
-import { QueryAccessGrantDto } from "./dto/query-access-grant.dto";
-import { RevokeAccessGrantDto } from "./dto/revoke-access-grant.dto";
+} from '@nestjs/common';
+import { Prisma } from 'generated/prisma/client';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
+import { getOffsetPagination } from 'src/common/utils/pagination.util';
+import { PrismaService } from 'src/database/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import { CreateAccessGrantDto } from './dto/create-access-grant.dto';
+import { QueryAccessGrantDto } from './dto/query-access-grant.dto';
+import { RevokeAccessGrantDto } from './dto/revoke-access-grant.dto';
 
 @Injectable()
 export class AccessGrantService {
@@ -28,42 +28,40 @@ export class AccessGrantService {
     userId: string,
     {
       fileId,
-      granteeWalletAddress,
+      granteeEmail,
       encryptedKeyGrantee,
-      txHash,
-      signature,
       expiresAt,
     }: CreateAccessGrantDto,
     ipAddress: string,
-    userAgent: string
+    userAgent: string,
   ) {
     const file = await this.prisma.file.findUnique({
       where: { id: fileId },
     });
     if (!file) {
-      throw new NotFoundException("Không tìm thấy file");
+      throw new NotFoundException('Không tìm thấy file');
     }
     if (file.ownerId !== userId) {
-      throw new ForbiddenException("Bạn không phải chủ sở hữu file");
+      throw new ForbiddenException('Bạn không phải chủ sở hữu file');
     }
 
     const grantee = await this.prisma.user.findUnique({
-      where: { walletAddress: granteeWalletAddress },
+      where: { email: granteeEmail },
     });
     if (!grantee) {
-      throw new NotFoundException("Không tìm thấy người nhận quyền truy cập");
+      throw new NotFoundException('Không tìm thấy người nhận quyền truy cập');
     }
     if (grantee.id === userId) {
       throw new BadRequestException(
-        "Không thể cấp quyền truy cập cho chính bạn"
+        'Không thể cấp quyền truy cập cho chính bạn',
       );
     }
 
     const status = await this.prisma.accessGrantStatus.findUnique({
-      where: { name: "active" },
+      where: { name: 'active' },
     });
     if (!status) {
-      throw new NotFoundException("Không tìm thấy trạng thái");
+      throw new NotFoundException('Không tìm thấy trạng thái');
     }
 
     const existingGrant = await this.prisma.accessGrant.findUnique({
@@ -76,7 +74,7 @@ export class AccessGrantService {
     });
 
     if (existingGrant && existingGrant.statusId === status.id) {
-      throw new ConflictException("Quyền truy cập đã tồn tại");
+      throw new ConflictException('Quyền truy cập đã tồn tại');
     }
 
     const grant = await this.prisma.accessGrant.create({
@@ -85,8 +83,6 @@ export class AccessGrantService {
         grantorId: userId,
         granteeId: grantee.id,
         encryptedKeyGrantee,
-        txHash,
-        signature,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         statusId: status.id,
       },
@@ -95,14 +91,14 @@ export class AccessGrantService {
         grantor: {
           select: {
             id: true,
-            walletAddress: true,
+            email: true,
             username: true,
           },
         },
         grantee: {
           select: {
             id: true,
-            walletAddress: true,
+            email: true,
             username: true,
           },
         },
@@ -112,14 +108,13 @@ export class AccessGrantService {
     // Audit Log: FILE_SHARE
     await this.auditService.log({
       userId,
-      eventType: "FILE_SHARE",
+      eventType: 'FILE_SHARE',
       fileId,
       targetUserId: grantee.id,
       eventData: {
         grantId: grant.id,
         expiresAt: grant.expiresAt,
       },
-      blockchainTxHash: txHash,
       ipAddress,
       userAgent,
     });
@@ -136,7 +131,7 @@ export class AccessGrantService {
       status,
       page = 1,
       limit = 20,
-    }: QueryAccessGrantDto
+    }: QueryAccessGrantDto,
   ) {
     const { skip, take } = getOffsetPagination(page, limit);
     const where: Prisma.AccessGrantWhereInput = {
@@ -155,9 +150,9 @@ export class AccessGrantService {
     }
 
     if (type) {
-      if (type === "given") {
+      if (type === 'given') {
         where.grantorId = userId;
-      } else if (type === "received") {
+      } else if (type === 'received') {
         where.granteeId = userId;
       }
     }
@@ -167,30 +162,30 @@ export class AccessGrantService {
         where,
         skip,
         take,
-        orderBy: { grantedAt: "desc" },
+        orderBy: { grantedAt: 'desc' },
         select: {
           id: true,
-          txHash: true,
           expiresAt: true,
           grantedAt: true,
           file: {
             select: {
               id: true,
               fileName: true,
+              originalFileName: true,
               fileSize: true,
             },
           },
           grantor: {
             select: {
               id: true,
-              walletAddress: true,
+              email: true,
               username: true,
             },
           },
           grantee: {
             select: {
               id: true,
-              walletAddress: true,
+              email: true,
               username: true,
             },
           },
@@ -224,27 +219,27 @@ export class AccessGrantService {
       select: {
         id: true,
         encryptedKeyGrantee: true,
-        txHash: true,
         expiresAt: true,
         grantedAt: true,
         file: {
           select: {
             id: true,
             fileName: true,
+            originalFileName: true,
             fileSize: true,
           },
         },
         grantor: {
           select: {
             id: true,
-            walletAddress: true,
+            email: true,
             username: true,
           },
         },
         grantee: {
           select: {
             id: true,
-            walletAddress: true,
+            email: true,
             username: true,
           },
         },
@@ -256,17 +251,16 @@ export class AccessGrantService {
         },
         revokedAt: true,
         revokeReason: true,
-        revokeSignature: true,
       },
     });
 
     if (!grant) {
-      throw new NotFoundException("Quyền truy cập không tồn tại");
+      throw new NotFoundException('Quyền truy cập không tồn tại');
     }
 
     if (grant.grantor.id !== userId && grant.grantee.id !== userId) {
       throw new ForbiddenException(
-        "Bạn không có quyền cập nhật quyền truy cập này"
+        'Bạn không có quyền cập nhật quyền truy cập này',
       );
     }
 
@@ -278,7 +272,7 @@ export class AccessGrantService {
     id: string,
     revokeAccessGrantDto: RevokeAccessGrantDto,
     ipAddress: string,
-    userAgent: string
+    userAgent: string,
   ) {
     const grant = await this.prisma.accessGrant.findUnique({
       where: { id },
@@ -303,15 +297,15 @@ export class AccessGrantService {
     });
 
     if (!grant) {
-      throw new NotFoundException("Quyền truy cập không tồn tại");
+      throw new NotFoundException('Quyền truy cập không tồn tại');
     }
 
     if (grant.grantor.id !== userId) {
-      throw new ForbiddenException("Bạn không có quyền hủy quyền truy cập này");
+      throw new ForbiddenException('Bạn không có quyền hủy quyền truy cập này');
     }
 
-    if (grant.status.name === "revoked") {
-      throw new ConflictException("Quyền truy cập này đã bị hủy");
+    if (grant.status.name === 'revoked') {
+      throw new ConflictException('Quyền truy cập này đã bị hủy');
     }
 
     const updatedGrant = await this.prisma.accessGrant.update({
@@ -319,25 +313,23 @@ export class AccessGrantService {
       data: {
         status: {
           connect: {
-            name: "revoked",
+            name: 'revoked',
           },
         },
         revokedAt: new Date(),
         revokeReason: revokeAccessGrantDto.reason,
-        revokeSignature: revokeAccessGrantDto.signature,
       },
     });
 
     // Audit Log: FILE_REVOKE
     await this.auditService.log({
       userId,
-      eventType: "FILE_REVOKE",
+      eventType: 'FILE_REVOKE',
       fileId: grant.file.id,
       eventData: {
         grantId: id,
         reason: revokeAccessGrantDto.reason,
       },
-      signature: revokeAccessGrantDto.signature,
       ipAddress,
       userAgent,
     });
@@ -358,14 +350,14 @@ export class AccessGrantService {
           select: {
             id: true,
             email: true,
-            walletAddress: true,
+            username: true,
           },
         },
         grantee: {
           select: {
             id: true,
             email: true,
-            walletAddress: true,
+            username: true,
           },
         },
         status: {
@@ -378,17 +370,17 @@ export class AccessGrantService {
     });
 
     if (!grant) {
-      throw new NotFoundException("Không tìm thấy quyền truy cập");
+      throw new NotFoundException('Không tìm thấy quyền truy cập');
     }
 
     if (grant.grantor.id !== userId && grant.grantee.id !== userId) {
       throw new ForbiddenException(
-        "Bạn không có quyền xác nhận quyền truy cập này"
+        'Bạn không có quyền xác nhận quyền truy cập này',
       );
     }
 
     const isExpired = grant.expiresAt && new Date() > grant.expiresAt;
-    const isRevoked = grant.status.name === "revoked";
+    const isRevoked = grant.status.name === 'revoked';
     const isValid = !(isExpired || isRevoked);
 
     return {

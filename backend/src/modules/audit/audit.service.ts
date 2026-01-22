@@ -1,6 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { PrismaService } from "src/database/prisma.service";
-import { CreateAuditDto } from "./dto/create-audit.dto";
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from 'src/database/prisma.service';
+import { CreateAuditDto } from './dto/create-audit.dto';
 
 @Injectable()
 export class AuditService {
@@ -24,8 +24,8 @@ export class AuditService {
       });
     } catch (error) {
       this.logger.error(
-        `Failed to create audit log: ${error.message}`,
-        error.stack
+        `Failed to create audit log: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
     }
   }

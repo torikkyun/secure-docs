@@ -1,16 +1,16 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Min,
-} from "class-validator";
+} from 'class-validator';
 
 export class PrepareUploadDto {
   @IsNotEmpty()
   @IsString()
-  @ApiProperty({ example: "document.pdf" })
+  @ApiProperty({ example: 'document.pdf' })
   fileName: string;
 
   @IsNotEmpty()
@@ -21,6 +21,6 @@ export class PrepareUploadDto {
 
   @IsOptional()
   @IsString()
-  @ApiPropertyOptional({ example: "application/pdf" })
+  @ApiPropertyOptional({ example: 'application/pdf' })
   fileType?: string;
 }

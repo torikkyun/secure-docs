@@ -1,41 +1,44 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class UploadFileDto {
   @IsNotEmpty()
   @IsString()
-  @ApiProperty({ example: "0x1234567890abcdef..." })
-  fileHash: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty({ example: "QmX4k3qVvQ7ZJqPZ..." })
-  cid: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty({ example: "document.pdf" })
+  @ApiProperty({ example: 'document_1234567890.pdf' })
   fileName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ example: 'document.pdf' })
+  originalFileName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ example: '/uploads/2026/01/document_1234567890.pdf' })
+  filePath: string;
 
   @IsNotEmpty()
   @IsNumber()
   @ApiProperty({ example: 10_485_760 })
   fileSize: number;
 
+  @IsNotEmpty()
   @IsString()
-  @ApiProperty({ example: "application/pdf" })
+  @ApiProperty({ example: 'pdf' })
   fileType: string;
 
   @IsNotEmpty()
   @IsString()
-  @ApiProperty({ example: "encrypted_aes_key_base64" })
-  encryptedKeyOwner: string;
+  @ApiProperty({ example: 'application/pdf' })
+  mimeType: string;
 
-  @IsNumber()
-  @ApiProperty({ example: 10_485_760 })
-  pinSize: number;
-
+  @IsNotEmpty()
   @IsString()
-  @ApiProperty({ example: "pinata" })
-  pinService: string;
+  @ApiProperty({ example: 'a3f5d8e9c1b2...' })
+  fileHash: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ example: 'encrypted_aes_key_base64' })
+  encryptedKeyOwner: string;
 }

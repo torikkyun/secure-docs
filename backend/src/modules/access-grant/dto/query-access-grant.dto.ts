@@ -1,6 +1,6 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
-import { OffsetPaginationQueryDto } from "src/common/dto/offset-pagination-query.dto";
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
+import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
 
 export class QueryAccessGrantDto extends OffsetPaginationQueryDto {
   @IsOptional()
@@ -13,13 +13,13 @@ export class QueryAccessGrantDto extends OffsetPaginationQueryDto {
 
   @IsOptional()
   @ApiPropertyOptional({
-    enum: ["given", "received"],
+    enum: ['given', 'received'],
   })
-  type?: "given" | "received";
+  type?: 'given' | 'received';
 
   @IsOptional()
   @ApiPropertyOptional({
-    enum: ["active", "revoked"],
+    enum: ['active', 'revoked'],
   })
   status?: string;
 }

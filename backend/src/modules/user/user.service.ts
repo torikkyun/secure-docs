@@ -2,16 +2,16 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { Request } from "express";
-import { Prisma } from "generated/prisma/client";
-import { serializeBigInt } from "src/common/utils/bigint.util";
-import { getOffsetPagination } from "src/common/utils/pagination.util";
-import extractIpAndUserAgent from "src/common/utils/request.util";
-import { PrismaService } from "src/database/prisma.service";
-import { AuditService } from "../audit/audit.service";
-import { QueryUserDto } from "./dto/query-user.dto";
-import { UpdateUserProfileDto } from "./dto/update-user-profile.dto";
+} from '@nestjs/common';
+import { Request } from 'express';
+import { Prisma } from 'generated/prisma/client';
+import { serializeBigInt } from 'src/common/utils/bigint.util';
+import { getOffsetPagination } from 'src/common/utils/pagination.util';
+import extractIpAndUserAgent from 'src/common/utils/request.util';
+import { PrismaService } from 'src/database/prisma.service';
+import { AuditService } from '../audit/audit.service';
+import { QueryUserDto } from './dto/query-user.dto';
+import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 
 @Injectable()
 export class UserService {
@@ -27,9 +27,9 @@ export class UserService {
       where: { id: userId },
       select: {
         id: true,
-        walletAddress: true,
         username: true,
         email: true,
+        publicKey: true,
         storageUsed: true,
         storageLimit: true,
         isActive: true,
@@ -41,7 +41,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("Không tìm thấy người dùng");
+      throw new NotFoundException('Không tìm thấy người dùng');
     }
 
     return serializeBigInt(user);
@@ -50,12 +50,12 @@ export class UserService {
   async updateProfile(
     userId: string,
     { email, username }: UpdateUserProfileDto,
-    req: Request
+    req: Request,
   ) {
     if (email) {
       const existing = await this.prisma.user.findUnique({ where: { email } });
       if (existing && existing.id !== userId) {
-        throw new ConflictException("Email đã được sử dụng bởi tài khoản khác");
+        throw new ConflictException('Email đã được sử dụng bởi tài khoản khác');
       }
     }
 
@@ -67,9 +67,9 @@ export class UserService {
       },
       select: {
         id: true,
-        walletAddress: true,
         username: true,
         email: true,
+        publicKey: true,
         storageUsed: true,
         storageLimit: true,
         isActive: true,
@@ -85,7 +85,7 @@ export class UserService {
     // Audit Log: USER_UPDATE_PROFILE
     await this.auditService.log({
       userId: user.id,
-      eventType: "USER_UPDATE_PROFILE",
+      eventType: 'USER_UPDATE_PROFILE',
       eventData: {
         username,
         email,
@@ -104,7 +104,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("Không tìm thấy người dùng");
+      throw new NotFoundException('Không tìm thấy người dùng');
     }
 
     const used = BigInt(user.storageUsed);
@@ -126,8 +126,8 @@ export class UserService {
     const where: Prisma.UserWhereInput = search
       ? {
           OR: [
-            { username: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
+            { username: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
           ],
         }
       : {};
@@ -136,7 +136,6 @@ export class UserService {
       this.prisma.user.findMany({
         select: {
           id: true,
-          walletAddress: true,
           username: true,
           email: true,
           publicKey: true,
@@ -151,7 +150,7 @@ export class UserService {
         where,
         skip,
         take,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.user.count({ where }),
     ]);
@@ -164,38 +163,11 @@ export class UserService {
     };
   }
 
-  async findByWallet(walletAddress: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { walletAddress },
-      select: {
-        id: true,
-        walletAddress: true,
-        username: true,
-        email: true,
-        publicKey: true,
-        storageUsed: true,
-        storageLimit: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        lastLoginAt: true,
-        role: { select: { name: true } },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException("Không tìm thấy người dùng");
-    }
-
-    return serializeBigInt(user);
-  }
-
   async findByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
-        walletAddress: true,
         username: true,
         email: true,
         publicKey: true,
@@ -210,7 +182,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException("Không tìm thấy người dùng với email này");
+      throw new NotFoundException('Không tìm thấy người dùng với email này');
     }
 
     return serializeBigInt(user);

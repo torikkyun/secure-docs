@@ -1,14 +1,14 @@
-import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
-import { OffsetPaginationQueryDto } from "src/common/dto/offset-pagination-query.dto";
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
+import { OffsetPaginationQueryDto } from 'src/common/dto/offset-pagination-query.dto';
 
 export class QueryFileDto extends OffsetPaginationQueryDto {
   @IsOptional()
   @ApiPropertyOptional({
-    enum: ["uploaded", "received", "all"],
-    default: "uploaded",
+    enum: ['uploaded', 'received', 'all'],
+    default: 'uploaded',
   })
-  type?: "uploaded" | "received" | "all";
+  type?: 'uploaded' | 'received' | 'all';
 
   @IsOptional()
   @ApiPropertyOptional()
@@ -19,6 +19,6 @@ export class QueryFileDto extends OffsetPaginationQueryDto {
   sortBy?: string;
 
   @IsOptional()
-  @ApiPropertyOptional({ enum: ["asc", "desc"], default: "desc" })
-  order?: "asc" | "desc";
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
+  order?: 'asc' | 'desc';
 }

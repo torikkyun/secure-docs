@@ -18,10 +18,7 @@ import { UserService } from './user.service';
 @ApiTags('users')
 @ApiBearerAuth()
 export class UserController {
-  private readonly userService: UserService;
-  constructor(userService: UserService) {
-    this.userService = userService;
-  }
+  constructor(private readonly userService: UserService) {}
 
   @Get('/profile')
   async getProfile(@CurrentUser() user: { id: string }) {
@@ -45,11 +42,6 @@ export class UserController {
   @Get()
   async findAll(@Query() dto: QueryUserDto) {
     return await this.userService.findAll(dto);
-  }
-
-  @Get('wallet/:address')
-  async getUserByWallet(@Param('address') address: string) {
-    return await this.userService.findByWallet(address);
   }
 
   @Get('email/:email')
