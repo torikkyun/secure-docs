@@ -2,14 +2,14 @@ import {
   type ExecutionContext,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { AuthGuard } from '@nestjs/passport';
-import type { Observable } from 'rxjs';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { AuthGuard } from "@nestjs/passport";
+import type { Observable } from "rxjs";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
 @Injectable()
-export class JwtGuard extends AuthGuard('jwt') {
+export class JwtGuard extends AuthGuard("jwt") {
   constructor(private readonly reflector: Reflector) {
     super();
   }
@@ -32,7 +32,7 @@ export class JwtGuard extends AuthGuard('jwt') {
   handleRequest<TUser = unknown>(err: unknown, user: TUser): TUser {
     if (err || !user) {
       throw new UnauthorizedException(
-        'Bạn cần đăng nhập để truy cập tài nguyên này',
+        "Bạn cần đăng nhập để truy cập tài nguyên này",
       );
     }
 

@@ -14,183 +14,93 @@ datasource db {
 }
 
 model User {
-  id              String        @id @default(uuid()) @map("id") @db.Uuid
-  roleId          String        @map("role_id") @db.Uuid
-  username        String        @map("username") @db.VarChar(100)
-  email           String        @unique @map("email") @db.VarChar(255)
-  password        String        @map("password") @db.VarChar(255)
-  passcode        String        @map("passcode") @db.VarChar(6)
-  publicKey       String        @map("public_key") @db.Text
-  storageUsed     BigInt        @default(0) @map("storage_used")
-  storageLimit    BigInt        @default(1073741824) @map("storage_limit")
-  isActive        Boolean       @default(true) @map("is_active")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  lastLoginAt     DateTime?     @map("last_login_at")
-  // Relations
-  role            Role          @relation("UserRoles", fields: [roleId], references: [id])
-  files           File[]        @relation("UserFiles")
-  grantsGiven     AccessGrant[] @relation("Grantor")
-  grantsReceived  AccessGrant[] @relation("Grantee")
-  downloads       Download[]
-  auditLogs       AuditLog[]    @relation("AuditLogUser")
-  auditLogsTarget AuditLog[]    @relation("AuditLogTargetUser")
-  sessions        UserSession[]
+  id        String   @id @default(uuid())
+  roleId    String   @map("role_id")
+  role      Role     @relation("UserRoles", fields: [roleId], references: [id])
+  email     String   @unique
+  password  String
+  passcode  String?
+  name      String
+  avatar    String
+  publicKey String   @unique @map("public_key")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  isBanned  Boolean  @default(false) @map("is_banned")
+  isDeleted Boolean  @default(false) @map("is_deleted")
+
+  ownedFiles     File[]         @relation("FileOwner")
+  sentShares     Share[]        @relation("ShareSender")
+  receivedShares Share[]        @relation("ShareRecipient")
+  fileActivities FileActivity[] @relation("FileActivityUser")
 
   @@map("users")
 }
 
-model File {
-  id                String        @id @default(uuid()) @map("id") @db.Uuid
-  ownerId           String        @map("owner_id") @db.Uuid
-  fileName          String        @map("file_name") @db.VarChar(255)
-  originalFileName  String        @map("original_file_name") @db.VarChar(255)
-  filePath          String        @map("file_path") @db.Text
-  fileSize          BigInt        @map("file_size")
-  fileType          String        @map("file_type") @db.VarChar(100)
-  mimeType          String        @map("mime_type") @db.VarChar(100)
-  fileHash          String        @unique @map("file_hash") @db.VarChar(64)
-  encryptedKeyOwner String        @map("encrypted_key_owner") @db.Text
-  uploadTimestamp   DateTime      @default(now()) @map("upload_timestamp")
-  statusId          String        @map("status_id") @db.Uuid
-  // Relations
-  owner             User          @relation("UserFiles", fields: [ownerId], references: [id])
-  status            FileStatus    @relation(fields: [statusId], references: [id])
-  grants            AccessGrant[]
-  downloads         Download[]
-  auditLogs         AuditLog[]
-
-  @@map("files")
-}
-
-model AccessGrant {
-  id                  String            @id @default(uuid()) @map("id") @db.Uuid
-  fileId              String            @map("file_id") @db.Uuid
-  grantorId           String            @map("grantor_id") @db.Uuid
-  granteeId           String            @map("grantee_id") @db.Uuid
-  encryptedKeyGrantee String            @map("encrypted_key_grantee") @db.Text
-  grantedAt           DateTime          @default(now()) @map("granted_at")
-  expiresAt           DateTime?         @map("expires_at")
-  statusId            String            @map("status_id") @db.Uuid
-  revokedAt           DateTime?         @map("revoked_at")
-  revokeReason        String?           @map("revoke_reason")
-  // Relations
-  file                File              @relation(fields: [fileId], references: [id])
-  grantor             User              @relation("Grantor", fields: [grantorId], references: [id])
-  grantee             User              @relation("Grantee", fields: [granteeId], references: [id])
-  status              AccessGrantStatus @relation(fields: [statusId], references: [id])
-  downloads           Download[]
-
-  @@unique([fileId, granteeId], name: "idx_unique_grant")
-  @@map("access_grants")
-}
-
-model Download {
-  id                String         @id @default(uuid()) @map("id") @db.Uuid
-  fileId            String         @map("file_id") @db.Uuid
-  userId            String         @map("user_id") @db.Uuid
-  accessGrantId     String?        @map("access_grant_id") @db.Uuid
-  downloadTimestamp DateTime       @default(now()) @map("download_timestamp")
-  ipAddress         String         @map("ip_address") @db.VarChar(45)
-  userAgent         String         @map("user_agent") @db.Text
-  statusId          String         @map("status_id") @db.Uuid
-  errorMessage      String?        @map("error_message")
-  // Relations
-  file              File           @relation(fields: [fileId], references: [id])
-  user              User           @relation(fields: [userId], references: [id])
-  accessGrant       AccessGrant?   @relation(fields: [accessGrantId], references: [id])
-  status            DownloadStatus @relation(fields: [statusId], references: [id])
-
-  @@map("downloads")
-}
-
-model AuditLog {
-  id           String    @id @default(uuid()) @map("id") @db.Uuid
-  eventTypeId  String    @map("event_type_id") @db.Uuid
-  userId       String    @map("user_id") @db.Uuid
-  fileId       String?   @map("file_id") @db.Uuid
-  targetUserId String?   @map("target_user_id") @db.Uuid
-  eventData    Json      @map("event_data")
-  txHash       String?   @map("tx_hash") @db.VarChar(66)
-  ipAddress    String    @map("ip_address") @db.VarChar(45)
-  userAgent    String    @map("user_agent") @db.Text
-  createdAt    DateTime  @default(now()) @map("created_at")
-  // Relations
-  user         User      @relation("AuditLogUser", fields: [userId], references: [id])
-  file         File?     @relation(fields: [fileId], references: [id])
-  targetUser   User?     @relation("AuditLogTargetUser", fields: [targetUserId], references: [id])
-  eventType    EventType @relation(fields: [eventTypeId], references: [id])
-
-  @@map("audit_logs")
-}
-
-model EventType {
-  id          String     @id @default(uuid()) @map("id") @db.Uuid
-  name        String     @unique @map("name") @db.VarChar(50)
-  description String?    @map("description")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  auditLogs   AuditLog[]
-
-  @@map("event_types")
-}
-
-model UserSession {
-  id             String   @id @default(uuid()) @map("id") @db.Uuid
-  userId         String   @map("user_id") @db.Uuid
-  sessionToken   String   @unique @map("session_token") @db.Text
-  ipAddress      String?  @map("ip_address") @db.VarChar(45)
-  userAgent      String?  @map("user_agent") @db.Text
-  createdAt      DateTime @default(now()) @map("created_at")
-  expiresAt      DateTime @map("expires_at")
-  lastActivityAt DateTime @default(now()) @map("last_activity_at")
-  isActive       Boolean  @default(true) @map("is_active")
-  // Relations
-  user           User     @relation(fields: [userId], references: [id])
-
-  @@map("user_sessions")
-}
-
 model Role {
-  id          String   @id @default(uuid()) @map("id") @db.Uuid
-  name        String   @unique @map("name")
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  users       User[]   @relation("UserRoles")
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]   @relation("UserRoles")
 
   @@map("roles")
 }
 
-model FileStatus {
-  id          String   @id @default(uuid()) @map("id") @db.Uuid
-  name        String   @unique @map("name")
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  files       File[]
+model File {
+  id                      String   @id @default(uuid())
+  ownerId                 String   @map("owner_id")
+  owner                   User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  filename                String
+  filePath                String   @map("file_path") // Path to encrypted file on server
+  wrappedAesKey           String   @map("wrapped_aes_key") // AES key wrapped by owner's public key
+  mimeType                String   @map("mime_type")
+  size                    BigInt
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  isDeleted               Boolean  @default(false) @map("is_deleted")
+  enableBlockchainLogging Boolean  @default(true) @map("enable_blockchain_logging")
 
-  @@map("file_status")
+  shares     Share[]        @relation("FileShares")
+  activities FileActivity[] @relation("FileActivities")
+
+  @@map("files")
 }
 
-model AccessGrantStatus {
-  id          String        @id @default(uuid()) @map("id") @db.Uuid
-  name        String        @unique @map("name")
-  description String?
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-  grants      AccessGrant[]
+model Share {
+  id            String   @id @default(uuid())
+  fileId        String   @map("file_id")
+  file          File     @relation("FileShares", fields: [fileId], references: [id], onDelete: Restrict)
+  senderId      String   @map("sender_id")
+  sender        User     @relation("ShareSender", fields: [senderId], references: [id], onDelete: Restrict)
+  recipientId   String   @map("recipient_id")
+  recipient     User     @relation("ShareRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  wrappedAesKey String   @map("wrapped_aes_key")
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  @@map("access_grant_status")
+  @@unique([fileId, recipientId])
+  @@map("shares")
 }
 
-model DownloadStatus {
-  id          String     @id @default(uuid()) @map("id") @db.Uuid
-  name        String     @unique @map("name")
-  description String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  downloads   Download[]
+enum FileActivityAction {
+  UPLOAD
+  SHARE
+  DOWNLOAD
+  DELETE
+  REVOKE_SHARE
+}
 
-  @@map("download_status")
+model FileActivity {
+  id               String             @id @default(uuid())
+  userId           String             @map("user_id")
+  user             User               @relation("FileActivityUser", fields: [userId], references: [id], onDelete: Restrict)
+  fileId           String             @map("file_id")
+  file             File               @relation("FileActivities", fields: [fileId], references: [id], onDelete: Restrict)
+  action           FileActivityAction
+  metadata         Json               @default("{}")
+  ipAddress        String?            @map("ip_address")
+  userAgent        String?            @map("user_agent")
+  blockchainTxHash String?            @map("blockchain_tx_hash")
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  @@map("file_activities")
 }

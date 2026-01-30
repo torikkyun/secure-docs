@@ -1,0 +1,280 @@
+---
+description: "Backend architecture guidelines for secure document management system built with NestJS. Covers authentication, RBAC, database design, and infrastructure components including health checks, caching, and logging."
+globs: ["backend/**/*.{ts,js}", "src/**/*.{ts,js}"]
+---
+
+# Backend Architecture Documentation
+
+## Project Overview
+
+This is a secure document management system backend built with NestJS, featuring robust authentication, role-based access control, and comprehensive infrastructure components. The application follows modern security practices with JWT-based authentication, password hashing, and role-based authorization.
+
+### Key Features
+
+- JWT-based authentication system
+- Role-based access control (RBAC)
+- Database encryption and security
+- Comprehensive error handling
+- API documentation with Swagger
+- Health monitoring
+- Caching with Redis
+- Input validation and sanitization
+
+## Directory Structure
+
+```
+backend/
+├── .vscode/                 # VSCode configuration
+├── prisma/                  # Database schema and migrations
+│   ├── migrations/          # Database migration files
+│   ├── schema.prisma        # Database schema definition
+│   └── seeds/               # Data seeding scripts
+├── src/                     # Main source code
+│   ├── app.module.ts        # Main application module
+│   ├── main.ts              # Application entry point
+│   ├── common/              # Shared utilities and components
+│   │   ├── decorators/      # Custom decorators (CurrentUser, Public, Roles)
+│   │   ├── dto/             # Data transfer objects
+│   │   ├── filters/         # Exception filters
+│   │   ├── guards/          # Authentication and authorization guards
+│   │   ├── interceptors/    # Request/response interceptors
+│   │   ├── strategies/      # Passport authentication strategies
+│   │   ├── types/           # Type definitions
+│   │   └── utils/           # Utility functions
+│   ├── config/              # Configuration modules
+│   ├── database/            # Database connection and services
+│   ├── infrastructure/      # Cross-cutting concerns
+│   │   ├── cache/           # Redis caching implementation
+│   │   ├── health/          # Health check functionality
+│   │   └── logging/         # Logging service
+│   └── modules/             # Feature modules
+│       ├── auth/            # Authentication module
+│       ├── role/            # Role management module
+│       └── user/            # User management module
+├── .env.sample              # Environment variables template
+├── nest-cli.json            # Nest CLI configuration
+├── package.json             # Project dependencies and scripts
+├── tsconfig.json            # TypeScript configuration
+└── README.md                # Project documentation
+```
+
+## Technologies and Dependencies
+
+### Core Dependencies
+
+- **NestJS** - Progressive Node.js framework for building efficient and scalable applications
+- **TypeScript** - Typed superset of JavaScript
+- **Prisma** - Modern database toolkit and ORM
+- **PostgreSQL** - Relational database
+- **Redis** - In-memory data structure store for caching
+- **Passport** - Authentication middleware
+- **JSON Web Tokens (JWT)** - Secure token-based authentication
+- **Swagger** - API documentation generator
+- **Class Validator & Transformer** - Runtime validation and transformation
+- **Bcrypt** - Password hashing library
+
+### Development Dependencies
+
+- **Jest** - Testing framework
+- **Supertest** - HTTP assertions library
+- **ESLint** - Linting utility
+- **Prettier** - Code formatter
+- **TS-Node** - TypeScript execution environment
+
+## Authentication System
+
+The application implements a comprehensive authentication system using JWT tokens with the following components:
+
+### Guards
+
+- **JwtGuard**: Protects routes requiring authentication
+- **RolesGuard**: Enforces role-based access control
+
+### Decorators
+
+- **@Public()**: Marks routes as publicly accessible
+- **@Roles()**: Specifies required roles for access
+- **@CurrentUser()**: Retrieves authenticated user from request
+
+### Strategies
+
+- **JwtStrategy**: Validates JWT tokens and retrieves user information
+
+### Security Features
+
+- Passwords are hashed using bcrypt with salt rounds
+- JWT tokens have configurable expiration times
+- Protected routes automatically validate tokens
+- Role-based access control prevents unauthorized access
+
+## Database Schema
+
+The application uses PostgreSQL with Prisma ORM and follows these models:
+
+### User Model
+
+```prisma
+model User {
+  id        String   @id @default(uuid())
+  roleId    String   @map("role_id")
+  role      Role     @relation("UserRoles", fields: [roleId], references: [id])
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+```
+
+### Role Model
+
+```prisma
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  users       User[]   @relation("UserRoles")
+
+  @@map("roles")
+}
+```
+
+### Relationships
+
+- One-to-many relationship between Role and User (one role can have many users)
+- Each User belongs to exactly one Role
+
+## Configuration
+
+The application uses NestJS ConfigModule for managing configuration with the following setup:
+
+### Environment Variables
+
+- **PORT**: Server port (default: 3000)
+- **DATABASE_URL**: PostgreSQL connection string
+- **JWT_SECRET**: Secret key for JWT signing
+- **JWT_EXPIRATION**: Token expiration time (default: 1d)
+- **REDIS_URL**: Redis connection URL
+- **CACHE_TTL**: Cache time-to-live in milliseconds (default: 300000)
+- **CACHE_LRU_SIZE**: Maximum number of items in cache (default: 10000)
+
+### Configuration Files
+
+- **configuration.ts**: Base configuration loader
+- **jwt.config.ts**: JWT-related settings
+- **redis.config.ts**: Redis cache configuration
+- **database.config.ts**: Database connection settings
+
+## Module Breakdown
+
+### Auth Module
+
+Handles user authentication including registration and login.
+
+#### Components:
+
+- **AuthController**: Manages `/api/auth` routes
+  - POST `/register`: Creates new user accounts
+  - POST `/login`: Authenticates users and returns JWT tokens
+- **AuthService**: Implements authentication logic
+  - User registration with password hashing
+  - User login with credential validation
+  - JWT token generation
+- **DTOs**:
+  - LoginDto: Validates login credentials
+  - RegisterDto: Extends LoginDto with name field
+
+### User Module
+
+Manages user profiles and user-related operations.
+
+#### Components:
+
+- **UserController**: Manages `/api/users` routes
+  - GET `/profile`: Retrieves current user profile
+  - GET `/`: Lists all users (admin only)
+  - GET `/:uuid`: Retrieves specific user by ID (admin only)
+- **UserService**: Implements user business logic
+  - Profile retrieval
+  - User listing with pagination and search
+  - Individual user lookup
+- **DTOs**:
+  - QueryUserDto: Handles pagination and search parameters
+
+### Role Module
+
+Currently a placeholder module for role management functionality.
+
+## Infrastructure Components
+
+### Health Checks
+
+- **HealthController**: Provides `/health` endpoint
+- Uses NestJS Terminus for health indicators
+- Monitors database connectivity
+
+### Logging
+
+- **LoggerService**: Custom logger extending Nest's ConsoleLogger
+- Supports different log levels (error, warn, log, debug)
+- Designed for extensibility with external logging services
+
+### Caching
+
+- **RedisModule**: Global Redis cache integration
+- **RedisService**: Simple get/set operations for caching
+- **UserAwareCacheInterceptor**: Cache interceptor that considers user context
+- Configurable TTL and LRU size settings
+
+### Error Handling
+
+- **HttpExceptionFilter**: Global exception handler
+- Formats error responses consistently
+- Logs error details for debugging
+
+### Request Processing
+
+- **TransformInterceptor**: Global response transformation
+- **ValidationPipe**: Automatic input validation and transformation
+- Custom utilities for IP and user agent extraction
+
+## Deployment Information
+
+### Scripts
+
+- `npm run build`: Compiles TypeScript to JavaScript
+- `npm run start`: Starts the production server
+- `npm run start:dev`: Starts development server with hot reload
+- `npm run start:debug`: Starts server in debug mode
+- `npm run db:dev`: Runs Prisma migrations and generates client
+- `npm run seed:dev`: Seeds the database with initial data
+- `npm run prisma:studio`: Opens Prisma Studio for database management
+- `npm run test`: Runs unit tests
+- `npm run test:e2e`: Runs end-to-end tests
+
+### Environment Setup
+
+1. Copy `.env.sample` to `.env` and configure variables
+2. Set up PostgreSQL database
+3. Configure Redis server (optional but recommended)
+4. Run database migrations: `npm run db:dev`
+5. Seed initial data: `npm run seed:dev`
+
+### Initial Data
+
+The seeding script creates:
+
+- Two roles: "admin" and "user"
+- Admin user with email "admin@gmail.com" and password "Thisisapassword123"
+
+## API Documentation
+
+- Swagger UI available at `/swagger` endpoint
+- Auto-generated API documentation
+- Interactive API testing interface
+- Bearer token authentication support

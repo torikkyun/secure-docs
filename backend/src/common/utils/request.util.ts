@@ -1,4 +1,4 @@
-import { Request } from "express";
+import type { Request } from "express";
 
 export function extractIpAndUserAgent(req: Request): {
   ipAddress: string;
@@ -24,6 +24,16 @@ export function extractIpAndUserAgent(req: Request): {
 
   const userAgent = req.headers["user-agent"] as string;
   return { ipAddress, userAgent };
+}
+
+export function getIpAddress(req: Request): string {
+  const { ipAddress } = extractIpAndUserAgent(req);
+  return ipAddress;
+}
+
+export function getUserAgent(req: Request): string {
+  const { userAgent } = extractIpAndUserAgent(req);
+  return userAgent;
 }
 
 export default extractIpAndUserAgent;

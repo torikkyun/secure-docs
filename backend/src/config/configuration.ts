@@ -1,5 +1,5 @@
 export default () => ({
   isGlobal: true,
-  envFilePath: `.env`,
+  envFilePath: ".env",
   expandVariables: true,
 });

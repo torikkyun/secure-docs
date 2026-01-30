@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-75b70edbdd6925adcf1aa82b26098ea9a30de2f9",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/FileActivityLogger.sol": "project/contracts/FileActivityLogger.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/FileActivityLogger.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.19;\r\n\r\n/**\r\n * @title File Activity Logger Smart Contract\r\n * @dev Logs file sharing and download activities on blockchain for secure document management\r\n * @notice This contract provides immutable audit trail for file operations\r\n */\r\ncontract FileActivityLogger {\r\n    // Events - All data stored in events (cheap), not in storage (expensive)\r\n    event FileShared(\r\n        string indexed fileId,\r\n        string sender,\r\n        string[] recipients,\r\n        uint256 timestamp\r\n    );\r\n\r\n    event FileDownloaded(\r\n        string indexed fileId,\r\n        string recipient,\r\n        uint256 timestamp\r\n    );\r\n\r\n    event OwnershipTransferred(\r\n        address indexed previousOwner,\r\n        address indexed newOwner,\r\n        uint256 timestamp\r\n    );\r\n\r\n    // Minimal state variables - only essential data\r\n    mapping(string => mapping(string => bool)) private downloadStatus; // fileId => recipientEmail => hasDownloaded\r\n\r\n    // Counters (cheaper than storing arrays)\r\n    mapping(string => uint256) private shareCount;\r\n    mapping(string => uint256) private downloadCount;\r\n    uint256 private totalShareOperations;\r\n    uint256 private totalDownloadOperations;\r\n\r\n    // Contract metadata\r\n    address public owner;\r\n    uint256 public immutable deployedAt;\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"Only owner can call this function\");\r\n        _;\r\n    }\r\n\r\n    constructor() {\r\n        owner = msg.sender;\r\n        deployedAt = block.timestamp;\r\n    }\r\n\r\n    /**\r\n     * @dev Log a file share activity\r\n     * @param fileId Unique identifier of the file\r\n     * @param sender Email of the file sender/sharer\r\n     * @param recipients Array of recipient emails\r\n     */\r\n    function logFileShare(\r\n        string calldata fileId,\r\n        string calldata sender,\r\n        string[] calldata recipients\r\n    ) external onlyOwner {\r\n        require(bytes(fileId).length > 0, \"FileId cannot be empty\");\r\n        require(bytes(sender).length > 0, \"Sender email cannot be empty\");\r\n        require(recipients.length > 0, \"Must have at least one recipient\");\r\n\r\n        // Validate recipient emails\r\n        for (uint256 i = 0; i < recipients.length; i++) {\r\n            require(bytes(recipients[i]).length > 0, \"Recipient email cannot be empty\");\r\n        }\r\n\r\n        // Update counters\r\n        shareCount[fileId]++;\r\n        totalShareOperations++;\r\n\r\n        // Emit event (all data stored here, queryable from blockchain)\r\n        emit FileShared(fileId, sender, recipients, block.timestamp);\r\n    }\r\n\r\n    /**\r\n     * @dev Log a file download activity\r\n     * @param fileId Unique identifier of the file\r\n     * @param recipient Email of the recipient who downloaded\r\n     */\r\n    function logFileDownload(\r\n        string calldata fileId,\r\n        string calldata recipient\r\n    ) external onlyOwner {\r\n        require(bytes(fileId).length > 0, \"FileId cannot be empty\");\r\n        require(bytes(recipient).length > 0, \"Recipient email cannot be empty\");\r\n\r\n        // Update counters and status\r\n        downloadCount[fileId]++;\r\n        totalDownloadOperations++;\r\n        downloadStatus[fileId][recipient] = true;\r\n\r\n        // Emit event (all data stored here, queryable from blockchain)\r\n        emit FileDownloaded(fileId, recipient, block.timestamp);\r\n    }\r\n\r\n    /**\r\n     * @dev Check if a recipient has downloaded a specific file\r\n     * @param fileId Unique identifier of the file\r\n     * @param recipient Email of the recipient\r\n     * @return hasDownloaded True if recipient has downloaded the file\r\n     */\r\n    function hasRecipientDownloaded(\r\n        string calldata fileId,\r\n        string calldata recipient\r\n    ) external view returns (bool hasDownloaded) {\r\n        return downloadStatus[fileId][recipient];\r\n    }\r\n\r\n    /**\r\n     * @dev Get share count for a file\r\n     * @param fileId Unique identifier of the file\r\n     * @return count Number of times the file has been shared\r\n     */\r\n    function getShareCount(string calldata fileId) external view returns (uint256 count) {\r\n        return shareCount[fileId];\r\n    }\r\n\r\n    /**\r\n     * @dev Get download count for a file\r\n     * @param fileId Unique identifier of the file\r\n     * @return count Number of times the file has been downloaded\r\n     */\r\n    function getDownloadCount(string calldata fileId) external view returns (uint256 count) {\r\n        return downloadCount[fileId];\r\n    }\r\n\r\n    /**\r\n     * @dev Get contract statistics\r\n     * @return totalShares Total number of share operations\r\n     * @return totalDownloads Total number of download operations\r\n     */\r\n    function getContractStats() external view returns (\r\n        uint256 totalShares,\r\n        uint256 totalDownloads\r\n    ) {\r\n        return (totalShareOperations, totalDownloadOperations);\r\n    }\r\n\r\n    /**\r\n     * @dev Transfer contract ownership to a new address\r\n     * @param newOwner New owner address\r\n     */\r\n    function transferOwnership(address newOwner) external onlyOwner {\r\n        require(newOwner != address(0), \"Invalid new owner address\");\r\n        require(newOwner != owner, \"New owner is the same as current owner\");\r\n        \r\n        address previousOwner = owner;\r\n        owner = newOwner;\r\n        \r\n        emit OwnershipTransferred(previousOwner, newOwner, block.timestamp);\r\n    }\r\n}"
+      }
+    }
+  }
+}

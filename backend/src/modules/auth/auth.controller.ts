@@ -1,46 +1,35 @@
-import { Body, Controller, Post, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { Public } from 'src/common/decorators/public.decorator';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { Body, Controller, Post } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import { Public } from "src/common/decorators/public.decorator";
+import { AuthService } from "./auth.service";
+import { LoginDto } from "./dto/login.dto";
+import { RegisterDto } from "./dto/register.dto";
+import { AuthUser } from "src/common/types/auth-user.type";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { VerifyPasscodeDto } from "./dto/verify-passcode.dto";
 
-@Controller('api/auth')
-@ApiTags('auth')
+@Controller("api/auth")
+@ApiTags("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('register')
+  @Post("register")
   @Public()
-  register(@Body() dto: RegisterDto, @Req() req: Request) {
-    return this.authService.register(dto, req);
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
-  @Post('login')
+  @Post("login")
   @Public()
-  login(@Body() dto: LoginDto, @Req() req: Request) {
-    return this.authService.login(dto, req);
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 
-  @Post('logout')
-  @ApiBearerAuth()
-  async logout(
-    @CurrentUser()
-    user: { id: string; role: { name: string }; sessionId: string },
-    @Req() req: Request,
+  @Post("verify-passcode")
+  async verifyPasscode(
+    @Body() dto: VerifyPasscodeDto,
+    @CurrentUser() user: AuthUser,
   ) {
-    const sessionId = user.sessionId;
-    if (sessionId) {
-      await this.authService.logoutBySessionId(sessionId, req);
-      return { message: 'Đăng xuất thành công' };
-    }
+    return this.authService.verifyPasscode(dto, user.id);
   }
-
-  // @Post('admin/login')
-  // @Public()
-  // adminLogin(@Body() dto: AdminLoginDto, @Req() req: Request) {
-  //   return this.authService.adminLogin(dto, req);
-  // }
 }

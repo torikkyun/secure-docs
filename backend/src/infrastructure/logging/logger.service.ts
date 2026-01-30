@@ -1,7 +1,19 @@
-import { ConsoleLogger, Injectable, Scope } from "@nestjs/common";
+import {
+  ConsoleLogger,
+  Injectable,
+  Scope,
+  Inject,
+  Optional,
+} from "@nestjs/common";
+import { PrismaService } from "../../database/prisma.service";
+import { BlockchainService } from "../blockchain/blockchain.service";
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class LoggerService extends ConsoleLogger {
+  constructor() {
+    super();
+  }
+
   error(message: string, stack?: string, context?: string) {
     // Add custom logging logic here (e.g., send to external service)
     super.error(message, stack, context);
@@ -12,7 +24,9 @@ export class LoggerService extends ConsoleLogger {
   }
 
   log(message: string, context?: string) {
-    super.log(message, context);
+    if (message) {
+      super.log(message, context);
+    }
   }
 
   debug(message: string, context?: string) {

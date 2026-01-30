@@ -1,57 +1,164 @@
-# Sample Hardhat 3 Beta Project (`node:test` and `viem`)
+# File Activity Logger - Hardhat 3 Project
 
-This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
+Hệ thống ghi log hoạt động chia sẻ và tải file bảo mật trên Blockchain sử dụng Hardhat 3 và Solidity.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+## Tổng quan
 
-## Project Overview
+Smart contract `FileActivityLogger` cung cấp nhật ký bất biến (immutable audit trail) cho các hoạt động chia sẻ và tải file trong hệ thống quản lý tài liệu bảo mật.
 
-This example project includes:
+### Tính năng chính
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+- **Ghi log chia sẻ file**: Theo dõi người gửi và danh sách người nhận
+- **Ghi log tải file**: Theo dõi việc tải file của từng người nhận
+- **Kiểm tra trạng thái**: Xem người nhận nào đã tải file
+- **Truy vấn lịch sử**: Lấy toàn bộ hoạt động của một file
+- **Bảo mật**: Chỉ contract owner (backend) mới có thể ghi log
 
-## Usage
+## Cài đặt
 
-### Running Tests
-
-To run all the tests in the project, execute the following command:
-
-```shell
-npx hardhat test
+```bash
+cd contract
+pnpm install
 ```
 
-You can also selectively run the Solidity or `node:test` tests:
+## Sử dụng
 
-```shell
+### Chạy Tests
+
+```bash
+# Chạy tất cả tests
+npx hardhat test
+
+# Chạy riêng Solidity tests
 npx hardhat test solidity
+
+# Chạy riêng TypeScript tests
 npx hardhat test nodejs
 ```
 
-### Make a deployment to Sepolia
+### Deploy Contract
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+#### Local Development
 
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+```bash
+npx hardhat ignition deploy ignition/modules/FileActivityLogger.ts
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+#### Sepolia Testnet
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+Đầu tiên, cấu hình private key:
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
+```bash
+# Sử dụng hardhat-keystore
 npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+
+# Hoặc set environment variable
+export SEPOLIA_PRIVATE_KEY=your_private_key_here
 ```
 
-After setting the variable, you can run the deployment with the Sepolia network:
+Sau đó deploy:
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+```bash
+npx hardhat ignition deploy --network sepolia ignition/modules/FileActivityLogger.ts
 ```
+
+### Demo Script
+
+Chạy script demo để xem các tính năng:
+
+```bash
+npx hardhat run scripts/demo-file-activities.ts
+```
+
+## API Reference
+
+### Structs
+
+```solidity
+struct FileShare {
+    string fileId;
+    address sender;
+    address[] recipients;
+    uint256 timestamp;
+    uint256 blockNumber;
+}
+
+struct FileDownload {
+    string fileId;
+    address recipient;
+    uint256 timestamp;
+    uint256 blockNumber;
+}
+```
+
+### Functions
+
+#### Write Functions (chỉ owner)
+
+```solidity
+// Ghi log chia sẻ file
+function logFileShare(string fileId, address sender, address[] recipients)
+
+// Ghi log tải file
+function logFileDownload(string fileId, address recipient)
+```
+
+#### Read Functions
+
+```solidity
+// Kiểm tra người nhận đã tải file chưa
+function hasRecipientDownloaded(string fileId, address recipient) returns (bool)
+
+// Lấy tất cả hoạt động chia sẻ của file
+function getFileShares(string fileId) returns (FileShare[])
+
+// Lấy tất cả hoạt động tải của file
+function getFileDownloads(string fileId) returns (FileDownload[])
+
+// Lấy số lần chia sẻ
+function getShareCount(string fileId) returns (uint256)
+
+// Lấy số lần tải
+function getDownloadCount(string fileId) returns (uint256)
+
+// Lấy danh sách người đã tải (unique)
+function getDownloadRecipients(string fileId) returns (address[])
+```
+
+## Tích hợp với Backend
+
+Contract được thiết kế để backend NestJS có thể dễ dàng tương tác qua Web3/Ethers.js:
+
+```typescript
+// Trong BlockchainService
+async logFileShare(params: { fileId: string; senderId: string; recipientIds: string[] }) {
+  // Convert userIds to addresses và gọi contract
+  const addresses = await this.convertUserIdsToAddresses(params.recipientIds);
+  await this.contract.logFileShare(params.fileId, params.senderId, addresses);
+}
+
+async getDownloadStatus(fileId: string, userId: string): Promise<boolean> {
+  const address = await this.convertUserIdToAddress(userId);
+  return await this.contract.hasRecipientDownloaded(fileId, address);
+}
+```
+
+## Events
+
+Contract emit các events để tracking:
+
+```solidity
+event FileShared(string indexed fileId, address indexed sender, address[] recipients, uint256 timestamp, uint256 blockNumber);
+event FileDownloaded(string indexed fileId, address indexed recipient, uint256 timestamp, uint256 blockNumber);
+```
+
+## Bảo mật
+
+- Chỉ contract owner (backend admin wallet) có thể ghi log
+- Validation đầy đủ cho tất cả inputs
+- Gas optimization cho bulk operations
+- Immutable audit trail trên blockchain
+
+## License
+
+MIT

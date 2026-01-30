@@ -1,366 +1,460 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { extname } from 'node:path';
 import {
-  BadRequestException,
-  ForbiddenException,
   Injectable,
+  BadRequestException,
   NotFoundException,
-} from '@nestjs/common';
-import { Prisma } from 'generated/prisma/client';
-import { serializeBigInt } from 'src/common/utils/bigint.util';
-import { getOffsetPagination } from 'src/common/utils/pagination.util';
-import { PrismaService } from 'src/database/prisma.service';
-import { AuditService } from '../audit/audit.service';
-import { QueryFileDto } from './dto/query-file.dto';
-import { UploadFileDto } from './dto/upload-file.dto';
+  StreamableFile,
+  ForbiddenException,
+} from "@nestjs/common";
+import { Response } from "express";
+import * as fs from "fs";
+import * as path from "path";
+import { PrismaService } from "src/database/prisma.service";
+import { FileActivityAction } from "generated/prisma/enums";
+import { UploadFilesDto } from "./dto/create-file.dto";
+import { QueryFileDto } from "./dto/query-file.dto";
+import { Prisma } from "generated/prisma/client";
+import { getOffsetPagination } from "src/common/utils/pagination.util";
+import { FileActivityService } from "../file-activity/file-activity.service";
 
 @Injectable()
 export class FileService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auditService: AuditService,
+    private readonly fileActivity: FileActivityService,
   ) {}
 
-  async prepareUpload(userId: string, fileSize: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { storageUsed: true, storageLimit: true },
-    });
-    if (!user) {
-      throw new BadRequestException('Người dùng không tồn tại');
-    }
-    const remaining = BigInt(user.storageLimit) - BigInt(user.storageUsed);
-    const fileSizeBigInt = BigInt(fileSize);
-    if (fileSizeBigInt > remaining) {
-      return { canUpload: false, remainingStorage: serializeBigInt(remaining) };
-    }
-    const uploadId = randomUUID();
-    return {
-      canUpload: true,
-      remainingStorage: serializeBigInt(remaining - fileSizeBigInt),
-      uploadId,
-    };
+  private isOwner(file: { ownerId: string }, userId: string): boolean {
+    return file.ownerId === userId;
   }
 
-  async handleFileUpload(
-    ownerId: string,
-    file: Express.Multer.File,
-    { encryptedKeyOwner }: UploadFileDto,
-    ipAddress: string,
-    userAgent: string,
-  ) {
-    if (!file) {
-      throw new BadRequestException('Không có file được upload');
-    }
-
-    // Check storage limit
-    const user = await this.prisma.user.findUnique({
-      where: { id: ownerId },
-      select: { storageUsed: true, storageLimit: true },
-    });
-
-    if (!user) {
-      throw new BadRequestException('Người dùng không tồn tại');
-    }
-
-    const remaining = BigInt(user.storageLimit) - BigInt(user.storageUsed);
-    const fileSizeBigInt = BigInt(file.size);
-
-    if (fileSizeBigInt > remaining) {
-      throw new BadRequestException('Không đủ dung lượng lưu trữ');
-    }
-
-    // Calculate file hash
-    const fileBuffer = readFileSync(file.path);
-    const fileHash = createHash('sha256').update(fileBuffer).digest('hex');
-
-    // Get file info
-    const originalFileName = file.originalname;
-    const fileName = file.filename;
-    const filePath = file.path;
-    const fileSize = file.size;
-    const mimeType = file.mimetype;
-    const fileType = extname(originalFileName).substring(1).toLowerCase();
-
-    // Create file record
-    return await this.createFile(
-      ownerId,
-      {
-        fileName,
-        originalFileName,
-        filePath,
-        fileSize,
-        fileType,
-        mimeType,
-        fileHash,
-        encryptedKeyOwner,
-      },
-      ipAddress,
-      userAgent,
-    );
-  }
-
-  async createFile(
-    ownerId: string,
-    {
-      fileName,
-      originalFileName,
-      filePath,
-      fileSize,
-      fileType,
-      mimeType,
-      fileHash,
-      encryptedKeyOwner,
-    }: {
-      fileName: string;
-      originalFileName: string;
-      filePath: string;
-      fileSize: number;
-      fileType: string;
-      mimeType: string;
-      fileHash: string;
-      encryptedKeyOwner: string;
-    },
-    ipAddress: string,
-    userAgent: string,
-  ) {
-    const status = await this.prisma.fileStatus.findUnique({
-      where: { name: 'active' },
-      select: { id: true },
-    });
-
-    if (!status) {
-      throw new Error('Trạng thái file không tồn tại');
-    }
-
-    const file = await this.prisma.file.create({
-      data: {
-        ownerId,
-        fileName,
-        originalFileName,
-        filePath,
-        fileSize: BigInt(fileSize),
-        fileType,
-        mimeType,
-        fileHash,
-        encryptedKeyOwner,
-        statusId: status.id,
+  private async resolveDownloadPermission(fileId: string, userId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id: fileId,
+        OR: [
+          { ownerId: userId },
+          { shares: { some: { recipientId: userId } } },
+        ],
       },
       select: {
         id: true,
-        fileName: true,
-        originalFileName: true,
-        filePath: true,
-        fileSize: true,
-        fileType: true,
+        filename: true,
         mimeType: true,
-        fileHash: true,
-        encryptedKeyOwner: true,
-        uploadTimestamp: true,
-        status: {
-          select: {
-            name: true,
-          },
-        },
+        size: true,
+        filePath: true,
+        ownerId: true,
+        wrappedAesKey: true,
+        enableBlockchainLogging: true,
         owner: {
           select: {
             id: true,
-            username: true,
+            name: true,
             email: true,
+            publicKey: true,
+          },
+        },
+        shares: {
+          where: { recipientId: userId },
+          select: {
+            wrappedAesKey: true,
           },
         },
       },
     });
 
-    await this.prisma.user.update({
-      where: { id: ownerId },
-      data: { storageUsed: { increment: BigInt(fileSize) } },
-    });
+    if (!file) {
+      throw new NotFoundException(
+        "Không tìm thấy file hoặc không có quyền truy cập",
+      );
+    }
 
-    // Audit Log: FILE_UPLOAD
-    await this.auditService.log({
-      userId: ownerId,
-      eventType: 'FILE_UPLOAD',
-      fileId: file.id,
-      eventData: {
-        fileName: originalFileName,
-        fileSize,
-        fileType,
-        mimeType,
-      },
-      ipAddress,
-      userAgent,
-    });
+    const isOwner = file.ownerId === userId;
 
-    return serializeBigInt(file);
+    const wrappedAesKey = isOwner
+      ? file.wrappedAesKey
+      : file.shares[0]?.wrappedAesKey;
+
+    if (!wrappedAesKey) {
+      throw new ForbiddenException("Không tìm thấy khóa giải mã hợp lệ");
+    }
+
+    if (!fs.existsSync(file.filePath)) {
+      throw new NotFoundException("Không tìm thấy dữ liệu file trên máy chủ");
+    }
+
+    return {
+      file,
+      isOwner,
+      wrappedAesKey,
+    };
   }
 
-  async findAll(
+  async createFile(
+    files: Express.Multer.File[],
+    dto: UploadFilesDto,
     userId: string,
-    userRole: string,
-    {
-      page = 1,
-      limit = 20,
-      type = 'uploaded',
-      search = '',
-      sortBy = 'uploadTimestamp',
-      order = 'desc',
-    }: QueryFileDto,
   ) {
-    const { take, skip } = getOffsetPagination(page, limit);
-    const where: Prisma.FileWhereInput = {
-      status: { name: 'active' },
-    };
-    if (search) {
-      where.originalFileName = { contains: search, mode: 'insensitive' };
+    if (!files || files.length === 0) {
+      throw new BadRequestException("Không có file được tải lên");
     }
 
-    // Admin can search all files, regular users are restricted
-    const isAdmin = userRole === 'admin';
-
-    if (type === 'all' && isAdmin) {
-      // Admin searching all files - no owner/grantee filter
-    } else if (type === 'uploaded') {
-      where.ownerId = userId;
-    } else if (type === 'received') {
-      where.grants = {
-        some: {
-          granteeId: userId,
-          status: { name: 'active' },
-        },
-      };
-    } else if (!isAdmin) {
-      // Non-admin users cannot use type="all", default to uploaded
-      where.ownerId = userId;
+    if (files.length !== dto.wrappedAesKeys.length) {
+      throw new BadRequestException(
+        "Số lượng khóa AES không khớp với số lượng file",
+      );
     }
-    const [files, total] = await Promise.all([
-      this.prisma.file.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { [sortBy]: order },
-        select: {
-          id: true,
-          fileName: true,
-          originalFileName: true,
-          fileSize: true,
-          fileType: true,
-          mimeType: true,
-          uploadTimestamp: true,
-          status: {
-            select: {
-              name: true,
+
+    const uploadsDir = path.join(process.cwd(), "uploads", "files");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const enableBlockchainLogging = dto.enableBlockchainLogging ?? true;
+
+    return Promise.all(
+      files.map(async (file, index) => {
+        const wrappedAesKey = dto.wrappedAesKeys[index];
+
+        if (!wrappedAesKey) {
+          throw new BadRequestException(
+            `Thiếu khóa AES cho file: ${file.originalname}`,
+          );
+        }
+
+        if (!fs.existsSync(file.path)) {
+          throw new BadRequestException(`File not found: ${file.originalname}`);
+        }
+
+        const record = await this.prisma.file.create({
+          data: {
+            ownerId: userId,
+            filename: file.originalname,
+            filePath: file.path,
+            wrappedAesKey,
+            mimeType: file.mimetype,
+            size: BigInt(file.size),
+            enableBlockchainLogging,
+          },
+        });
+
+        await this.fileActivity.logFileActivity(
+          {
+            userId,
+            fileId: record.id,
+            action: FileActivityAction.UPLOAD,
+            metadata: {
+              filename: record.filename,
+              mimeType: record.mimeType,
+              size: record.size.toString(),
             },
           },
+          enableBlockchainLogging,
+        );
+
+        return {
+          id: record.id,
+          filename: record.filename,
+          mimeType: record.mimeType,
+          size: record.size.toString(),
+          createdAt: record.createdAt,
+        };
+      }),
+    );
+  }
+
+  async getUserFiles(
+    userId: string,
+    { page = 1, limit = 20, search, filter }: QueryFileDto,
+  ) {
+    const { take, skip } = getOffsetPagination(page, limit);
+
+    let accessFilter: Prisma.FileWhereInput = {};
+
+    if (filter === "shared") {
+      accessFilter = { shares: { some: { recipientId: userId } } };
+    } else if (filter === "owned") {
+      accessFilter = { ownerId: userId };
+    } else {
+      // Default: 'all' (owned OR shared)
+      accessFilter = {
+        OR: [
+          { ownerId: userId },
+          { shares: { some: { recipientId: userId } } },
+        ],
+      };
+    }
+
+    const searchFilter = search
+      ? {
+          AND: {
+            OR: [
+              {
+                filename: {
+                  contains: search,
+                  mode: "insensitive" as Prisma.QueryMode,
+                },
+              },
+              {
+                owner: {
+                  name: {
+                    contains: search,
+                    mode: "insensitive" as Prisma.QueryMode,
+                  },
+                },
+              },
+              {
+                owner: {
+                  email: {
+                    contains: search,
+                    mode: "insensitive" as Prisma.QueryMode,
+                  },
+                },
+              },
+            ],
+          },
+        }
+      : {};
+
+    const where: Prisma.FileWhereInput = {
+      ...accessFilter,
+      ...(search ? searchFilter : {}),
+    };
+
+    const [files, total] = await Promise.all([
+      this.prisma.file.findMany({
+        select: {
+          id: true,
+          filename: true,
+          mimeType: true,
+          size: true,
+          wrappedAesKey: true,
+          createdAt: true,
+          updatedAt: true,
+          ownerId: true,
           owner: {
             select: {
               id: true,
-              username: true,
+              name: true,
+              email: true,
+            },
+          },
+          shares: {
+            where: { recipientId: userId },
+            select: {
+              id: true,
+              wrappedAesKey: true,
+              createdAt: true,
+              sender: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        where,
+        skip,
+        take,
+      }),
+      this.prisma.file.count({ where }),
+    ]);
+
+    const mapped = files.map((file) => {
+      const owner = this.isOwner(file, userId);
+      return {
+        ...file,
+        size: file.size.toString(),
+        isOwner: owner,
+        wrappedAesKey: owner
+          ? file.wrappedAesKey
+          : file.shares[0]?.wrappedAesKey,
+        sharedBy: owner ? null : file.owner,
+      };
+    });
+
+    return {
+      files: mapped,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getFileById(fileId: string, userId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id: fileId,
+        OR: [
+          { ownerId: userId },
+          { shares: { some: { recipientId: userId } } },
+        ],
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        shares: {
+          where: { recipientId: userId },
+          select: {
+            wrappedAesKey: true,
+          },
+        },
+      },
+    });
+
+    if (!file) {
+      throw new NotFoundException(
+        "Không tìm thấy file hoặc không có quyền truy cập",
+      );
+    }
+
+    const isOwner = file.ownerId === userId;
+
+    let sharedWith:
+      | {
+          id: string;
+          name: string;
+          email: string;
+        }[]
+      | undefined;
+
+    if (isOwner) {
+      const shares = await this.prisma.share.findMany({
+        where: { fileId },
+        select: {
+          recipient: {
+            select: {
+              id: true,
+              name: true,
               email: true,
             },
           },
         },
-      }),
-      this.prisma.file.count({ where }),
-    ]);
-    return {
-      files: serializeBigInt(files),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
+      });
 
-  async findOne(userId: string, fileId: string) {
-    const file = await this.prisma.file.findUnique({
-      where: { id: fileId },
-      select: {
-        id: true,
-        fileName: true,
-        originalFileName: true,
-        filePath: true,
-        fileSize: true,
-        fileType: true,
-        mimeType: true,
-        fileHash: true,
-        encryptedKeyOwner: true,
-        uploadTimestamp: true,
-        status: {
-          select: {
-            name: true,
-          },
-        },
-        owner: {
-          select: {
-            id: true,
-            username: true,
-            email: true,
-          },
-        },
-        grants: {
-          where: { status: { name: 'active' } },
-          select: {
-            grantee: {
-              select: { id: true, username: true, email: true },
-            },
-          },
-        },
-      },
-    });
-    if (!file) {
-      throw new NotFoundException('File không tồn tại');
+      sharedWith = shares.map((s) => s.recipient);
     }
-    const isOwner = file.owner.id === userId;
-    const hasGrant = file.grants.some((g) => g.grantee.id === userId);
-    if (!(isOwner || hasGrant)) {
-      throw new ForbiddenException('Bạn không có quyền truy cập file này');
-    }
+
     return {
-      file: serializeBigInt(file),
+      id: file.id,
+      filename: file.filename,
+      mimeType: file.mimeType,
+      size: file.size.toString(),
+      createdAt: file.createdAt,
+      updatedAt: file.updatedAt,
       isOwner,
+      wrappedAesKey: isOwner
+        ? file.wrappedAesKey
+        : file.shares[0]?.wrappedAesKey,
+      owner: file.owner,
+      sharedWith,
     };
   }
 
-  async remove(
-    userId: string,
+  async getFileForDownload(fileId: string, userId: string) {
+    const { file, isOwner, wrappedAesKey } =
+      await this.resolveDownloadPermission(fileId, userId);
+
+    return {
+      id: file.id,
+      filename: file.filename,
+      mimeType: file.mimeType,
+      size: file.size.toString(),
+      owner: file.owner,
+      isOwner,
+      wrappedAesKey,
+    };
+  }
+
+  async downloadFile(
     fileId: string,
-    ipAddress: string,
-    userAgent: string,
-  ) {
-    const file = await this.prisma.file.findUnique({
-      where: { id: fileId },
+    userId: string,
+    res: Response,
+  ): Promise<StreamableFile> {
+    const { file, isOwner, wrappedAesKey } =
+      await this.resolveDownloadPermission(fileId, userId);
+
+    /**
+     * Log blockchain (recipient only)
+     */
+    if (!isOwner) {
+      await this.fileActivity.logFileActivity(
+        {
+          userId,
+          fileId: file.id,
+          action: FileActivityAction.DOWNLOAD,
+          metadata: {
+            filename: file.filename,
+            downloadedByRecipient: true,
+          },
+        },
+        file.enableBlockchainLogging ?? true,
+      );
+    }
+
+    const fileStream = fs.createReadStream(file.filePath);
+
+    res.set({
+      "Content-Type": file.mimeType,
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+      "Content-Length": file.size.toString(),
+
+      /**
+       * ⚠️ SECURITY NOTE
+       * Header có thể bị log → chỉ dùng nếu bạn chấp nhận risk
+       */
+      // "X-Wrapped-AES-Key": wrappedAesKey,
+      "X-File-ID": file.id,
+      "X-Is-Owner": isOwner.toString(),
     });
+
+    return new StreamableFile(fileStream);
+  }
+
+  async deleteFile(fileId: string, userId: string) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id: fileId,
+        ownerId: userId,
+      },
+    });
+
     if (!file) {
-      throw new NotFoundException('File không tồn tại');
+      throw new NotFoundException(
+        "Không tìm thấy file hoặc không có quyền truy cập",
+      );
     }
-    if (file.ownerId !== userId) {
-      throw new ForbiddenException('Bạn không phải chủ sở hữu file');
-    }
+
+    await this.fileActivity.logFileActivity({
+      userId,
+      fileId,
+      action: FileActivityAction.DELETE,
+      metadata: {
+        filename: file.filename,
+      },
+    });
+
+    // if (fs.existsSync(file.filePath)) {
+    //   fs.unlinkSync(file.filePath);
+    // }
+
+    // await this.prisma.file.delete({
+    //   where: { id: fileId },
+    // });
+
     await this.prisma.file.update({
       where: { id: fileId },
-      data: { status: { connect: { name: 'deleted' } } },
-    });
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { storageUsed: { decrement: file.fileSize } },
+      data: { isDeleted: true },
     });
 
-    // Audit Log: FILE_DELETE
-    await this.auditService.log({
-      userId,
-      eventType: 'FILE_DELETE',
-      fileId,
-      eventData: {
-        fileName: file.fileName,
-      },
-      ipAddress,
-      userAgent,
-    });
-
-    return { message: 'Xóa file thành công' };
+    return { message: "Xóa file thành công" };
   }
 }

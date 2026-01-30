@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    },
+    "context7": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "context7-mcp"]
+    }
+  }
+}

@@ -1,51 +1,37 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Query,
-  Req,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { QueryUserDto } from './dto/query-user.dto';
-import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { UserService } from './user.service';
+import { Controller, Get, Param, Query, Patch, Body } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { QueryUserDto } from "./dto/query-user.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { UserService } from "./user.service";
+import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { AuthUser } from "src/common/types/auth-user.type";
 
-@Controller('api/users')
-@ApiTags('users')
+@Controller("api/users")
+@ApiTags("users")
 @ApiBearerAuth()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('/profile')
-  async getProfile(@CurrentUser() user: { id: string }) {
-    return await this.userService.getProfile(user.id);
+  @Get("profile")
+  getProfile(@CurrentUser() { id }: AuthUser) {
+    return this.userService.getProfile(id);
   }
 
-  @Patch('/profile')
-  async updateProfile(
-    @CurrentUser() user: { id: string },
-    @Body() dto: UpdateUserProfileDto,
-    @Req() req: Request,
+  @Patch("profile")
+  updateProfile(
+    @CurrentUser() { id }: AuthUser,
+    @Body() dto: UpdateProfileDto,
   ) {
-    return await this.userService.updateProfile(user.id, dto, req);
-  }
-
-  @Get('/storage')
-  async getStorage(@CurrentUser() user: { id: string }) {
-    return await this.userService.getStorageInfo(user.id);
+    return this.userService.updateProfile(id, dto);
   }
 
   @Get()
-  async findAll(@Query() dto: QueryUserDto) {
-    return await this.userService.findAll(dto);
+  findAll(@Query() dto: QueryUserDto) {
+    return this.userService.findAll(dto);
   }
 
-  @Get('email/:email')
-  async getUserByEmail(@Param('email') email: string) {
-    return await this.userService.findByEmail(email);
+  @Get(":userId")
+  findById(@Param("userId") userId: string) {
+    return this.userService.findById(userId);
   }
 }

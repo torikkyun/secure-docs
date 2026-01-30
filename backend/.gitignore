@@ -56,9 +56,3 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
-
-# Uploaded files
-/uploads
-
-# Google Cloud service account keys
-secure-docs-473301-4c6fd88bd175.json

@@ -1,122 +1,84 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { Prisma } from 'generated/prisma/client';
-import { serializeBigInt } from 'src/common/utils/bigint.util';
-import { getOffsetPagination } from 'src/common/utils/pagination.util';
-import extractIpAndUserAgent from 'src/common/utils/request.util';
-import { PrismaService } from 'src/database/prisma.service';
-import { AuditService } from '../audit/audit.service';
-import { QueryUserDto } from './dto/query-user.dto';
-import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+  BadRequestException,
+} from "@nestjs/common";
+import { Prisma } from "generated/prisma/client";
+import { getOffsetPagination } from "src/common/utils/pagination.util";
+import { PrismaService } from "src/database/prisma.service";
+import { QueryUserDto } from "./dto/query-user.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
 
 @Injectable()
 export class UserService {
-  private readonly prisma: PrismaService;
-  private readonly auditService: AuditService;
-  constructor(prisma: PrismaService, auditService: AuditService) {
-    this.prisma = prisma;
-    this.auditService = auditService;
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
-        username: true,
         email: true,
-        publicKey: true,
-        storageUsed: true,
-        storageLimit: true,
-        isActive: true,
+        name: true,
+        avatar: true,
         createdAt: true,
         updatedAt: true,
-        lastLoginAt: true,
-        role: { select: { name: true } },
+        publicKey: true,
+        role: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
     if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng');
+      throw new NotFoundException("User không tồn tại");
     }
 
-    return serializeBigInt(user);
+    return user;
   }
 
-  async updateProfile(
-    userId: string,
-    { email, username }: UpdateUserProfileDto,
-    req: Request,
-  ) {
-    if (email) {
-      const existing = await this.prisma.user.findUnique({ where: { email } });
-      if (existing && existing.id !== userId) {
-        throw new ConflictException('Email đã được sử dụng bởi tài khoản khác');
-      }
-    }
-
-    const user = await this.prisma.user.update({
+  async updateProfile(userId: string, { name, avatar }: UpdateProfileDto) {
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: {
-        ...(username !== undefined ? { username } : {}),
-        ...(email !== undefined ? { email } : {}),
+        ...(name && { name }),
+        ...(avatar && { avatar }),
       },
       select: {
         id: true,
-        username: true,
         email: true,
-        publicKey: true,
-        storageUsed: true,
-        storageLimit: true,
-        isActive: true,
-        createdAt: true,
+        name: true,
+        avatar: true,
         updatedAt: true,
-        lastLoginAt: true,
-        role: { select: { name: true } },
       },
     });
 
-    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
-
-    // Audit Log: USER_UPDATE_PROFILE
-    await this.auditService.log({
-      userId: user.id,
-      eventType: 'USER_UPDATE_PROFILE',
-      eventData: {
-        username,
-        email,
-      },
-      ipAddress,
-      userAgent,
-    });
-
-    return serializeBigInt(user);
+    return updatedUser;
   }
 
-  async getStorageInfo(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { storageUsed: true, storageLimit: true },
-    });
+  async search(query: string) {
+    if (!query) return [];
 
-    if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng');
-    }
-
-    const used = BigInt(user.storageUsed);
-    const limit = BigInt(user.storageLimit);
-    const remaining = limit - used;
-    const usagePercentage = limit > 0n ? Number((used * 100n) / limit) : 0;
-
-    return serializeBigInt({
-      storageUsed: used,
-      storageLimit: limit,
-      storageRemaining: remaining < 0n ? 0n : remaining,
-      usagePercentage,
+    return this.prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: query, mode: "insensitive" } },
+          { name: { contains: query, mode: "insensitive" } },
+        ],
+        AND: {
+          isDeleted: false,
+          isBanned: false,
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+      },
+      take: 5,
     });
   }
 
@@ -126,8 +88,8 @@ export class UserService {
     const where: Prisma.UserWhereInput = search
       ? {
           OR: [
-            { username: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
           ],
         }
       : {};
@@ -136,55 +98,58 @@ export class UserService {
       this.prisma.user.findMany({
         select: {
           id: true,
-          username: true,
           email: true,
+          name: true,
+          avatar: true,
           publicKey: true,
-          storageUsed: true,
-          storageLimit: true,
-          isActive: true,
           createdAt: true,
           updatedAt: true,
-          lastLoginAt: true,
-          role: { select: { name: true } },
+          role: {
+            select: {
+              name: true,
+            },
+          },
         },
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.user.count({ where }),
     ]);
 
     return {
-      users: users.map(serializeBigInt),
+      users,
       total,
       page,
       limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findByEmail(email: string) {
+  async findById(id: string) {
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { id },
       select: {
         id: true,
-        username: true,
         email: true,
+        name: true,
+        avatar: true,
         publicKey: true,
-        storageUsed: true,
-        storageLimit: true,
-        isActive: true,
         createdAt: true,
         updatedAt: true,
-        lastLoginAt: true,
-        role: { select: { name: true } },
+        role: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
     if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng với email này');
+      throw new NotFoundException(`Người dùng với ID ${id} không tồn tại`);
     }
 
-    return serializeBigInt(user);
+    return user;
   }
 }

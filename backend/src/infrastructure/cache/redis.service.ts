@@ -4,17 +4,17 @@ import { Cache } from "cache-manager";
 
 @Injectable()
 export class RedisService {
-  private readonly cache: Cache;
-  constructor(@Inject(CACHE_MANAGER) cache: Cache) {
-    this.cache = cache;
-  }
+  constructor(
+    @Inject(CACHE_MANAGER)
+    private readonly cache: Cache,
+  ) {}
 
   get<T>(key: string) {
     return this.cache.get<T>(key);
   }
 
   set(key: string, value: unknown, ttl?: number) {
-    return this.cache.set(key, value, ttl ? ttl * 1000 : undefined);
+    return this.cache.set(key, value, ttl);
   }
 
   del(key: string) {
