@@ -19,13 +19,13 @@ export function KeySyncWarning() {
   })
 
   useEffect(() => {
-    if (!userData?.userKey?.publicKey) return
+    if (!userData?.publicKey) return
 
     const userKeys = getUserKeys()
     const localPublicKey = userKeys?.publicKey
     const localEncryptedPrivateKey = userKeys?.encryptedPrivateKey
 
-    const serverPubKey = userData.userKey.publicKey
+    const serverPubKey = userData.publicKey
 
     // Check if keys are synced
     // Show warning if:

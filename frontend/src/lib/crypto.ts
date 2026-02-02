@@ -32,9 +32,19 @@ export function fromBase64(base64: string): Uint8Array {
 }
 
 // Generate random bytes
+function getCrypto() {
+  const c = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined
+  if (!c || !c.subtle) {
+    throw new Error(
+      'Trình duyệt không hỗ trợ Web Crypto API hoặc không bảo mật. Vui lòng sử dụng HTTPS hoặc Localhost.',
+    )
+  }
+  return c
+}
+
 function randomBytes(length: number): Uint8Array {
   const array = new Uint8Array(length)
-  crypto.getRandomValues(array)
+  getCrypto().getRandomValues(array)
   return array
 }
 
@@ -51,7 +61,7 @@ async function hkdf(
   info: string,
   length: number,
 ): Promise<Uint8Array> {
-  const key = await crypto.subtle.importKey(
+  const key = await getCrypto().subtle.importKey(
     'raw',
     toBuffer(ikm),
     { name: 'HKDF' },
@@ -59,7 +69,7 @@ async function hkdf(
     ['deriveBits'],
   )
 
-  const derived = await crypto.subtle.deriveBits(
+  const derived = await getCrypto().subtle.deriveBits(
     {
       name: 'HKDF',
       hash: 'SHA-256',
@@ -96,9 +106,8 @@ export async function generateKeyPair(): Promise<KeyPair> {
     // Derive seed from mnemonic (without passphrase)
     const seed = mnemonicToSeedSync(mnemonic)
 
-    // For simplicity, use first 32 bytes of seed as X25519 private key
-    // In production, you might want to use proper KDF like HKDF
-    const privateKeyBytes = seed.slice(0, 32)
+    // Use HKDF to derive X25519 private key from seed (same as recovery)
+    const privateKeyBytes = await hkdf(seed, 'x25519-key-derivation', 32)
 
     // Generate X25519 public key from private key
     const publicKeyBytes = x25519.getPublicKey(privateKeyBytes)
@@ -160,16 +169,16 @@ export async function encryptPrivateKey(
   const iv = randomBytes(12)
 
   // Derive key from passcode using PBKDF2
-  const keyMaterial = await crypto.subtle.importKey(
+  const keyMaterial = await getCrypto().subtle.importKey(
     'raw',
-    await crypto.subtle.deriveBits(
+    await getCrypto().subtle.deriveBits(
       {
         name: 'PBKDF2',
         salt: toBuffer(salt),
         iterations: 100000,
         hash: 'SHA-256',
       },
-      await crypto.subtle.importKey(
+      await getCrypto().subtle.importKey(
         'raw',
         toBuffer(new TextEncoder().encode(passcode)),
         { name: 'PBKDF2' },
@@ -185,7 +194,7 @@ export async function encryptPrivateKey(
 
   // Encrypt private key
   const privateKeyBytes = fromBase64(privateKey)
-  const encrypted = await crypto.subtle.encrypt(
+  const encrypted = await getCrypto().subtle.encrypt(
     { name: 'AES-GCM', iv: toBuffer(iv) },
     keyMaterial,
     toBuffer(privateKeyBytes),
@@ -207,16 +216,16 @@ export async function decryptPrivateKey(
 ): Promise<string> {
   // Derive key from passcode using PBKDF2
   const salt = fromBase64(encryptedData.salt)
-  const keyMaterial = await crypto.subtle.importKey(
+  const keyMaterial = await getCrypto().subtle.importKey(
     'raw',
-    await crypto.subtle.deriveBits(
+    await getCrypto().subtle.deriveBits(
       {
         name: 'PBKDF2',
         salt: toBuffer(salt),
         iterations: 100000,
         hash: 'SHA-256',
       },
-      await crypto.subtle.importKey(
+      await getCrypto().subtle.importKey(
         'raw',
         toBuffer(new TextEncoder().encode(passcode)),
         { name: 'PBKDF2' },
@@ -235,7 +244,7 @@ export async function decryptPrivateKey(
   const iv = fromBase64(encryptedData.iv)
 
   try {
-    const decrypted = await crypto.subtle.decrypt(
+    const decrypted = await getCrypto().subtle.decrypt(
       { name: 'AES-GCM', iv: toBuffer(iv) },
       keyMaterial,
       toBuffer(encryptedBytes),
@@ -301,7 +310,7 @@ export async function encryptFileData(
   const keyBytes = fromBase64(aesKey)
   const iv = randomBytes(12)
 
-  const cryptoKey = await crypto.subtle.importKey(
+  const cryptoKey = await getCrypto().subtle.importKey(
     'raw',
     toBuffer(keyBytes),
     { name: 'AES-GCM' },
@@ -309,7 +318,7 @@ export async function encryptFileData(
     ['encrypt'],
   )
 
-  const encrypted = await crypto.subtle.encrypt(
+  const encrypted = await getCrypto().subtle.encrypt(
     { name: 'AES-GCM', iv: toBuffer(iv) },
     cryptoKey,
     toBuffer(data),
@@ -336,7 +345,7 @@ export async function decryptFileData(
       : encryptedData
   const ivBytes = fromBase64(iv)
 
-  const cryptoKey = await crypto.subtle.importKey(
+  const cryptoKey = await getCrypto().subtle.importKey(
     'raw',
     toBuffer(keyBytes),
     { name: 'AES-GCM' },
@@ -344,7 +353,7 @@ export async function decryptFileData(
     ['decrypt'],
   )
 
-  const decrypted = await crypto.subtle.decrypt(
+  const decrypted = await getCrypto().subtle.decrypt(
     { name: 'AES-GCM', iv: toBuffer(ivBytes) },
     cryptoKey,
     toBuffer(encryptedBytes),
@@ -363,7 +372,7 @@ export async function wrapAesKey(
   const aesKeyBytes = fromBase64(aesKey)
   const wrappingKeyBytes = fromBase64(wrappingKey)
 
-  const wrappingCryptoKey = await crypto.subtle.importKey(
+  const wrappingCryptoKey = await getCrypto().subtle.importKey(
     'raw',
     toBuffer(wrappingKeyBytes),
     { name: 'AES-KW' },
@@ -371,7 +380,7 @@ export async function wrapAesKey(
     ['wrapKey'],
   )
 
-  const aesKeyToWrap = await crypto.subtle.importKey(
+  const aesKeyToWrap = await getCrypto().subtle.importKey(
     'raw',
     toBuffer(aesKeyBytes),
     { name: 'AES-GCM' },
@@ -379,7 +388,7 @@ export async function wrapAesKey(
     ['encrypt', 'decrypt'],
   )
 
-  const wrappedKey = await crypto.subtle.wrapKey(
+  const wrappedKey = await getCrypto().subtle.wrapKey(
     'raw',
     aesKeyToWrap,
     wrappingCryptoKey,
@@ -399,7 +408,7 @@ export async function unwrapAesKey(
   const wrappedKeyBytes = fromBase64(wrappedKey)
   const unwrappingKeyBytes = fromBase64(unwrappingKey)
 
-  const unwrappingCryptoKey = await crypto.subtle.importKey(
+  const unwrappingCryptoKey = await getCrypto().subtle.importKey(
     'raw',
     toBuffer(unwrappingKeyBytes),
     { name: 'AES-KW' },
@@ -407,7 +416,7 @@ export async function unwrapAesKey(
     ['unwrapKey'],
   )
 
-  const unwrappedKey = await crypto.subtle.unwrapKey(
+  const unwrappedKey = await getCrypto().subtle.unwrapKey(
     'raw',
     toBuffer(wrappedKeyBytes),
     unwrappingCryptoKey,
@@ -417,7 +426,7 @@ export async function unwrapAesKey(
     ['encrypt', 'decrypt'],
   )
 
-  const rawKey = await crypto.subtle.exportKey('raw', unwrappedKey)
+  const rawKey = await getCrypto().subtle.exportKey('raw', unwrappedKey)
   return toBase64(new Uint8Array(rawKey))
 }
 

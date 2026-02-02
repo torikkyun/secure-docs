@@ -101,10 +101,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
       }
 
       // 5. Add wrappedAesKeys array to FormData
-      // Backend expects array, so append each key separately with same field name
-      wrappedAesKeys.forEach((key) => {
-        formData.append('wrappedAesKeys', key)
-      })
+      formData.append('wrappedAesKeys', JSON.stringify(wrappedAesKeys))
 
       formData.append(
         'enableBlockchainLogging',
