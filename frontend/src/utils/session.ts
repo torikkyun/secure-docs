@@ -5,9 +5,17 @@ type SessionData = {
 }
 
 export function useAppSession() {
+  const sessionSecret = process.env.SESSION_SECRET
+
+  if (!sessionSecret) {
+    throw new Error(
+      'SESSION_SECRET environment variable is not set. Please check your .env file.',
+    )
+  }
+
   return useSession<SessionData>({
     name: 'app-session',
-    password: process.env.SESSION_SECRET!,
+    password: sessionSecret,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
