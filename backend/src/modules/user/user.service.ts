@@ -8,10 +8,14 @@ import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { PrismaService } from "src/database/prisma.service";
 import { QueryUserDto } from "./dto/query-user.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
+import { RedisService } from "src/infrastructure/cache/redis.service";
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -54,6 +58,7 @@ export class UserService {
         updatedAt: true,
       },
     });
+    await this.redis.deleteByPattern("/api/users");
 
     return updatedUser;
   }

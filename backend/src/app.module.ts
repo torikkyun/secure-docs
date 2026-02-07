@@ -30,7 +30,7 @@ import { FileActivityModule } from "./modules/file-activity/file-activity.module
       verboseMemoryLeak: true,
     }),
     PrismaModule,
-    // RedisModule,
+    RedisModule,
     LoggerModule,
     BlockchainModule,
     HealthModule,

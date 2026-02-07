@@ -17,7 +17,7 @@ import { diskStorage } from "multer";
 import { FileService } from "./file.service";
 import { UploadFilesDto } from "./dto/create-file.dto";
 import * as path from "path";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { AuthUser } from "src/common/types/auth-user.type";
 import { QueryFileDto } from "./dto/query-file.dto";
@@ -34,9 +34,13 @@ export class FileController {
       storage: diskStorage({
         destination: "./uploads/files",
         filename: (_req, file, callback) => {
+          const originalname = Buffer.from(
+            file.originalname,
+            "latin1",
+          ).toString("utf8");
           const uniqueSuffix =
             Date.now() + "-" + Math.round(Math.random() * 1e9);
-          const extension = path.extname(file.originalname);
+          const extension = path.extname(originalname);
           callback(null, `${uniqueSuffix}${extension}`);
         },
       }),
@@ -45,12 +49,44 @@ export class FileController {
       },
     }),
   )
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: {
+          type: "array",
+          items: {
+            type: "string",
+            format: "binary",
+          },
+          description: "Files to upload (max 10 files, 50MB each)",
+        },
+        wrappedAesKeys: {
+          type: "array",
+          items: { type: "string" },
+          description: "Array of wrapped AES keys",
+          example: ["key1", "key2"],
+        },
+        enableBlockchainLogging: {
+          type: "boolean",
+          description: "Enable blockchain logging",
+          default: true,
+        },
+      },
+      required: ["file", "wrappedAesKeys"],
+    },
+  })
   uploadFile(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() dto: UploadFilesDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.fileService.createFile(files, dto, user.id);
+    const fixedFiles = files.map((file) => ({
+      ...file,
+      originalname: Buffer.from(file.originalname, "latin1").toString("utf8"),
+    }));
+    return this.fileService.createFile(fixedFiles, dto, user.id);
   }
 
   @Get()
