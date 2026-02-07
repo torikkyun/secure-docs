@@ -9,15 +9,29 @@ import { PrismaService } from "src/database/prisma.service";
 import { QueryUserDto } from "./dto/query-user.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { RedisService } from "src/infrastructure/cache/redis.service";
+import { CacheVersionService } from "src/infrastructure/cache/cache-version.service";
+import { CacheKeyFactory } from "src/infrastructure/cache/cache-key.factory";
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly cacheVersion: CacheVersionService,
   ) {}
 
   async getProfile(userId: string) {
+    const version = await this.cacheVersion.get(
+      `users:profile:${userId}:version`,
+    );
+
+    const cacheKey = CacheKeyFactory.userProfile(userId, version);
+
+    const cached = await this.redis.get<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -40,6 +54,8 @@ export class UserService {
       throw new NotFoundException("User không tồn tại");
     }
 
+    await this.redis.set(cacheKey, user, 300000);
+
     return user;
   }
 
@@ -58,36 +74,30 @@ export class UserService {
         updatedAt: true,
       },
     });
-    await this.redis.deleteByPattern("/api/users");
+
+    // invalidate profile cache của user đó
+    await this.cacheVersion.bump(`users:profile:${userId}:version`);
+
+    // invalidate tất cả list cache
+    await this.cacheVersion.bump("users:list:version");
 
     return updatedUser;
   }
 
-  async search(query: string) {
-    if (!query) return [];
-
-    return this.prisma.user.findMany({
-      where: {
-        OR: [
-          { email: { contains: query, mode: "insensitive" } },
-          { name: { contains: query, mode: "insensitive" } },
-        ],
-        AND: {
-          isDeleted: false,
-          isBanned: false,
-        },
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatar: true,
-      },
-      take: 5,
-    });
-  }
-
   async findAll({ page = 1, limit = 10, search }: QueryUserDto) {
+    const version = await this.cacheVersion.get("users:list:version");
+
+    const cacheKey = CacheKeyFactory.usersList(version, {
+      page,
+      limit,
+      search,
+    });
+
+    const cached = await this.redis.get<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const { take, skip } = getOffsetPagination(page, limit);
 
     const where: Prisma.UserWhereInput = search
@@ -122,6 +132,18 @@ export class UserService {
       }),
       this.prisma.user.count({ where }),
     ]);
+
+    await this.redis.set(
+      cacheKey,
+      {
+        users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+      60000,
+    );
 
     return {
       users,

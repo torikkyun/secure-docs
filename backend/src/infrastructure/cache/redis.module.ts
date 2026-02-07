@@ -3,8 +3,7 @@ import { CacheModule } from "@nestjs/cache-manager";
 import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { RedisService } from "./redis.service";
-import { APP_INTERCEPTOR } from "@nestjs/core";
-import { UserAwareCacheInterceptor } from "./user-aware-cache.interceptor";
+import { CacheVersionService } from "./cache-version.service";
 
 @Global()
 @Module({
@@ -26,19 +25,11 @@ import { UserAwareCacheInterceptor } from "./user-aware-cache.interceptor";
               keyPrefixSeparator: ":",
             }),
           ],
-          ttl: redisConfig.ttl,
-          max: redisConfig.lruSize,
         };
       },
     }),
   ],
-  providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: UserAwareCacheInterceptor,
-    },
-    RedisService,
-  ],
-  exports: [RedisService],
+  providers: [RedisService, CacheVersionService],
+  exports: [RedisService, CacheVersionService],
 })
 export class RedisModule {}

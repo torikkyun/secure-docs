@@ -21,34 +21,27 @@ export class RedisService {
     return this.cache.del(key);
   }
 
-  async deleteByPattern(pattern: string) {
-    try {
-      const store = this.cache.stores[0];
-
-      if (!store || typeof store.iterator !== "function") {
-        console.warn("Redis store not available");
-        return;
-      }
-
-      const keysToDelete: string[] = [];
-
-      for await (const [key] of store.iterator({})) {
-        if (key.includes(pattern)) {
-          keysToDelete.push(key);
-        }
-      }
-
-      if (keysToDelete.length > 0) {
-        await Promise.all(
-          keysToDelete.map((key: string) => this.cache.del(key)),
-        );
-      }
-    } catch (error) {
-      console.error("Error deleting cache by pattern:", error);
-    }
-  }
-
   async clear() {
     return this.cache.clear();
+  }
+
+  async incr(key: string) {
+    const store: any = this.cache.stores[0];
+    if (!store?.client?.incr) {
+      throw new Error("Redis INCR not supported");
+    }
+    return store.client.incr(key);
+  }
+
+  async getNumber(key: string, defaultValue = 1): Promise<number> {
+    const value = await this.cache.get<number>(key);
+    return typeof value === "number" ? value : defaultValue;
+  }
+
+  async bumpVersion(key: string): Promise<number> {
+    const current = await this.getNumber(key, 1);
+    const next = current + 1;
+    await this.cache.set(key, next);
+    return next;
   }
 }
