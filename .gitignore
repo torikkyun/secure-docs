@@ -1,2 +1,5 @@
 *.zip
 .vscode/
+docs/
+.qwen/
+.cursor/
