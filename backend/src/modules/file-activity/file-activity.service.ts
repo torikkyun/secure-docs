@@ -48,8 +48,7 @@ export class FileActivityService {
 
     if (
       enableBlockchainLogging &&
-      this.shouldLogToBlockchain(action) &&
-      this.blockchainService?.isEnabled()
+      this.shouldLogToBlockchain(action)
     ) {
       this.emitBlockchainEvent(createdActivity.id, activity);
     }

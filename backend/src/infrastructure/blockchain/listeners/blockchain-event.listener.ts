@@ -7,10 +7,7 @@ import {
   BlockchainLogDownloadEvent,
 } from "../events/blockchain-log.event";
 
-/**
- * Event listener for blockchain logging operations
- * Runs asynchronously in background without blocking main request flow
- */
+
 @Injectable()
 export class BlockchainEventListener {
   private readonly logger = new Logger(BlockchainEventListener.name);
@@ -20,10 +17,6 @@ export class BlockchainEventListener {
     private readonly prisma: PrismaService,
   ) {}
 
-  /**
-   * Handle file share blockchain logging event
-   * Runs async, doesn't block the calling code
-   */
   @OnEvent("blockchain.log.share", { async: true })
   async handleFileShareLog(event: BlockchainLogShareEvent) {
     try {
@@ -31,7 +24,6 @@ export class BlockchainEventListener {
         `Processing blockchain log for file share: ${event.fileId}`,
       );
 
-      // Fetch sender's email
       const sender = await this.prisma.user.findUnique({
         where: { id: event.senderId },
         select: { email: true },
@@ -39,12 +31,11 @@ export class BlockchainEventListener {
 
       if (!sender?.email) {
         this.logger.error(
-          `❌ Cannot log to blockchain: Sender ${event.senderId} has no email`,
+          `Cannot log to blockchain: Sender ${event.senderId} has no email`,
         );
         return;
       }
 
-      // Fetch recipients' emails
       const recipients = await this.prisma.user.findMany({
         where: { id: { in: event.recipientIds } },
         select: { id: true, email: true },
@@ -53,7 +44,7 @@ export class BlockchainEventListener {
       const recipientEmails = recipients.map((r) => r.email);
 
       if (recipientEmails.length === 0) {
-        this.logger.error(`❌ Cannot log to blockchain: No recipients found`);
+        this.logger.error(`Cannot log to blockchain: No recipients found`);
         return;
       }
 
@@ -65,33 +56,27 @@ export class BlockchainEventListener {
       });
 
       if (txHash) {
-        // Update activity with blockchain tx hash
         await this.prisma.fileActivity.update({
           where: { id: event.activityId },
           data: { blockchainTxHash: txHash },
         });
 
         this.logger.log(
-          `✅ Successfully logged file share to blockchain. TX: ${txHash}`,
+          `Successfully logged file share to blockchain. TX: ${txHash}`,
         );
       } else {
         this.logger.warn(
-          `⚠️ Blockchain logging failed for file share: ${event.fileId}`,
+          `Blockchain logging failed for file share: ${event.fileId}`,
         );
       }
     } catch (error) {
-      // Catch errors to prevent crash, but log them
       this.logger.error(
-        `❌ Error processing file share blockchain log: ${error.message}`,
+        `Error processing file share blockchain log: ${error.message}`,
         error.stack,
       );
     }
   }
 
-  /**
-   * Handle file download blockchain logging event
-   * Runs async, doesn't block the calling code
-   */
   @OnEvent("blockchain.log.download", { async: true })
   async handleFileDownloadLog(event: BlockchainLogDownloadEvent) {
     try {
@@ -99,7 +84,6 @@ export class BlockchainEventListener {
         `Processing blockchain log for file download: ${event.fileId} by ${event.recipientId}`,
       );
 
-      // Fetch user's email
       const user = await this.prisma.user.findUnique({
         where: { id: event.recipientId },
         select: { email: true },
@@ -107,7 +91,7 @@ export class BlockchainEventListener {
 
       if (!user?.email) {
         this.logger.error(
-          `❌ Cannot log to blockchain: User ${event.recipientId} has no email`,
+          `Cannot log to blockchain: User ${event.recipientId} has no email`,
         );
         return;
       }
@@ -119,24 +103,22 @@ export class BlockchainEventListener {
       });
 
       if (txHash) {
-        // Update activity with blockchain tx hash
         await this.prisma.fileActivity.update({
           where: { id: event.activityId },
           data: { blockchainTxHash: txHash },
         });
 
         this.logger.log(
-          `✅ Successfully logged file download to blockchain. TX: ${txHash}`,
+          `Successfully logged file download to blockchain. TX: ${txHash}`,
         );
       } else {
         this.logger.warn(
-          `⚠️ Blockchain logging failed for file download: ${event.fileId}`,
+          `Blockchain logging failed for file download: ${event.fileId}`,
         );
       }
     } catch (error) {
-      // Catch errors to prevent crash, but log them
       this.logger.error(
-        `❌ Error processing file download blockchain log: ${error.message}`,
+        `Error processing file download blockchain log: ${error.message}`,
         error.stack,
       );
     }
