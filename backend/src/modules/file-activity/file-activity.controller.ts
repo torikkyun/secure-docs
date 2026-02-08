@@ -1,25 +1,9 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Param,
-  UseGuards,
-  BadRequestException,
-} from "@nestjs/common";
+import { Controller, Get, Query, Param } from "@nestjs/common";
 import { FileActivityService } from "./file-activity.service";
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-} from "@nestjs/swagger";
-import { JwtGuard } from "src/common/guards/jwt.guard";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { AuthUser } from "src/common/types/auth-user.type";
-import {
-  QueryFileActivityDto,
-  PaginatedFileActivitiesDto,
-} from "./dto/file-activity.dto";
+import { QueryFileActivityDto } from "./dto/query-file-activity.dto";
 
 @Controller("api/file-activity")
 @ApiTags("file-activity")
@@ -30,47 +14,17 @@ export class FileActivityController {
   @Get("user")
   async getUserFileActivities(
     @CurrentUser() user: AuthUser,
-    @Query() query: QueryFileActivityDto,
+    @Query() dto: QueryFileActivityDto,
   ) {
-    return this.fileActivityService.getUserFileActivities(user.id, {
-      page: query.page,
-      limit: query.limit,
-    });
+    return this.fileActivityService.getUserFileActivities(user.id, dto);
   }
 
   @Get("file/:fileId")
   async getFileActivities(
     @Param("fileId") fileId: string,
-    @Query() query: QueryFileActivityDto,
-    @CurrentUser() user: AuthUser,
+    @Query() dto: QueryFileActivityDto,
+    @CurrentUser() { id }: AuthUser,
   ) {
-    const hasAccess = await this.verifyFileAccess(fileId, user.id);
-    if (!hasAccess) {
-      throw new BadRequestException(
-        "Bạn không có quyền xem hoạt động của file này",
-      );
-    }
-
-    return this.fileActivityService.getFileActivities(fileId, {
-      page: query.page,
-      limit: query.limit,
-    });
-  }
-
-  private async verifyFileAccess(
-    fileId: string,
-    userId: string,
-  ): Promise<boolean> {
-    const file = await this.fileActivityService["prisma"].file.findFirst({
-      where: {
-        id: fileId,
-        OR: [
-          { ownerId: userId },
-          { shares: { some: { recipientId: userId } } },
-        ],
-      },
-    });
-
-    return !!file;
+    return this.fileActivityService.getFileActivities(fileId, dto, id);
   }
 }

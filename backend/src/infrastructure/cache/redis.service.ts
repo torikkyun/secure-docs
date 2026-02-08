@@ -25,14 +25,6 @@ export class RedisService {
     return this.cache.clear();
   }
 
-  async incr(key: string) {
-    const store: any = this.cache.stores[0];
-    if (!store?.client?.incr) {
-      throw new Error("Redis INCR not supported");
-    }
-    return store.client.incr(key);
-  }
-
   async getNumber(key: string, defaultValue = 1): Promise<number> {
     const value = await this.cache.get<number>(key);
     return typeof value === "number" ? value : defaultValue;

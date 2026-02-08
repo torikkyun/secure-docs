@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { FileActivityAction } from "generated/prisma/enums";
 import { PrismaService } from "src/database/prisma.service";
@@ -8,6 +8,9 @@ import {
   BlockchainLogShareEvent,
   BlockchainLogDownloadEvent,
 } from "src/infrastructure/blockchain/events/blockchain-log.event";
+import { getIpAddress, getUserAgent } from "src/common/utils/request.util";
+import { Request } from "express";
+import { QueryFileActivityDto } from "./dto/query-file-activity.dto";
 
 @Injectable()
 export class FileActivityService {
@@ -23,26 +26,26 @@ export class FileActivityService {
       fileId: string;
       action: FileActivityAction;
       metadata?: Record<string, any>;
-      ipAddress?: string;
-      userAgent?: string;
+      req: Request;
     },
     enableBlockchainLogging: boolean = true,
   ) {
-    const { userId, fileId, action, metadata, ipAddress, userAgent } = activity;
+    const { userId, fileId, action, metadata, req } = activity;
 
-    // Always log to internal database first (fast, critical)
+    const ipAddress = getIpAddress(req);
+    const userAgent = getUserAgent(req);
+
     const createdActivity = await this.prisma.fileActivity.create({
       data: {
         userId,
         fileId,
-        action: action as any,
+        action: action,
         metadata: metadata || {},
         ipAddress,
         userAgent,
       },
     });
 
-    // Emit blockchain event asynchronously (fire-and-forget, non-blocking)
     if (
       enableBlockchainLogging &&
       this.shouldLogToBlockchain(action) &&
@@ -67,10 +70,6 @@ export class FileActivityService {
     );
   }
 
-  /**
-   * Emit blockchain event asynchronously (fire-and-forget)
-   * This doesn't block the main request flow
-   */
   private emitBlockchainEvent(
     activityId: string,
     activity: {
@@ -103,12 +102,9 @@ export class FileActivityService {
     }
   }
 
-  /**
-   * Get file activities for a user with pagination
-   */
   async getUserFileActivities(
     userId: string,
-    { page = 1, limit = 20 }: { page?: number; limit?: number } = {},
+    { page = 1, limit = 20 }: QueryFileActivityDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
 
@@ -158,8 +154,16 @@ export class FileActivityService {
    */
   async getFileActivities(
     fileId: string,
-    { page = 1, limit = 50 }: { page?: number; limit?: number } = {},
+    { page = 1, limit = 50 }: QueryFileActivityDto,
+    userId: string,
   ) {
+    const hasAccess = await this.verifyFileAccess(fileId, userId);
+    if (!hasAccess) {
+      throw new BadRequestException(
+        "Bạn không có quyền xem hoạt động của file này",
+      );
+    }
+
     const { take, skip } = getOffsetPagination(page, limit);
 
     const [activities, total] = await Promise.all([
@@ -189,7 +193,6 @@ export class FileActivityService {
       this.prisma.fileActivity.count({ where: { fileId } }),
     ]);
 
-    // Enrich activities with additional data
     const enrichedActivities = await Promise.all(
       activities.map((activity) => this.enrichActivity(activity)),
     );
@@ -218,7 +221,6 @@ export class FileActivityService {
       userAgent: activity.userAgent,
     };
 
-    // Enrich SHARE action with recipient details
     if (activity.action === FileActivityAction.SHARE) {
       const recipientIds = activity.metadata?.recipientIds || [];
       const recipients = await this.prisma.user.findMany({
@@ -243,7 +245,6 @@ export class FileActivityService {
       };
     }
 
-    // Enrich DOWNLOAD action
     if (activity.action === FileActivityAction.DOWNLOAD) {
       return {
         ...baseActivity,
@@ -252,7 +253,6 @@ export class FileActivityService {
       };
     }
 
-    // Enrich UPLOAD action
     if (activity.action === FileActivityAction.UPLOAD) {
       return {
         ...baseActivity,
@@ -262,7 +262,23 @@ export class FileActivityService {
       };
     }
 
-    // Return base activity for other actions
     return baseActivity;
+  }
+
+  private async verifyFileAccess(
+    fileId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id: fileId,
+        OR: [
+          { ownerId: userId },
+          { shares: { some: { recipientId: userId } } },
+        ],
+      },
+    });
+
+    return !!file;
   }
 }

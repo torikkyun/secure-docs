@@ -75,10 +75,7 @@ export class UserService {
       },
     });
 
-    // invalidate profile cache của user đó
     await this.cacheVersion.bump(`users:profile:${userId}:version`);
-
-    // invalidate tất cả list cache
     await this.cacheVersion.bump("users:list:version");
 
     return updatedUser;

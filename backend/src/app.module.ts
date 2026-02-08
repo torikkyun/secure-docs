@@ -10,7 +10,6 @@ import redisConfig from "./config/redis.config";
 import blockchainConfig from "./config/blockchain.config";
 import { PrismaModule } from "./database/prisma.module";
 import { HealthModule } from "./infrastructure/health/health.module";
-import { LoggerModule } from "./infrastructure/logging/logger.module";
 import { BlockchainModule } from "./infrastructure/blockchain/blockchain.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { UserModule } from "./modules/user/user.module";
@@ -31,7 +30,6 @@ import { FileActivityModule } from "./modules/file-activity/file-activity.module
     }),
     PrismaModule,
     RedisModule,
-    LoggerModule,
     BlockchainModule,
     HealthModule,
     AuthModule,

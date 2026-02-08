@@ -5,7 +5,7 @@ import {
   StreamableFile,
   ForbiddenException,
 } from "@nestjs/common";
-import { Response } from "express";
+import { Request, Response } from "express";
 import * as fs from "fs";
 import * as path from "path";
 import { PrismaService } from "src/database/prisma.service";
@@ -93,6 +93,7 @@ export class FileService {
     files: Express.Multer.File[],
     dto: UploadFilesDto,
     userId: string,
+    req: Request,
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException("Không có file được tải lên");
@@ -147,6 +148,7 @@ export class FileService {
               mimeType: record.mimeType,
               size: record.size.toString(),
             },
+            req,
           },
           enableBlockchainLogging,
         );
@@ -378,6 +380,7 @@ export class FileService {
     fileId: string,
     userId: string,
     res: Response,
+    req: Request,
   ): Promise<StreamableFile> {
     const { file, isOwner, wrappedAesKey } =
       await this.resolveDownloadPermission(fileId, userId);
@@ -395,6 +398,7 @@ export class FileService {
             filename: file.filename,
             downloadedByRecipient: true,
           },
+          req,
         },
         file.enableBlockchainLogging ?? true,
       );
@@ -419,7 +423,7 @@ export class FileService {
     return new StreamableFile(fileStream);
   }
 
-  async deleteFile(fileId: string, userId: string) {
+  async deleteFile(fileId: string, userId: string, req: Request) {
     const file = await this.prisma.file.findFirst({
       where: {
         id: fileId,
@@ -440,6 +444,7 @@ export class FileService {
       metadata: {
         filename: file.filename,
       },
+      req,
     });
 
     // if (fs.existsSync(file.filePath)) {

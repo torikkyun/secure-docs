@@ -10,8 +10,9 @@ import {
   StreamableFile,
   UploadedFiles,
   Query,
+  Req,
 } from "@nestjs/common";
-import { Response } from "express";
+import { Request, Response } from "express";
 import { FilesInterceptor } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { FileService } from "./file.service";
@@ -80,44 +81,50 @@ export class FileController {
   uploadFile(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() dto: UploadFilesDto,
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() { id }: AuthUser,
+    @Req() req: Request,
   ) {
     const fixedFiles = files.map((file) => ({
       ...file,
       originalname: Buffer.from(file.originalname, "latin1").toString("utf8"),
     }));
-    return this.fileService.createFile(fixedFiles, dto, user.id);
+    return this.fileService.createFile(fixedFiles, dto, id, req);
   }
 
   @Get()
-  getUserFiles(@CurrentUser() user: AuthUser, @Query() dto: QueryFileDto) {
-    return this.fileService.getUserFiles(user.id, dto);
+  getUserFiles(@CurrentUser() { id }: AuthUser, @Query() dto: QueryFileDto) {
+    return this.fileService.getUserFiles(id, dto);
   }
 
   @Get(":fileId")
-  getFile(@Param("fileId") fileId: string, @CurrentUser() user: AuthUser) {
-    return this.fileService.getFileById(fileId, user.id);
+  getFile(@Param("fileId") fileId: string, @CurrentUser() { id }: AuthUser) {
+    return this.fileService.getFileById(fileId, id);
   }
 
   @Get(":fileId/download")
   getFileForDownload(
     @Param("fileId") fileId: string,
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() { id }: AuthUser,
   ) {
-    return this.fileService.getFileForDownload(fileId, user.id);
+    return this.fileService.getFileForDownload(fileId, id);
   }
 
   @Get(":fileId/stream")
   downloadFile(
     @Param("fileId") fileId: string,
-    @CurrentUser() user: AuthUser,
+    @CurrentUser() { id }: AuthUser,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<StreamableFile> {
-    return this.fileService.downloadFile(fileId, user.id, res);
+    return this.fileService.downloadFile(fileId, id, res, req);
   }
 
   @Delete(":fileId")
-  deleteFile(@Param("fileId") fileId: string, @CurrentUser() user: AuthUser) {
-    return this.fileService.deleteFile(fileId, user.id);
+  deleteFile(
+    @Param("fileId") fileId: string,
+    @CurrentUser() { id }: AuthUser,
+    @Req() req: Request,
+  ) {
+    return this.fileService.deleteFile(fileId, id, req);
   }
 }
