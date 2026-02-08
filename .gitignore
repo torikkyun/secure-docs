@@ -1,4 +1,2 @@
 *.zip
-/docs
-/.cursor
-/.vscode
+.vscode/
