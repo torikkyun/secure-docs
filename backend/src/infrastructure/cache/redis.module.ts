@@ -30,6 +30,6 @@ import { CacheVersionService } from "./cache-version.service";
     }),
   ],
   providers: [RedisService, CacheVersionService],
-  exports: [RedisService, CacheVersionService],
+  exports: [CacheModule, RedisService, CacheVersionService],
 })
 export class RedisModule {}

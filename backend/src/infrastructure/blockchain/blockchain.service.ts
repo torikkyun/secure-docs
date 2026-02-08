@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ethers } from "ethers";
-import { FileActivityLoggerABI } from "./abi/FileActivityLogger.abi";
+import { FileActivityLoggerABI } from "./abis/FileActivityLogger.abi";
 
 @Injectable()
 export class BlockchainService implements OnModuleInit {

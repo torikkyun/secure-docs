@@ -4,6 +4,7 @@ import {
   NotFoundException,
   StreamableFile,
   ForbiddenException,
+  Inject,
 } from "@nestjs/common";
 import { Request, Response } from "express";
 import * as fs from "fs";
@@ -15,12 +16,19 @@ import { QueryFileDto } from "./dto/query-file.dto";
 import { Prisma } from "generated/prisma/client";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { FileActivityService } from "../file-activity/file-activity.service";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { VersionedCache } from "src/infrastructure/cache/decorators/versioned-cache.decorator";
+import type { Cache } from "cache-manager";
+import { CacheVersionService } from "src/infrastructure/cache/cache-version.service";
 
 @Injectable()
 export class FileService {
   constructor(
+    @Inject(CACHE_MANAGER)
+    public readonly cache: Cache,
     private readonly prisma: PrismaService,
     private readonly fileActivity: FileActivityService,
+    private readonly cacheVersion: CacheVersionService,
   ) {}
 
   private isOwner(file: { ownerId: string }, userId: string): boolean {
@@ -112,7 +120,7 @@ export class FileService {
 
     const enableBlockchainLogging = dto.enableBlockchainLogging ?? true;
 
-    return Promise.all(
+    const results = await Promise.all(
       files.map(async (file, index) => {
         const wrappedAesKey = dto.wrappedAesKeys[index];
 
@@ -153,6 +161,10 @@ export class FileService {
           enableBlockchainLogging,
         );
 
+        // Bump cache version cho file cụ thể
+        await this.cacheVersion.bump(`files:file:${record.id}:version`);
+        await this.cacheVersion.bump(`file-activity:file:${record.id}:version`);
+
         return {
           id: record.id,
           filename: record.filename,
@@ -162,8 +174,19 @@ export class FileService {
         };
       }),
     );
+
+    // Bump cache version cho danh sách files của user (chỉ 1 lần)
+    await this.cacheVersion.bump(`files:user:${userId}:version`);
+    await this.cacheVersion.bump(`file-activity:user:${userId}:version`);
+
+    return results;
   }
 
+  @VersionedCache({
+    prefix: "files",
+    versionKey: (args) => `files:user:${args[0]}:version`,
+    ttl: 60000,
+  })
   async getUserFiles(
     userId: string,
     { page = 1, limit = 20, search, filter }: QueryFileDto,
@@ -286,6 +309,11 @@ export class FileService {
     };
   }
 
+  @VersionedCache({
+    prefix: "files:file",
+    versionKey: (args) => `files:file:${args[0]}:version`,
+    ttl: 300000,
+  })
   async getFileById(fileId: string, userId: string) {
     const file = await this.prisma.file.findFirst({
       where: {
@@ -402,6 +430,10 @@ export class FileService {
         },
         file.enableBlockchainLogging ?? true,
       );
+
+      // Bump cache version cho file activities
+      await this.cacheVersion.bump(`file-activity:user:${userId}:version`);
+      await this.cacheVersion.bump(`file-activity:file:${file.id}:version`);
     }
 
     const fileStream = fs.createReadStream(file.filePath);
@@ -459,6 +491,11 @@ export class FileService {
       where: { id: fileId },
       data: { isDeleted: true },
     });
+
+    await this.cacheVersion.bump(`files:user:${userId}:version`);
+    await this.cacheVersion.bump(`files:file:${fileId}:version`);
+    await this.cacheVersion.bump(`file-activity:user:${userId}:version`);
+    await this.cacheVersion.bump(`file-activity:file:${fileId}:version`);
 
     return { message: "Xóa file thành công" };
   }

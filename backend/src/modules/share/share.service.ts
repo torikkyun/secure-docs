@@ -8,12 +8,14 @@ import { CreateShareDto } from "./dto/create-share.dto";
 import { FileActivityAction } from "generated/prisma/enums";
 import { FileActivityService } from "../file-activity/file-activity.service";
 import { Request } from "express";
+import { CacheVersionService } from "src/infrastructure/cache/cache-version.service";
 
 @Injectable()
 export class ShareService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileActivity: FileActivityService,
+    private readonly cacheVersion: CacheVersionService,
   ) {}
 
   async createShare(
@@ -110,6 +112,16 @@ export class ShareService {
         req,
       },
       file?.enableBlockchainLogging ?? true,
+    );
+
+    await this.cacheVersion.bump(`file-activity:user:${senderId}:version`);
+    await this.cacheVersion.bump(`file-activity:file:${fileId}:version`);
+    await this.cacheVersion.bump(`files:file:${fileId}:version`);
+
+    await Promise.all(
+      created.map((share) =>
+        this.cacheVersion.bump(`files:user:${share.recipient.id}:version`),
+      ),
     );
 
     return {

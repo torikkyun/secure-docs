@@ -1,8 +1,7 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, Version } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { FileActivityAction } from "generated/prisma/enums";
 import { PrismaService } from "src/database/prisma.service";
-import { BlockchainService } from "src/infrastructure/blockchain/blockchain.service";
 import { getOffsetPagination } from "src/common/utils/pagination.util";
 import {
   BlockchainLogShareEvent,
@@ -11,12 +10,12 @@ import {
 import { getIpAddress, getUserAgent } from "src/common/utils/request.util";
 import { Request } from "express";
 import { QueryFileActivityDto } from "./dto/query-file-activity.dto";
+import { VersionedCache } from "src/infrastructure/cache/decorators/versioned-cache.decorator";
 
 @Injectable()
 export class FileActivityService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly blockchainService: BlockchainService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -46,10 +45,7 @@ export class FileActivityService {
       },
     });
 
-    if (
-      enableBlockchainLogging &&
-      this.shouldLogToBlockchain(action)
-    ) {
+    if (enableBlockchainLogging && this.shouldLogToBlockchain(action)) {
       this.emitBlockchainEvent(createdActivity.id, activity);
     }
 
@@ -101,6 +97,11 @@ export class FileActivityService {
     }
   }
 
+  @VersionedCache({
+    prefix: "file-activity:user",
+    versionKey: (args) => `file-activity:user:${args[0]}:version`,
+    ttl: 300000,
+  })
   async getUserFileActivities(
     userId: string,
     { page = 1, limit = 20 }: QueryFileActivityDto,
@@ -151,6 +152,11 @@ export class FileActivityService {
   /**
    * Get file activities for a specific file with pagination
    */
+  @VersionedCache({
+    prefix: "file-activity:file",
+    versionKey: (args) => `file-activity:file:${args[0]}:version`,
+    ttl: 300000,
+  })
   async getFileActivities(
     fileId: string,
     { page = 1, limit = 50 }: QueryFileActivityDto,
