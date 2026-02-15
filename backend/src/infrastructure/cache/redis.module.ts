@@ -15,8 +15,6 @@ import { CacheVersionService } from "./cache-version.service";
       useFactory: (configService: ConfigService) => {
         const redisConfig = configService.getOrThrow<{
           url: string;
-          ttl: number;
-          lruSize: number;
         }>("redis");
         return {
           stores: [

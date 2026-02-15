@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req } from "@nestjs/common";
+import { Controller, Post, Body, Req, Delete, Param } from "@nestjs/common";
 import { ShareService } from "./share.service";
 import { CreateShareDto } from "./dto/create-share.dto";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
@@ -19,5 +19,15 @@ export class ShareController {
     @Req() req: Request,
   ) {
     return this.shareService.createShare(dto, id, req);
+  }
+
+  @Delete(":fileId/revoke/:recipientId")
+  revokeShare(
+    @Param("fileId") fileId: string,
+    @Param("recipientId") recipientId: string,
+    @CurrentUser() { id }: AuthUser,
+    @Req() req: Request,
+  ) {
+    return this.shareService.revokeShare(fileId, recipientId, id, req);
   }
 }

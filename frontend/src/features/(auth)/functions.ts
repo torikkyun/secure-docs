@@ -9,7 +9,6 @@ import { getHeaders } from '@/utils/get-header'
 export const loginFn = createServerFn({ method: 'POST' })
   .inputValidator(loginSchema)
   .handler(async ({ data }): Promise<LoginResult> => {
-    console.log('LOGIN DATA:', data)
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -23,14 +22,12 @@ export const loginFn = createServerFn({ method: 'POST' })
 
     const result = await res.json()
 
-    console.log('LOGIN RESULT:', result)
 
     try {
       const session = await useAppSession()
       await session.update({
         accessToken: result.accessToken,
       })
-      console.log('SESSION UPDATED:', session.data)
     } catch (sessionError) {
       console.error('SESSION UPDATE ERROR:', sessionError)
       throw new Error(

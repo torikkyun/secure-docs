@@ -136,4 +136,89 @@ export class ShareService {
           : undefined,
     };
   }
+
+  async revokeShare(
+    fileId: string,
+    recipientId: string,
+    userId: string,
+    req: Request,
+  ) {
+    const file = await this.prisma.file.findFirst({
+      where: {
+        id: fileId,
+        ownerId: userId,
+      },
+      select: {
+        id: true,
+        filename: true,
+      },
+    });
+
+    if (!file) {
+      throw new NotFoundException(
+        "Không tìm thấy file hoặc bạn không phải chủ sở hữu file",
+      );
+    }
+
+    const share = await this.prisma.share.findFirst({
+      where: {
+        fileId,
+        recipientId,
+      },
+      select: {
+        id: true,
+        recipient: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!share) {
+      throw new NotFoundException(
+        "Không tìm thấy lần chia sẻ này hoặc người dùng không có quyền truy cập file này",
+      );
+    }
+
+    // Delete the share record
+    // await this.prisma.share.delete({
+    //   where: {
+    //     id: share.id,
+    //   },
+    // });
+
+    await this.fileActivity.logFileActivity(
+      {
+        userId,
+        fileId,
+        action: FileActivityAction.REVOKE_SHARE,
+        metadata: {
+          filename: file.filename,
+          revokedForUser: share.recipient.email,
+          revokedForUserId: share.recipient.id,
+        },
+        req,
+      },
+      true,
+    );
+
+    // Bump cache versions
+    await this.cacheVersion.bump(`files:user:${userId}:version`);
+    await this.cacheVersion.bump(`files:user:${recipientId}:version`);
+    await this.cacheVersion.bump(`files:file:${fileId}:version`);
+    await this.cacheVersion.bump(`file-activity:user:${userId}:version`);
+    await this.cacheVersion.bump(`file-activity:file:${fileId}:version`);
+
+    return {
+      message: `Đã hủy chia sẻ file cho ${share.recipient.email}`,
+      revokedUser: {
+        id: share.recipient.id,
+        name: share.recipient.name,
+        email: share.recipient.email,
+      },
+    };
+  }
 }

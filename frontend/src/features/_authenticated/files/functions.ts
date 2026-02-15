@@ -22,8 +22,6 @@ export const uploadFileFn = createServerFn({ method: 'POST' })
       body: data,
     })
 
-    console.log('uploadFileFn res', res)
-
     if (!res.ok) {
       const error = await res.json()
       throw new Error(error.message)

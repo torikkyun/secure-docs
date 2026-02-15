@@ -10,13 +10,7 @@ import { DownloadFileModal } from '../components/download-file-modal'
 import { FileItem } from '../types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+
 import { Badge } from '@/components/ui/badge'
 import {
   Grid3X3,
@@ -31,7 +25,7 @@ export function FilesPage() {
   Route.useLoaderData()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<string>('all')
+
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
@@ -45,14 +39,9 @@ export function FilesPage() {
 
   const files: FileItem[] = filesData?.files || []
 
-  // Filter files based on search and type
+  // Filter files based on search
   const filteredFiles = files.filter((file) => {
-    const matchesSearch = file.filename.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = filterType === 'all' ||
-      (filterType === 'documents' && file.mimeType.includes('document')) ||
-      (filterType === 'images' && file.mimeType.startsWith('image/')) ||
-      (filterType === 'archives' && file.mimeType.includes('zip'))
-    return matchesSearch && matchesType
+    return file.filename.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
   const handleShare = (file: FileItem) => {
@@ -73,9 +62,9 @@ export function FilesPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between sticky top-0 bg-background/95 backdrop-blur z-20 pb-4 border-b">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">Tài liệu của tôi</h1>
-          <Badge variant="outline" className="ml-2">
+          {/* <Badge variant="outline" className="ml-2">
             {filteredFiles.length} mục
-          </Badge>
+          </Badge> */}
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-3">
@@ -83,25 +72,14 @@ export function FilesPage() {
           <div className="relative w-full max-w-sm">
              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
              <Input
-               placeholder="Tìm kiếm trong Drive..."
+               placeholder="Tìm kiếm trong Secure Docs..."
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
                className="pl-9 h-10 bg-muted/50 border-none focus-visible:ring-1"
              />
           </div>
 
-          {/* Filter Type */}
-          <Select value={filterType} onValueChange={(val) => setFilterType(val || 'all')} disabled>
-             <SelectTrigger className="w-[140px] h-10 border-none bg-muted/50">
-               <SelectValue placeholder="Loại tệp" />
-             </SelectTrigger>
-             <SelectContent>
-               <SelectItem value="all">Tất cả</SelectItem>
-               <SelectItem value="documents">Tài liệu</SelectItem>
-               <SelectItem value="images">Hình ảnh</SelectItem>
-               <SelectItem value="archives">Tệp nén</SelectItem>
-             </SelectContent>
-          </Select>
+
 
           {/* View Toggle */}
           <div className="flex items-center bg-muted/50 rounded-lg p-1">
@@ -146,12 +124,12 @@ export function FilesPage() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Chưa có tài liệu nào</h3>
             <p className="text-muted-foreground mb-6 max-w-sm">
-              {searchQuery || filterType !== 'all'
+              {searchQuery
                 ? 'Không tìm thấy kết quả phù hợp với bộ lọc của bạn.'
                 : 'Nơi lưu trữ an toàn cho mọi tài liệu của bạn. Hãy bắt đầu bằng cách tải lên tệp tin mới.'
               }
             </p>
-            {!searchQuery && filterType === 'all' && (
+            {!searchQuery && (
               <Button onClick={() => setIsUploadFormOpen(true)} size="lg">
                 <Upload className="mr-2 h-5 w-5" />
                 Tải tệp lên
