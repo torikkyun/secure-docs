@@ -261,6 +261,7 @@ export class FileService {
               id: true,
               name: true,
               email: true,
+              avatar: true,
             },
           },
           shares: {

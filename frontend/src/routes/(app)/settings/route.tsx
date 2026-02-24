@@ -6,12 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { KeySyncWarning } from '@/routes/_authenticated/settings/-components/key-sync-warning'
-import { UpdateProfileForm } from '@/routes/_authenticated/settings/-components/update-profile-form'
+import { KeySyncWarning } from '@/routes/(app)/settings/-components/key-sync-warning'
+import { UpdateProfileForm } from '@/routes/(app)/settings/-components/update-profile-form'
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle } from 'lucide-react'
 
-export const Route = createFileRoute('/_authenticated/settings')({
+export const Route = createFileRoute('/(app)/settings')({
   component: Settings,
 })
 

@@ -3,6 +3,7 @@ export type FileOwner = {
   name: string
   email: string
   publicKey: string
+  avatar: string
 }
 
 export type FileShare = {

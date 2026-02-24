@@ -9,48 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedSharedRouteRouteImport } from './routes/_authenticated/shared/route'
-import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as AuthenticatedFilesRouteRouteImport } from './routes/_authenticated/files/route'
-import { Route as AuthenticatedFileActivityRouteRouteImport } from './routes/_authenticated/file-activity/route'
-import { Route as AuthenticatedDashboardRouteRouteImport } from './routes/_authenticated/dashboard/route'
+import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as authRegisterRouteRouteImport } from './routes/(auth)/register/route'
 import { Route as authLoginRouteRouteImport } from './routes/(auth)/login/route'
+import { Route as appSharedRouteRouteImport } from './routes/(app)/shared/route'
+import { Route as appSettingsRouteRouteImport } from './routes/(app)/settings/route'
+import { Route as appFilesRouteRouteImport } from './routes/(app)/files/route'
+import { Route as appFileActivityRouteRouteImport } from './routes/(app)/file-activity/route'
+import { Route as appDashboardRouteRouteImport } from './routes/(app)/dashboard/route'
 
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const appRouteRoute = appRouteRouteImport.update({
+  id: '/(app)',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSharedRouteRoute =
-  AuthenticatedSharedRouteRouteImport.update({
-    id: '/shared',
-    path: '/shared',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSettingsRouteRoute =
-  AuthenticatedSettingsRouteRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFilesRouteRoute = AuthenticatedFilesRouteRouteImport.update({
-  id: '/files',
-  path: '/files',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFileActivityRouteRoute =
-  AuthenticatedFileActivityRouteRouteImport.update({
-    id: '/file-activity',
-    path: '/file-activity',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedDashboardRouteRoute =
-  AuthenticatedDashboardRouteRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const authRegisterRouteRoute = authRegisterRouteRouteImport.update({
   id: '/(auth)/register',
   path: '/register',
@@ -61,120 +32,106 @@ const authLoginRouteRoute = authLoginRouteRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const appSharedRouteRoute = appSharedRouteRouteImport.update({
+  id: '/shared',
+  path: '/shared',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appSettingsRouteRoute = appSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appFilesRouteRoute = appFilesRouteRouteImport.update({
+  id: '/files',
+  path: '/files',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appFileActivityRouteRoute = appFileActivityRouteRouteImport.update({
+  id: '/file-activity',
+  path: '/file-activity',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appDashboardRouteRoute = appDashboardRouteRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => appRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedRouteRouteWithChildren
+  '/dashboard': typeof appDashboardRouteRoute
+  '/file-activity': typeof appFileActivityRouteRoute
+  '/files': typeof appFilesRouteRoute
+  '/settings': typeof appSettingsRouteRoute
+  '/shared': typeof appSharedRouteRoute
   '/login': typeof authLoginRouteRoute
   '/register': typeof authRegisterRouteRoute
-  '/dashboard': typeof AuthenticatedDashboardRouteRoute
-  '/file-activity': typeof AuthenticatedFileActivityRouteRoute
-  '/files': typeof AuthenticatedFilesRouteRoute
-  '/settings': typeof AuthenticatedSettingsRouteRoute
-  '/shared': typeof AuthenticatedSharedRouteRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AuthenticatedRouteRouteWithChildren
+  '/dashboard': typeof appDashboardRouteRoute
+  '/file-activity': typeof appFileActivityRouteRoute
+  '/files': typeof appFilesRouteRoute
+  '/settings': typeof appSettingsRouteRoute
+  '/shared': typeof appSharedRouteRoute
   '/login': typeof authLoginRouteRoute
   '/register': typeof authRegisterRouteRoute
-  '/dashboard': typeof AuthenticatedDashboardRouteRoute
-  '/file-activity': typeof AuthenticatedFileActivityRouteRoute
-  '/files': typeof AuthenticatedFilesRouteRoute
-  '/settings': typeof AuthenticatedSettingsRouteRoute
-  '/shared': typeof AuthenticatedSharedRouteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/(app)': typeof appRouteRouteWithChildren
+  '/(app)/dashboard': typeof appDashboardRouteRoute
+  '/(app)/file-activity': typeof appFileActivityRouteRoute
+  '/(app)/files': typeof appFilesRouteRoute
+  '/(app)/settings': typeof appSettingsRouteRoute
+  '/(app)/shared': typeof appSharedRouteRoute
   '/(auth)/login': typeof authLoginRouteRoute
   '/(auth)/register': typeof authRegisterRouteRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteRoute
-  '/_authenticated/file-activity': typeof AuthenticatedFileActivityRouteRoute
-  '/_authenticated/files': typeof AuthenticatedFilesRouteRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRouteRoute
-  '/_authenticated/shared': typeof AuthenticatedSharedRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/login'
-    | '/register'
     | '/dashboard'
     | '/file-activity'
     | '/files'
     | '/settings'
     | '/shared'
+    | '/login'
+    | '/register'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/login'
-    | '/register'
     | '/dashboard'
     | '/file-activity'
     | '/files'
     | '/settings'
     | '/shared'
+    | '/login'
+    | '/register'
   id:
     | '__root__'
-    | '/_authenticated'
+    | '/(app)'
+    | '/(app)/dashboard'
+    | '/(app)/file-activity'
+    | '/(app)/files'
+    | '/(app)/settings'
+    | '/(app)/shared'
     | '/(auth)/login'
     | '/(auth)/register'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/file-activity'
-    | '/_authenticated/files'
-    | '/_authenticated/settings'
-    | '/_authenticated/shared'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  appRouteRoute: typeof appRouteRouteWithChildren
   authLoginRouteRoute: typeof authLoginRouteRoute
   authRegisterRouteRoute: typeof authRegisterRouteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_authenticated': {
-      id: '/_authenticated'
+    '/(app)': {
+      id: '/(app)'
       path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      fullPath: ''
+      preLoaderRoute: typeof appRouteRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/shared': {
-      id: '/_authenticated/shared'
-      path: '/shared'
-      fullPath: '/shared'
-      preLoaderRoute: typeof AuthenticatedSharedRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/files': {
-      id: '/_authenticated/files'
-      path: '/files'
-      fullPath: '/files'
-      preLoaderRoute: typeof AuthenticatedFilesRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/file-activity': {
-      id: '/_authenticated/file-activity'
-      path: '/file-activity'
-      fullPath: '/file-activity'
-      preLoaderRoute: typeof AuthenticatedFileActivityRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(auth)/register': {
       id: '/(auth)/register'
@@ -190,30 +147,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLoginRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(app)/shared': {
+      id: '/(app)/shared'
+      path: '/shared'
+      fullPath: '/shared'
+      preLoaderRoute: typeof appSharedRouteRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/settings': {
+      id: '/(app)/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof appSettingsRouteRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/files': {
+      id: '/(app)/files'
+      path: '/files'
+      fullPath: '/files'
+      preLoaderRoute: typeof appFilesRouteRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/file-activity': {
+      id: '/(app)/file-activity'
+      path: '/file-activity'
+      fullPath: '/file-activity'
+      preLoaderRoute: typeof appFileActivityRouteRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/dashboard': {
+      id: '/(app)/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof appDashboardRouteRouteImport
+      parentRoute: typeof appRouteRoute
+    }
   }
 }
 
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRouteRoute: typeof AuthenticatedDashboardRouteRoute
-  AuthenticatedFileActivityRouteRoute: typeof AuthenticatedFileActivityRouteRoute
-  AuthenticatedFilesRouteRoute: typeof AuthenticatedFilesRouteRoute
-  AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRoute
-  AuthenticatedSharedRouteRoute: typeof AuthenticatedSharedRouteRoute
+interface appRouteRouteChildren {
+  appDashboardRouteRoute: typeof appDashboardRouteRoute
+  appFileActivityRouteRoute: typeof appFileActivityRouteRoute
+  appFilesRouteRoute: typeof appFilesRouteRoute
+  appSettingsRouteRoute: typeof appSettingsRouteRoute
+  appSharedRouteRoute: typeof appSharedRouteRoute
 }
 
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedDashboardRouteRoute: AuthenticatedDashboardRouteRoute,
-  AuthenticatedFileActivityRouteRoute: AuthenticatedFileActivityRouteRoute,
-  AuthenticatedFilesRouteRoute: AuthenticatedFilesRouteRoute,
-  AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRoute,
-  AuthenticatedSharedRouteRoute: AuthenticatedSharedRouteRoute,
+const appRouteRouteChildren: appRouteRouteChildren = {
+  appDashboardRouteRoute: appDashboardRouteRoute,
+  appFileActivityRouteRoute: appFileActivityRouteRoute,
+  appFilesRouteRoute: appFilesRouteRoute,
+  appSettingsRouteRoute: appSettingsRouteRoute,
+  appSharedRouteRoute: appSharedRouteRoute,
 }
 
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
+  appRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  appRouteRoute: appRouteRouteWithChildren,
   authLoginRouteRoute: authLoginRouteRoute,
   authRegisterRouteRoute: authRegisterRouteRoute,
 }

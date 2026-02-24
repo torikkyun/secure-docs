@@ -12,8 +12,6 @@ import {
   File,
   MoreHorizontal,
   ArrowUpDown,
-  Lock,
-  ExternalLink,
   Download,
   Share2,
 } from 'lucide-react'
@@ -37,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { FileItem } from '@/api/file/types'
 
 interface FileListProps {
@@ -82,7 +80,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Tên
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-2 w-2" />
         </Button>
       )
     },
@@ -92,26 +90,61 @@ const columns: ColumnDef<FileItem>[] = [
 
       return (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
+          <div className="w-8 h-8 bg-muted rounded flex items-center justify-center shrink-0">
             <FileIcon className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-medium truncate" title={file.filename}>
-              {file.filename}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                <Lock className="w-3 h-3 mr-1" />
-                Mã hóa
-              </Badge>
-              {file.enableBlockchainLogging && (
-                <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  Blockchain
-                </Badge>
-              )}
-            </div>
-          </div>
+          <span className="font-medium truncate" title={file.filename}>
+            {file.filename}
+          </span>
+        </div>
+      )
+    },
+  },
+  {
+    id: 'owner',
+    header: 'Chủ sở hữu',
+    cell: ({ row }) => {
+      const file = row.original
+      const person = file.isOwner ? file.owner : (file.sharedBy ?? file.owner)
+      const displayName = file.isOwner ? 'Tôi' : person?.name || '—'
+      const initials = person?.name
+        ? person.name
+            .split(' ')
+            .map((w) => w[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase()
+        : (person?.email?.substring(0, 2).toUpperCase() ?? '?')
+
+      return (
+        <div className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={person?.avatar} alt={person?.name ?? ''} />
+            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+          </Avatar>
+          <span className="text-sm text-muted-foreground">{displayName}</span>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'createdAt',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="h-auto p-0 font-medium"
+        >
+          Ngày tải lên
+          <ArrowUpDown className="h-2 w-2" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      return (
+        <div className="text-sm text-muted-foreground">
+          {formatDate(row.getValue('createdAt'))}
         </div>
       )
     },
@@ -126,36 +159,14 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Kích thước
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      return (
-        <div className="font-mono text-sm">
-          {formatFileSize(Number(row.getValue('size')))}
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: 'createdAt',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-auto p-0 font-medium"
-        >
-          Ngày tạo
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-2 w-2" />
         </Button>
       )
     },
     cell: ({ row }) => {
       return (
         <div className="text-sm text-muted-foreground">
-          {formatDate(row.getValue('createdAt'))}
+          {formatFileSize(Number(row.getValue('size')))}
         </div>
       )
     },
@@ -190,7 +201,6 @@ const columns: ColumnDef<FileItem>[] = [
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-
             <DropdownMenuGroup>
               <DropdownMenuItem
                 disabled
@@ -222,64 +232,6 @@ const columns: ColumnDef<FileItem>[] = [
   },
 ]
 
-interface FileListTableProps extends FileListProps {
-  table: any
-}
-
-function FileListTable({
-  files,
-  onShare,
-  onDownload,
-  table,
-}: FileListTableProps) {
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup: any) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header: any) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row: any) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
-              >
-                {row.getVisibleCells().map((cell: any) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No files found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  )
-}
-
 export function FileList({ files, onShare, onDownload }: FileListProps) {
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -289,21 +241,55 @@ export function FileList({ files, onShare, onDownload }: FileListProps) {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    },
-    meta: {
-      onShare,
-      onDownload,
-    },
+    state: { sorting },
+    meta: { onShare, onDownload },
   })
 
   return (
-    <FileListTable
-      files={files}
-      onShare={onShare}
-      onDownload={onDownload}
-      table={table}
-    />
+    <div className="rounded-md">
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && 'selected'}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center text-muted-foreground"
+              >
+                Không có tệp nào.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

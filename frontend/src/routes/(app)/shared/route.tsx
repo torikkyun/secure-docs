@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Search, Share2, FileText, Users } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-export const Route = createFileRoute('/_authenticated/shared')({
+export const Route = createFileRoute('/(app)/shared')({
   component: SharedPage,
 })
 

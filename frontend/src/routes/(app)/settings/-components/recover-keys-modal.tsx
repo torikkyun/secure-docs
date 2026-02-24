@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-// import { recoverKeysSchema } from '../schemas'
+import { recoverKeysSchema } from '../-schemas/recover-keys'
 import { recoverKeyPairFromMnemonic, encryptPrivateKey } from '@/lib/crypto'
-import { getCurrentUserFn } from '../../../../features/_authenticated/functions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,7 +17,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Loader2, KeyRound, AlertTriangle } from 'lucide-react'
-import { recoverKeysSchema } from '@/lib/schemas/settings'
+import { getCurrentUserFn } from '@/api/user/functions'
 
 interface RecoverKeysModalProps {
   serverPublicKey?: string
