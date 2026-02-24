@@ -19,11 +19,9 @@ const config = defineConfig(({ mode }) => {
     },
     plugins: [
       devtools(),
-      // this is the plugin that enables path aliases
       viteTsConfigPaths({
         projects: ['./tsconfig.json'],
       }),
-      // tanstackStart MUST come before nitro, tailwindcss, and viteReact
       tanstackStart(),
       nitro({
         runtimeConfig: {

@@ -184,11 +184,11 @@ export class ShareService {
     }
 
     // Delete the share record
-    // await this.prisma.share.delete({
-    //   where: {
-    //     id: share.id,
-    //   },
-    // });
+    await this.prisma.share.delete({
+      where: {
+        id: share.id,
+      },
+    });
 
     await this.fileActivity.logFileActivity(
       {

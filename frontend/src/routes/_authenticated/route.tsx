@@ -1,5 +1,5 @@
+import { getCurrentUserFn } from '@/api/user/functions'
 import { AppSidebarLayout } from '@/components/layout/app-layout'
-import { getCurrentUserFn } from '@/features/_authenticated/functions'
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated')({

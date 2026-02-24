@@ -10,50 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedSharedRouteImport } from './routes/_authenticated/shared'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedFilesRouteImport } from './routes/_authenticated/files'
-import { Route as AuthenticatedFileActivityRouteImport } from './routes/_authenticated/file-activity'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as authRegisterRouteImport } from './routes/(auth)/register'
-import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as AuthenticatedSharedRouteRouteImport } from './routes/_authenticated/shared/route'
+import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedFilesRouteRouteImport } from './routes/_authenticated/files/route'
+import { Route as AuthenticatedFileActivityRouteRouteImport } from './routes/_authenticated/file-activity/route'
+import { Route as AuthenticatedDashboardRouteRouteImport } from './routes/_authenticated/dashboard/route'
+import { Route as authRegisterRouteRouteImport } from './routes/(auth)/register/route'
+import { Route as authLoginRouteRouteImport } from './routes/(auth)/login/route'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSharedRoute = AuthenticatedSharedRouteImport.update({
-  id: '/shared',
-  path: '/shared',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFilesRoute = AuthenticatedFilesRouteImport.update({
+const AuthenticatedSharedRouteRoute =
+  AuthenticatedSharedRouteRouteImport.update({
+    id: '/shared',
+    path: '/shared',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsRouteRoute =
+  AuthenticatedSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFilesRouteRoute = AuthenticatedFilesRouteRouteImport.update({
   id: '/files',
   path: '/files',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedFileActivityRoute =
-  AuthenticatedFileActivityRouteImport.update({
+const AuthenticatedFileActivityRouteRoute =
+  AuthenticatedFileActivityRouteRouteImport.update({
     id: '/file-activity',
     path: '/file-activity',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const authRegisterRoute = authRegisterRouteImport.update({
+const AuthenticatedDashboardRouteRoute =
+  AuthenticatedDashboardRouteRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const authRegisterRouteRoute = authRegisterRouteRouteImport.update({
   id: '/(auth)/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const authLoginRoute = authLoginRouteImport.update({
+const authLoginRouteRoute = authLoginRouteRouteImport.update({
   id: '/(auth)/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
@@ -61,34 +64,34 @@ const authLoginRoute = authLoginRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedRouteRouteWithChildren
-  '/login': typeof authLoginRoute
-  '/register': typeof authRegisterRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/file-activity': typeof AuthenticatedFileActivityRoute
-  '/files': typeof AuthenticatedFilesRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/shared': typeof AuthenticatedSharedRoute
+  '/login': typeof authLoginRouteRoute
+  '/register': typeof authRegisterRouteRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteRoute
+  '/file-activity': typeof AuthenticatedFileActivityRouteRoute
+  '/files': typeof AuthenticatedFilesRouteRoute
+  '/settings': typeof AuthenticatedSettingsRouteRoute
+  '/shared': typeof AuthenticatedSharedRouteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedRouteRouteWithChildren
-  '/login': typeof authLoginRoute
-  '/register': typeof authRegisterRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/file-activity': typeof AuthenticatedFileActivityRoute
-  '/files': typeof AuthenticatedFilesRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/shared': typeof AuthenticatedSharedRoute
+  '/login': typeof authLoginRouteRoute
+  '/register': typeof authRegisterRouteRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteRoute
+  '/file-activity': typeof AuthenticatedFileActivityRouteRoute
+  '/files': typeof AuthenticatedFilesRouteRoute
+  '/settings': typeof AuthenticatedSettingsRouteRoute
+  '/shared': typeof AuthenticatedSharedRouteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/(auth)/login': typeof authLoginRoute
-  '/(auth)/register': typeof authRegisterRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/file-activity': typeof AuthenticatedFileActivityRoute
-  '/_authenticated/files': typeof AuthenticatedFilesRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/shared': typeof AuthenticatedSharedRoute
+  '/(auth)/login': typeof authLoginRouteRoute
+  '/(auth)/register': typeof authRegisterRouteRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteRoute
+  '/_authenticated/file-activity': typeof AuthenticatedFileActivityRouteRoute
+  '/_authenticated/files': typeof AuthenticatedFilesRouteRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteRoute
+  '/_authenticated/shared': typeof AuthenticatedSharedRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -125,8 +128,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  authLoginRoute: typeof authLoginRoute
-  authRegisterRoute: typeof authRegisterRoute
+  authLoginRouteRoute: typeof authLoginRouteRoute
+  authRegisterRouteRoute: typeof authRegisterRouteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -142,68 +145,68 @@ declare module '@tanstack/react-router' {
       id: '/_authenticated/shared'
       path: '/shared'
       fullPath: '/shared'
-      preLoaderRoute: typeof AuthenticatedSharedRouteImport
+      preLoaderRoute: typeof AuthenticatedSharedRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/files': {
       id: '/_authenticated/files'
       path: '/files'
       fullPath: '/files'
-      preLoaderRoute: typeof AuthenticatedFilesRouteImport
+      preLoaderRoute: typeof AuthenticatedFilesRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/file-activity': {
       id: '/_authenticated/file-activity'
       path: '/file-activity'
       fullPath: '/file-activity'
-      preLoaderRoute: typeof AuthenticatedFileActivityRouteImport
+      preLoaderRoute: typeof AuthenticatedFileActivityRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      preLoaderRoute: typeof AuthenticatedDashboardRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(auth)/register': {
       id: '/(auth)/register'
       path: '/register'
       fullPath: '/register'
-      preLoaderRoute: typeof authRegisterRouteImport
+      preLoaderRoute: typeof authRegisterRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(auth)/login': {
       id: '/(auth)/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof authLoginRouteImport
+      preLoaderRoute: typeof authLoginRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedFileActivityRoute: typeof AuthenticatedFileActivityRoute
-  AuthenticatedFilesRoute: typeof AuthenticatedFilesRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedSharedRoute: typeof AuthenticatedSharedRoute
+  AuthenticatedDashboardRouteRoute: typeof AuthenticatedDashboardRouteRoute
+  AuthenticatedFileActivityRouteRoute: typeof AuthenticatedFileActivityRouteRoute
+  AuthenticatedFilesRouteRoute: typeof AuthenticatedFilesRouteRoute
+  AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRoute
+  AuthenticatedSharedRouteRoute: typeof AuthenticatedSharedRouteRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedFileActivityRoute: AuthenticatedFileActivityRoute,
-  AuthenticatedFilesRoute: AuthenticatedFilesRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedSharedRoute: AuthenticatedSharedRoute,
+  AuthenticatedDashboardRouteRoute: AuthenticatedDashboardRouteRoute,
+  AuthenticatedFileActivityRouteRoute: AuthenticatedFileActivityRouteRoute,
+  AuthenticatedFilesRouteRoute: AuthenticatedFilesRouteRoute,
+  AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRoute,
+  AuthenticatedSharedRouteRoute: AuthenticatedSharedRouteRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -211,8 +214,8 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  authLoginRoute: authLoginRoute,
-  authRegisterRoute: authRegisterRoute,
+  authLoginRouteRoute: authLoginRouteRoute,
+  authRegisterRouteRoute: authRegisterRouteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
