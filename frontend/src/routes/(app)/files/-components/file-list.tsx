@@ -80,7 +80,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Tên
-          <ArrowUpDown className="h-2 w-2" />
+          <ArrowUpDown className="ml-2 h-2 w-2" />
         </Button>
       )
     },
@@ -137,7 +137,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Ngày tải lên
-          <ArrowUpDown className="h-2 w-2" />
+          <ArrowUpDown className="ml-2 h-2 w-2" />
         </Button>
       )
     },
@@ -159,7 +159,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Kích thước
-          <ArrowUpDown className="h-2 w-2" />
+          <ArrowUpDown className="ml-2 h-2 w-2" />
         </Button>
       )
     },

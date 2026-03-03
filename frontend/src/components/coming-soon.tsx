@@ -17,9 +17,9 @@ interface ComingSoonProps {
 }
 
 export function ComingSoon({
-  title = "Tính năng đang phát triển",
-  description = "Chúng tôi đang nỗ lực hoàn thiện tính năng này. Vui lòng quay lại sau!",
-  backLink = "/dashboard" // Default fallback, though usually we might want to go back in history
+  title = 'Tính năng đang phát triển',
+  description = 'Chúng tôi đang nỗ lực hoàn thiện tính năng này. Vui lòng quay lại sau!',
+  backLink = '/dashboard', // Default fallback, though usually we might want to go back in history
 }: ComingSoonProps) {
   const router = useRouter()
 
@@ -36,12 +36,16 @@ export function ComingSoon({
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <p className="text-sm text-muted-foreground">
-             Đội ngũ phát triển đang làm việc chăm chỉ để mang đến trải nghiệm tốt nhất cho bạn.
-           </p>
+          <p className="text-sm text-muted-foreground">
+            Đội ngũ phát triển đang làm việc chăm chỉ để mang đến trải nghiệm
+            tốt nhất cho bạn.
+          </p>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Button variant="outline" onClick={() => router.navigate({ to: backLink })}>
+          <Button
+            variant="outline"
+            onClick={() => router.navigate({ to: backLink })}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Quay lại trang trước
           </Button>
