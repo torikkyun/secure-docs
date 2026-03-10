@@ -8,7 +8,7 @@ import { DownloadFileModal } from './-components/download-file-modal'
 import { createFileRoute } from '@tanstack/react-router'
 import { getFilesFn } from '@/api/file/functions'
 
-export const Route = createFileRoute('/(app)/files')({
+export const Route = createFileRoute('/(app)/files/')({
   component: FilesPage,
 })
 

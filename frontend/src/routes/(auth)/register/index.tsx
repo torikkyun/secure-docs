@@ -39,7 +39,7 @@ import { toast } from 'sonner'
 import { registerFn } from '@/api/auth/functions'
 import { registerFormSchema } from '@/api/auth/schemas'
 
-export const Route = createFileRoute('/(auth)/register')({
+export const Route = createFileRoute('/(auth)/register/')({
   component: Register,
 })
 
@@ -260,7 +260,6 @@ function Register() {
           </CardFooter>
         </form>
       </Card>
-
       <Dialog open={showMnemonicDialog} onOpenChange={setShowMnemonicDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

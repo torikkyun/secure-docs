@@ -11,7 +11,7 @@ import { UpdateProfileForm } from '@/routes/(app)/settings/-components/update-pr
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle } from 'lucide-react'
 
-export const Route = createFileRoute('/(app)/settings')({
+export const Route = createFileRoute('/(app)/settings/')({
   component: Settings,
 })
 

@@ -16,7 +16,7 @@ import {
   Share2,
 } from 'lucide-react'
 
-export const Route = createFileRoute('/(app)/file-activity')({
+export const Route = createFileRoute('/(app)/file-activity/')({
   component: FileActivityPage,
 })
 

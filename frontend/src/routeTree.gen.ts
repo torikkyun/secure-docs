@@ -10,95 +10,106 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
-import { Route as authRegisterRouteRouteImport } from './routes/(auth)/register/route'
-import { Route as authLoginRouteRouteImport } from './routes/(auth)/login/route'
-import { Route as appSharedRouteRouteImport } from './routes/(app)/shared/route'
-import { Route as appSettingsRouteRouteImport } from './routes/(app)/settings/route'
-import { Route as appFilesRouteRouteImport } from './routes/(app)/files/route'
-import { Route as appFileActivityRouteRouteImport } from './routes/(app)/file-activity/route'
-import { Route as appDashboardRouteRouteImport } from './routes/(app)/dashboard/route'
+import { Route as appIndexRouteImport } from './routes/(app)/index'
+import { Route as authRegisterIndexRouteImport } from './routes/(auth)/register/index'
+import { Route as authLoginIndexRouteImport } from './routes/(auth)/login/index'
+import { Route as appSharedIndexRouteImport } from './routes/(app)/shared/index'
+import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
+import { Route as appFilesIndexRouteImport } from './routes/(app)/files/index'
+import { Route as appFileActivityIndexRouteImport } from './routes/(app)/file-activity/index'
+import { Route as appDashboardIndexRouteImport } from './routes/(app)/dashboard/index'
 
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
   getParentRoute: () => rootRouteImport,
 } as any)
-const authRegisterRouteRoute = authRegisterRouteRouteImport.update({
-  id: '/(auth)/register',
-  path: '/register',
+const appIndexRoute = appIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const authRegisterIndexRoute = authRegisterIndexRouteImport.update({
+  id: '/(auth)/register/',
+  path: '/register/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const authLoginRouteRoute = authLoginRouteRouteImport.update({
-  id: '/(auth)/login',
-  path: '/login',
+const authLoginIndexRoute = authLoginIndexRouteImport.update({
+  id: '/(auth)/login/',
+  path: '/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const appSharedRouteRoute = appSharedRouteRouteImport.update({
-  id: '/shared',
-  path: '/shared',
+const appSharedIndexRoute = appSharedIndexRouteImport.update({
+  id: '/shared/',
+  path: '/shared/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appSettingsRouteRoute = appSettingsRouteRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const appSettingsIndexRoute = appSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appFilesRouteRoute = appFilesRouteRouteImport.update({
-  id: '/files',
-  path: '/files',
+const appFilesIndexRoute = appFilesIndexRouteImport.update({
+  id: '/files/',
+  path: '/files/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appFileActivityRouteRoute = appFileActivityRouteRouteImport.update({
-  id: '/file-activity',
-  path: '/file-activity',
+const appFileActivityIndexRoute = appFileActivityIndexRouteImport.update({
+  id: '/file-activity/',
+  path: '/file-activity/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appDashboardRouteRoute = appDashboardRouteRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const appDashboardIndexRoute = appDashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
   getParentRoute: () => appRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/dashboard': typeof appDashboardRouteRoute
-  '/file-activity': typeof appFileActivityRouteRoute
-  '/files': typeof appFilesRouteRoute
-  '/settings': typeof appSettingsRouteRoute
-  '/shared': typeof appSharedRouteRoute
-  '/login': typeof authLoginRouteRoute
-  '/register': typeof authRegisterRouteRoute
+  '/': typeof appIndexRoute
+  '/dashboard/': typeof appDashboardIndexRoute
+  '/file-activity/': typeof appFileActivityIndexRoute
+  '/files/': typeof appFilesIndexRoute
+  '/settings/': typeof appSettingsIndexRoute
+  '/shared/': typeof appSharedIndexRoute
+  '/login/': typeof authLoginIndexRoute
+  '/register/': typeof authRegisterIndexRoute
 }
 export interface FileRoutesByTo {
-  '/dashboard': typeof appDashboardRouteRoute
-  '/file-activity': typeof appFileActivityRouteRoute
-  '/files': typeof appFilesRouteRoute
-  '/settings': typeof appSettingsRouteRoute
-  '/shared': typeof appSharedRouteRoute
-  '/login': typeof authLoginRouteRoute
-  '/register': typeof authRegisterRouteRoute
+  '/': typeof appIndexRoute
+  '/dashboard': typeof appDashboardIndexRoute
+  '/file-activity': typeof appFileActivityIndexRoute
+  '/files': typeof appFilesIndexRoute
+  '/settings': typeof appSettingsIndexRoute
+  '/shared': typeof appSharedIndexRoute
+  '/login': typeof authLoginIndexRoute
+  '/register': typeof authRegisterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
-  '/(app)/dashboard': typeof appDashboardRouteRoute
-  '/(app)/file-activity': typeof appFileActivityRouteRoute
-  '/(app)/files': typeof appFilesRouteRoute
-  '/(app)/settings': typeof appSettingsRouteRoute
-  '/(app)/shared': typeof appSharedRouteRoute
-  '/(auth)/login': typeof authLoginRouteRoute
-  '/(auth)/register': typeof authRegisterRouteRoute
+  '/(app)/': typeof appIndexRoute
+  '/(app)/dashboard/': typeof appDashboardIndexRoute
+  '/(app)/file-activity/': typeof appFileActivityIndexRoute
+  '/(app)/files/': typeof appFilesIndexRoute
+  '/(app)/settings/': typeof appSettingsIndexRoute
+  '/(app)/shared/': typeof appSharedIndexRoute
+  '/(auth)/login/': typeof authLoginIndexRoute
+  '/(auth)/register/': typeof authRegisterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/dashboard'
-    | '/file-activity'
-    | '/files'
-    | '/settings'
-    | '/shared'
-    | '/login'
-    | '/register'
+    | '/'
+    | '/dashboard/'
+    | '/file-activity/'
+    | '/files/'
+    | '/settings/'
+    | '/shared/'
+    | '/login/'
+    | '/register/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/dashboard'
     | '/file-activity'
     | '/files'
@@ -109,19 +120,20 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/(app)'
-    | '/(app)/dashboard'
-    | '/(app)/file-activity'
-    | '/(app)/files'
-    | '/(app)/settings'
-    | '/(app)/shared'
-    | '/(auth)/login'
-    | '/(auth)/register'
+    | '/(app)/'
+    | '/(app)/dashboard/'
+    | '/(app)/file-activity/'
+    | '/(app)/files/'
+    | '/(app)/settings/'
+    | '/(app)/shared/'
+    | '/(auth)/login/'
+    | '/(auth)/register/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   appRouteRoute: typeof appRouteRouteWithChildren
-  authLoginRouteRoute: typeof authLoginRouteRoute
-  authRegisterRouteRoute: typeof authRegisterRouteRoute
+  authLoginIndexRoute: typeof authLoginIndexRoute
+  authRegisterIndexRoute: typeof authRegisterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -133,72 +145,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(auth)/register': {
-      id: '/(auth)/register'
+    '/(app)/': {
+      id: '/(app)/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof appIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(auth)/register/': {
+      id: '/(auth)/register/'
       path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof authRegisterRouteRouteImport
+      fullPath: '/register/'
+      preLoaderRoute: typeof authRegisterIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(auth)/login': {
-      id: '/(auth)/login'
+    '/(auth)/login/': {
+      id: '/(auth)/login/'
       path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof authLoginRouteRouteImport
+      fullPath: '/login/'
+      preLoaderRoute: typeof authLoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(app)/shared': {
-      id: '/(app)/shared'
+    '/(app)/shared/': {
+      id: '/(app)/shared/'
       path: '/shared'
-      fullPath: '/shared'
-      preLoaderRoute: typeof appSharedRouteRouteImport
+      fullPath: '/shared/'
+      preLoaderRoute: typeof appSharedIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/settings': {
-      id: '/(app)/settings'
+    '/(app)/settings/': {
+      id: '/(app)/settings/'
       path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof appSettingsRouteRouteImport
+      fullPath: '/settings/'
+      preLoaderRoute: typeof appSettingsIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/files': {
-      id: '/(app)/files'
+    '/(app)/files/': {
+      id: '/(app)/files/'
       path: '/files'
-      fullPath: '/files'
-      preLoaderRoute: typeof appFilesRouteRouteImport
+      fullPath: '/files/'
+      preLoaderRoute: typeof appFilesIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/file-activity': {
-      id: '/(app)/file-activity'
+    '/(app)/file-activity/': {
+      id: '/(app)/file-activity/'
       path: '/file-activity'
-      fullPath: '/file-activity'
-      preLoaderRoute: typeof appFileActivityRouteRouteImport
+      fullPath: '/file-activity/'
+      preLoaderRoute: typeof appFileActivityIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/dashboard': {
-      id: '/(app)/dashboard'
+    '/(app)/dashboard/': {
+      id: '/(app)/dashboard/'
       path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof appDashboardRouteRouteImport
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof appDashboardIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
   }
 }
 
 interface appRouteRouteChildren {
-  appDashboardRouteRoute: typeof appDashboardRouteRoute
-  appFileActivityRouteRoute: typeof appFileActivityRouteRoute
-  appFilesRouteRoute: typeof appFilesRouteRoute
-  appSettingsRouteRoute: typeof appSettingsRouteRoute
-  appSharedRouteRoute: typeof appSharedRouteRoute
+  appIndexRoute: typeof appIndexRoute
+  appDashboardIndexRoute: typeof appDashboardIndexRoute
+  appFileActivityIndexRoute: typeof appFileActivityIndexRoute
+  appFilesIndexRoute: typeof appFilesIndexRoute
+  appSettingsIndexRoute: typeof appSettingsIndexRoute
+  appSharedIndexRoute: typeof appSharedIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
-  appDashboardRouteRoute: appDashboardRouteRoute,
-  appFileActivityRouteRoute: appFileActivityRouteRoute,
-  appFilesRouteRoute: appFilesRouteRoute,
-  appSettingsRouteRoute: appSettingsRouteRoute,
-  appSharedRouteRoute: appSharedRouteRoute,
+  appIndexRoute: appIndexRoute,
+  appDashboardIndexRoute: appDashboardIndexRoute,
+  appFileActivityIndexRoute: appFileActivityIndexRoute,
+  appFilesIndexRoute: appFilesIndexRoute,
+  appSettingsIndexRoute: appSettingsIndexRoute,
+  appSharedIndexRoute: appSharedIndexRoute,
 }
 
 const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
@@ -207,8 +228,8 @@ const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   appRouteRoute: appRouteRouteWithChildren,
-  authLoginRouteRoute: authLoginRouteRoute,
-  authRegisterRouteRoute: authRegisterRouteRoute,
+  authLoginIndexRoute: authLoginIndexRoute,
+  authRegisterIndexRoute: authRegisterIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

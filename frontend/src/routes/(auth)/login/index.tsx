@@ -22,7 +22,7 @@ import { toast } from 'sonner'
 import { loginFn } from '@/api/auth/functions'
 import { loginSchema } from '@/api/auth/schemas'
 
-export const Route = createFileRoute('/(auth)/login')({
+export const Route = createFileRoute('/(auth)/login/')({
   component: Login,
 })
 

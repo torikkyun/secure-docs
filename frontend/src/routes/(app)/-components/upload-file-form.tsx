@@ -137,7 +137,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-primary" />
+            {/* <Upload className="h-5 w-5 text-primary" /> */}
             Tải lên tệp bảo mật
           </DialogTitle>
           <DialogDescription>
@@ -181,7 +181,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
                     + Thêm tệp
                   </Button>
                 </div>
-                <div className="max-h-[180px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                <div className="max-h-45 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                   {selectedFiles.map((file, index) => (
                     <div
                       key={index}
@@ -289,7 +289,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
               !passcode ||
               uploadMutation.isPending
             }
-            className="min-w-[140px]"
+            className="min-w-35"
           >
             {uploadMutation.isPending ? (
               <>
