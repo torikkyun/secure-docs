@@ -18,6 +18,8 @@ import {
   User,
   ChevronDown,
   Plus,
+  PanelRightOpen,
+  PanelRightClose,
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -31,18 +33,69 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
-import { useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { UploadFileForm } from './-components/upload-file-form'
+import { DetailBar } from './-components/detail-bar'
 import { useRouterState } from '@tanstack/react-router'
+import { FileItem } from '@/api/file/types'
+
+interface DetailBarContextValue {
+  isOpen: boolean
+  toggle: () => void
+  selectedFile: FileItem | null
+  setSelectedFile: (file: FileItem | null) => void
+}
+
+export const DetailBarContext = createContext<DetailBarContextValue>({
+  isOpen: false,
+  toggle: () => {},
+  selectedFile: null,
+  setSelectedFile: () => {},
+})
+
+export function useDetailBar() {
+  return useContext(DetailBarContext)
+}
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tài liệu của tôi', href: '/files', icon: FileText },
   { name: 'Được chia sẻ', href: '/shared', icon: Share2 },
   { name: 'Hoạt động', href: '/file-activity', icon: FileClock },
   { name: 'Cài đặt', href: '/settings', icon: Settings },
 ]
+
+function PageToolbar() {
+  const currentPath = useRouterState({ select: (s) => s.location.pathname })
+  const { isOpen, toggle } = useDetailBar()
+  const currentNav = navigation.find(
+    (item) =>
+      currentPath === item.href || currentPath.startsWith(item.href + '/'),
+  )
+  if (!currentNav) return null
+
+  return (
+    <div className="sticky top-0 bg-background/50 backdrop-blur z-20 flex items-center justify-between">
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {currentNav.name}
+      </h1>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggle}
+        aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
+        className={cn(isOpen && 'bg-muted')}
+      >
+        {isOpen ? (
+          <PanelRightClose className="h-5 w-5" />
+        ) : (
+          <PanelRightOpen className="h-5 w-5" />
+        )}
+      </Button>
+    </div>
+  )
+}
 
 export const Route = createFileRoute('/(app)')({
   loader: async () => {
@@ -62,6 +115,8 @@ function AppLayout() {
   const routerInstance = useRouter()
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const [isUploadOpen, setIsUploadOpen] = useState(false)
+  const [isDetailBarOpen, setIsDetailBarOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
 
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
@@ -118,103 +173,120 @@ function AppLayout() {
   )
 
   return (
-    <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden bg-muted/40">
-      {isUploadOpen && (
-        <UploadFileForm onClose={() => setIsUploadOpen(false)} />
-      )}
-      <div className="hidden border-r bg-background md:block dark:bg-zinc-950/50">
-        <SidebarContent />
-      </div>
-      <div className="flex flex-col h-full overflow-hidden">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-15 lg:px-6 shrink-0 z-10">
-          <Sheet>
-            <SheetTrigger
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'icon' }),
-                'shrink-0 md:hidden',
-              )}
-            >
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle navigation menu</span>
-            </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col w-60 p-0">
-              <SidebarContent />
-            </SheetContent>
-          </Sheet>
-          <div className="w-full flex-1" />
-          <div className="flex items-center gap-4">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className={cn(
-                    buttonVariants({ variant: 'ghost' }),
-                    'relative h-9 flex items-center gap-2 px-2 hover:bg-muted outline-none',
-                  )}
-                >
-                  <Avatar className="h-6 w-6 border">
-                    <AvatarImage src={user.avatar} alt={user.email} />
-                    <AvatarFallback>
-                      {user.email.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden text-sm font-medium lg:inline-block max-w-37.5 truncate">
-                    {user.email}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {user.name || 'Người dùng'}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        routerInstance.navigate({ to: '/settings' })
-                      }
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Tài khoản</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        routerInstance.navigate({ to: '/settings' })
-                      }
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Cài đặt</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-red-500 focus:text-red-500 font-medium"
+    <DetailBarContext.Provider
+      value={{
+        isOpen: isDetailBarOpen,
+        toggle: () => setIsDetailBarOpen((v) => !v),
+        selectedFile,
+        setSelectedFile,
+      }}
+    >
+      <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden bg-muted/40">
+        {isUploadOpen && (
+          <UploadFileForm onClose={() => setIsUploadOpen(false)} />
+        )}
+        <div className="hidden border-r bg-background md:block dark:bg-zinc-950/50">
+          <SidebarContent />
+        </div>
+        <div className="flex flex-col h-full overflow-hidden">
+          <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-15 lg:px-6 shrink-0 z-10">
+            <Sheet>
+              <SheetTrigger
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'icon' }),
+                  'shrink-0 md:hidden',
+                )}
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </SheetTrigger>
+              <SheetContent side="left" className="flex flex-col w-60 p-0">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
+            <div className="w-full flex-1" />
+            <div className="flex items-center gap-4">
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className={cn(
+                      buttonVariants({ variant: 'ghost' }),
+                      'relative h-9 flex items-center gap-2 px-2 hover:bg-muted outline-none',
+                    )}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Đăng xuất</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link to="/login">
-                <Button size="sm">Đăng nhập</Button>
-              </Link>
+                    <Avatar className="h-6 w-6 border">
+                      <AvatarImage src={user.avatar} alt={user.email} />
+                      <AvatarFallback>
+                        {user.email.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden text-sm font-medium lg:inline-block max-w-37.5 truncate">
+                      {user.email}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {user.name || 'Người dùng'}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          routerInstance.navigate({ to: '/settings' })
+                        }
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Tài khoản</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          routerInstance.navigate({ to: '/settings' })
+                        }
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Cài đặt</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-500 focus:text-red-500 font-medium"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Đăng xuất</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/login">
+                  <Button size="sm">Đăng nhập</Button>
+                </Link>
+              )}
+            </div>
+          </header>
+          <div className="flex flex-1 overflow-hidden">
+            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-y-auto bg-background/50">
+              <PageToolbar />
+              <Outlet />
+            </main>
+            {isDetailBarOpen && (
+              <aside className="w-80 shrink-0 border-l bg-background overflow-y-auto">
+                <DetailBar />
+              </aside>
             )}
           </div>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-y-auto bg-background/50">
-          <Outlet />
-        </main>
+        </div>
       </div>
-    </div>
+    </DetailBarContext.Provider>
   )
 }

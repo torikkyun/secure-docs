@@ -6,7 +6,7 @@ import { FileItem } from '@/api/file/types'
 import { DownloadFileModal } from '../files/-components/download-file-modal'
 import { SharedFileGrid } from './-components/shared-file-grid'
 import { Input } from '@/components/ui/input'
-import { Search, Share2, FileText, Users } from 'lucide-react'
+import { Search, Share2, FileText } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 export const Route = createFileRoute('/(app)/shared/')({
@@ -40,19 +40,11 @@ function SharedPage() {
     <div className="flex flex-col h-full gap-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between sticky top-0 bg-background/95 backdrop-blur z-20 pb-4 border-b">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-              <Users className="h-6 w-6 text-primary" />
-              Được chia sẻ với tôi
-            </h1>
-            {!isLoading && (
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {files.length} tệp tin từ người khác
-              </p>
-            )}
-          </div>
-        </div>
+        {!isLoading && (
+          <p className="text-sm text-muted-foreground">
+            {files.length} tệp tin từ người khác
+          </p>
+        )}
 
         <div className="flex items-center gap-3">
           {!isLoading && files.length > 0 && (

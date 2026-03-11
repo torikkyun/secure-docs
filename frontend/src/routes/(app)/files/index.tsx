@@ -39,13 +39,6 @@ export function FilesPage() {
 
   return (
     <div className="flex flex-col h-full gap-6">
-      {/* Toolbar Section */}
-      <div className="sticky top-0 bg-background/50 backdrop-blur z-20">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Tài liệu của tôi
-        </h1>
-      </div>
-
       {/* Main Content Area */}
       <div className="flex-1">
         {isLoading ? (

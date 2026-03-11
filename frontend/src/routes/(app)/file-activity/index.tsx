@@ -7,14 +7,7 @@ import { ActivityFeed } from './-components/activity-feed'
 import { ActivityFilters } from './-components/activity-filters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  Activity,
-  Clock,
-  FileText,
-  Download,
-  Upload,
-  Share2,
-} from 'lucide-react'
+import { Activity, FileText, Download, Upload } from 'lucide-react'
 
 export const Route = createFileRoute('/(app)/file-activity/')({
   component: FileActivityPage,
@@ -60,14 +53,9 @@ export function FileActivityPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Lịch sử hoạt động
-          </h1>
-          <p className="text-muted-foreground">
-            Theo dõi toàn bộ hoạt động trên tệp tin của bạn
-          </p>
-        </div>
+        <p className="text-muted-foreground">
+          Theo dõi toàn bộ hoạt động trên tệp tin của bạn
+        </p>
         <Badge variant="outline" className="w-fit">
           <Activity className="mr-1 h-3 w-3" />
           Giám sát thời gian thực
