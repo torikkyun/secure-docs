@@ -1,4 +1,6 @@
-import { FileText, Image, File, Download, Lock } from 'lucide-react'
+import { Download, Lock } from 'lucide-react'
+import { getFileIcon, formatFileSize, formatDate } from '@/lib/file-utils'
+import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,33 +12,11 @@ interface SharedFileGridProps {
   onDownload: (file: FileItem) => void
 }
 
-function getFileIcon(mimeType: string) {
-  if (mimeType.startsWith('image/')) return Image
-  if (mimeType === 'application/pdf') return FileText
-  return File
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('vi-VN', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
 export function SharedFileGrid({ files, onDownload }: SharedFileGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {files.map((file) => {
-        const FileIcon = getFileIcon(file.mimeType)
+        const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
         const sharedBy = file.sharedBy
 
         return (
@@ -49,7 +29,7 @@ export function SharedFileGrid({ files, onDownload }: SharedFileGridProps) {
                 {/* File Icon */}
                 <div className="flex justify-center">
                   <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <FileIcon className="h-8 w-8 text-primary" />
+                    <FileIcon className={cn('h-8 w-8', colorClass)} />
                   </div>
                 </div>
 

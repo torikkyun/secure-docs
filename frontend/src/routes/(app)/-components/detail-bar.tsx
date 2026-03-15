@@ -1,31 +1,9 @@
 import { useDetailBar } from '../route'
-import { FileText, Image, File, Calendar, HardDrive } from 'lucide-react'
+import { FileText, Calendar, HardDrive } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-
-function formatFileSize(bytes: number) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('vi-VN', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function getFileIcon(mimeType: string) {
-  if (mimeType.startsWith('image/')) return Image
-  if (mimeType === 'application/pdf') return FileText
-  return File
-}
+import { formatDate, formatFileSize, getFileIcon } from '@/lib/file-utils'
+import { cn } from '@/lib/utils'
 
 export function DetailBar() {
   const { selectedFile } = useDetailBar()
@@ -41,7 +19,7 @@ export function DetailBar() {
     )
   }
 
-  const FileIcon = getFileIcon(selectedFile.mimeType)
+  const { Icon: FileIcon, colorClass } = getFileIcon(selectedFile.mimeType)
   const ownerInitials = (selectedFile.owner.name || selectedFile.owner.email)
     .substring(0, 2)
     .toUpperCase()
@@ -51,7 +29,7 @@ export function DetailBar() {
       {/* Preview */}
       <div className="flex flex-col items-center py-6 gap-3 bg-muted/30 rounded-lg">
         <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-background shadow-sm border">
-          <FileIcon className="h-8 w-8 text-muted-foreground" />
+          <FileIcon className={cn('h-8 w-8', colorClass)} />
         </div>
         <p className="text-sm font-medium text-center break-all px-2 leading-snug">
           {selectedFile.filename}

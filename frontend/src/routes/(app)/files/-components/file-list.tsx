@@ -7,15 +7,14 @@ import {
   SortingState,
 } from '@tanstack/react-table'
 import {
-  FileText,
-  Image,
-  File,
   MoreHorizontal,
   ArrowUpDown,
   Download,
   Share2,
   Eye,
+  Info,
 } from 'lucide-react'
+import { getFileIcon, formatFileSize, formatDate } from '@/lib/file-utils'
 import { toast } from 'sonner'
 import { useState, useRef, useEffect } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
@@ -29,6 +28,13 @@ import {
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +44,7 @@ import {
 } from '@/components/ui/table'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { FileItem } from '@/api/file/types'
+import { useDetailBar } from '@/routes/(app)/route'
 
 interface FileListProps {
   files: FileItem[]
@@ -45,31 +52,7 @@ interface FileListProps {
   onDownload: (file: FileItem) => void
   onView: (file: FileItem) => void
   onSelect?: (file: FileItem | null) => void
-}
-
-function getFileIcon(mimeType: string) {
-  if (mimeType.startsWith('image/')) return Image
-  if (mimeType === 'application/pdf') return FileText
-  return File
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-function formatDate(dateString: string) {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('vi-VN', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  onOpenDetail?: (file: FileItem) => void
 }
 
 const columns: ColumnDef<FileItem>[] = [
@@ -89,12 +72,12 @@ const columns: ColumnDef<FileItem>[] = [
     },
     cell: ({ row }) => {
       const file = row.original
-      const FileIcon = getFileIcon(file.mimeType)
+      const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
 
       return (
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-muted rounded flex items-center justify-center shrink-0">
-            <FileIcon className="h-4 w-4 text-muted-foreground" />
+            <FileIcon className={cn('h-4 w-4', colorClass)} />
           </div>
           <span className="font-medium truncate" title={file.filename}>
             {file.filename}
@@ -179,10 +162,13 @@ const columns: ColumnDef<FileItem>[] = [
     enableHiding: false,
     cell: ({ row, table }) => {
       const file = row.original
-      const { onShare, onDownload, onView } = table.options.meta as {
+      const { onShare, onDownload, onView, onOpenDetail } = table.options
+        .meta as {
         onShare: (file: FileItem) => void
         onDownload: (file: FileItem) => void
         onView: (file: FileItem) => void
+        onSelect: (file: FileItem | null) => void
+        onOpenDetail: (file: FileItem) => void
       }
 
       return (
@@ -195,10 +181,17 @@ const columns: ColumnDef<FileItem>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => onOpenDetail(file)}>
+                <Info className="mr-2 h-4 w-4" />
+                Thông tin chi tiết
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
               {file.mimeType === 'application/pdf' && (
                 <DropdownMenuItem onClick={() => onView(file)}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Xem trực tuyến
+                  Xem
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => onDownload(file)}>
@@ -252,12 +245,16 @@ export function FileList({
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
   const tableRef = useRef<HTMLDivElement>(null)
+  const {
+    isOpen: isDetailBarOpen,
+    toggle: toggleDetailBar,
+    setSelectedFile,
+  } = useDetailBar()
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
         setSelectedRowId(null)
-        onSelect?.(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -265,13 +262,19 @@ export function FileList({
   }, [onSelect])
 
   const handleRowClick = (rowId: string, file: FileItem) => {
-    if (selectedRowId === rowId) {
-      setSelectedRowId(null)
-      onSelect?.(null)
-    } else {
-      setSelectedRowId(rowId)
-      onSelect?.(file)
-    }
+    const isAlreadySelected = selectedRowId === rowId
+    setSelectedRowId(isAlreadySelected ? null : rowId)
+    onSelect?.(isAlreadySelected ? null : file)
+  }
+
+  const handleOpenDetail = (file: FileItem) => {
+    setSelectedFile(file)
+    if (!isDetailBarOpen) toggleDetailBar()
+    const rowId =
+      table.getRowModel().rows.find((r) => r.original.id === file.id)?.id ??
+      null
+    setSelectedRowId(rowId)
+    onSelect?.(file)
   }
 
   const table = useReactTable({
@@ -281,7 +284,13 @@ export function FileList({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: { sorting },
-    meta: { onShare, onDownload, onView },
+    meta: {
+      onShare,
+      onDownload,
+      onView,
+      onSelect,
+      onOpenDetail: handleOpenDetail,
+    },
   })
 
   return (
@@ -306,18 +315,72 @@ export function FileList({
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={selectedRowId === row.id ? 'selected' : undefined}
-                className="cursor-pointer"
-                onClick={() => handleRowClick(row.id, row.original)}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
+              <ContextMenu key={row.id}>
+                <ContextMenuTrigger
+                  render={
+                    <TableRow
+                      data-state={
+                        selectedRowId === row.id ? 'selected' : undefined
+                      }
+                      className="cursor-pointer"
+                      onClick={() => handleRowClick(row.id, row.original)}
+                    />
+                  }
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </ContextMenuTrigger>
+                <ContextMenuContent className="w-48">
+                  <ContextMenuItem
+                    onClick={() => handleOpenDetail(row.original)}
+                  >
+                    <Info className="mr-2 h-4 w-4" />
+                    Thông tin chi tiết
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  {row.original.mimeType === 'application/pdf' && (
+                    <ContextMenuItem onClick={() => onView(row.original)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Xem
+                    </ContextMenuItem>
+                  )}
+                  <ContextMenuItem onClick={() => onDownload(row.original)}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Tải xuống
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={() => onShare(row.original)}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Chia sẻ
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    disabled
+                    onClick={() => toast.info('Tính năng đang phát triển')}
+                  >
+                    Đổi tên
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    disabled
+                    onClick={() => toast.info('Tính năng đang phát triển')}
+                  >
+                    Di chuyển
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    disabled
+                    className="text-destructive"
+                    onClick={() => toast.info('Tính năng đang phát triển')}
+                  >
+                    Xóa
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))
           ) : (
             <TableRow>

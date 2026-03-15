@@ -279,11 +279,9 @@ function AppLayout() {
               <PageToolbar />
               <Outlet />
             </main>
-            {isDetailBarOpen && (
-              <aside className="w-80 shrink-0 border-l bg-background overflow-y-auto">
-                <DetailBar />
-              </aside>
-            )}
+            <aside className={cn('w-80 shrink-0 border-l bg-background overflow-y-auto', !isDetailBarOpen && 'hidden')}>
+              <DetailBar />
+            </aside>
           </div>
         </div>
       </div>

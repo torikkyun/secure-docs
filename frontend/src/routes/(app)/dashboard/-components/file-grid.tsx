@@ -1,13 +1,13 @@
 import {
   FileText,
-  Image,
-  File,
   MoreHorizontal,
   Lock,
   ExternalLink,
   Download,
   Share2,
 } from 'lucide-react'
+import { getFileIcon } from '@/lib/file-utils'
+import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,12 +24,6 @@ interface FileGridProps {
   files: FileItem[]
   onShare: (file: FileItem) => void
   onDownload: (file: FileItem) => void
-}
-
-function getFileIcon(mimeType: string) {
-  if (mimeType.startsWith('image/')) return Image
-  if (mimeType === 'application/pdf') return FileText
-  return File
 }
 
 function formatFileSize(bytes: number) {
@@ -53,7 +47,7 @@ export function FileGrid({ files, onShare, onDownload }: FileGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {files.map((file) => {
-        const FileIcon = getFileIcon(file.mimeType)
+        const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
 
         return (
           <Card
@@ -65,7 +59,7 @@ export function FileGrid({ files, onShare, onDownload }: FileGridProps) {
                 {/* File Icon/Thumbnail */}
                 <div className="flex justify-center">
                   <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <FileIcon className="h-8 w-8 text-primary" />
+                    <FileIcon className={cn('h-8 w-8', colorClass)} />
                   </div>
                 </div>
 
