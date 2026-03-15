@@ -14,9 +14,10 @@ import {
   ArrowUpDown,
   Download,
   Share2,
+  Eye,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -42,6 +43,8 @@ interface FileListProps {
   files: FileItem[]
   onShare: (file: FileItem) => void
   onDownload: (file: FileItem) => void
+  onView: (file: FileItem) => void
+  onSelect?: (file: FileItem | null) => void
 }
 
 function getFileIcon(mimeType: string) {
@@ -176,9 +179,10 @@ const columns: ColumnDef<FileItem>[] = [
     enableHiding: false,
     cell: ({ row, table }) => {
       const file = row.original
-      const { onShare, onDownload } = table.options.meta as {
+      const { onShare, onDownload, onView } = table.options.meta as {
         onShare: (file: FileItem) => void
         onDownload: (file: FileItem) => void
+        onView: (file: FileItem) => void
       }
 
       return (
@@ -191,6 +195,12 @@ const columns: ColumnDef<FileItem>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
+              {file.mimeType === 'application/pdf' && (
+                <DropdownMenuItem onClick={() => onView(file)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Xem trực tuyến
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={() => onDownload(file)}>
                 <Download className="mr-2 h-4 w-4" />
                 Tải xuống
@@ -232,8 +242,37 @@ const columns: ColumnDef<FileItem>[] = [
   },
 ]
 
-export function FileList({ files, onShare, onDownload }: FileListProps) {
+export function FileList({
+  files,
+  onShare,
+  onDownload,
+  onView,
+  onSelect,
+}: FileListProps) {
   const [sorting, setSorting] = useState<SortingState>([])
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
+  const tableRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
+        setSelectedRowId(null)
+        onSelect?.(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onSelect])
+
+  const handleRowClick = (rowId: string, file: FileItem) => {
+    if (selectedRowId === rowId) {
+      setSelectedRowId(null)
+      onSelect?.(null)
+    } else {
+      setSelectedRowId(rowId)
+      onSelect?.(file)
+    }
+  }
 
   const table = useReactTable({
     data: files,
@@ -242,11 +281,11 @@ export function FileList({ files, onShare, onDownload }: FileListProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: { sorting },
-    meta: { onShare, onDownload },
+    meta: { onShare, onDownload, onView },
   })
 
   return (
-    <div className="rounded-md">
+    <div ref={tableRef} className="rounded-md">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -269,7 +308,9 @@ export function FileList({ files, onShare, onDownload }: FileListProps) {
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
+                data-state={selectedRowId === row.id ? 'selected' : undefined}
+                className="cursor-pointer"
+                onClick={() => handleRowClick(row.id, row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>

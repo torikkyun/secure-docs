@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/card'
 import { KeySyncWarning } from '@/routes/(app)/settings/-components/key-sync-warning'
 import { UpdateProfileForm } from '@/routes/(app)/settings/-components/update-profile-form'
+import { GeminiApiKeyForm } from '@/routes/(app)/settings/-components/gemini-api-key-form'
 import { createFileRoute } from '@tanstack/react-router'
 import { CheckCircle } from 'lucide-react'
 
@@ -49,6 +50,19 @@ function Settings() {
         </CardHeader>
         <CardContent>
           <UpdateProfileForm />
+        </CardContent>
+      </Card>
+
+      {/* Gemini API Key Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Gemini AI</CardTitle>
+          <CardDescription>
+            Cấu hình API key để sử dụng tính năng tóm tắt tài liệu PDF bằng AI
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <GeminiApiKeyForm />
         </CardContent>
       </Card>
     </div>

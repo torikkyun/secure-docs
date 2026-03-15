@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Upload, FileText } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import { FileList } from './-components/file-list'
 import { ShareFileModal } from './-components/share-file-modal'
 import { DownloadFileModal } from './-components/download-file-modal'
+import { ViewFileModal } from './-components/view-file-modal'
 import { createFileRoute } from '@tanstack/react-router'
 import { getFilesFn } from '@/api/file/functions'
+import { useDetailBar } from '../route'
 
 export const Route = createFileRoute('/(app)/files/')({
   component: FilesPage,
@@ -18,6 +20,14 @@ export function FilesPage() {
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const { setSelectedFile: setDetailBarFile } = useDetailBar()
+
+  useEffect(() => {
+    return () => {
+      setDetailBarFile(null)
+    }
+  }, [])
 
   // Fetch real files data
   const { data: filesData, isLoading } = useQuery({
@@ -35,6 +45,11 @@ export function FilesPage() {
   const handleDownload = (file: FileItem) => {
     setSelectedFile(file)
     setIsDownloadModalOpen(true)
+  }
+
+  const handleView = (file: FileItem) => {
+    setSelectedFile(file)
+    setIsViewModalOpen(true)
   }
 
   return (
@@ -65,6 +80,8 @@ export function FilesPage() {
             files={files}
             onShare={handleShare}
             onDownload={handleDownload}
+            onView={handleView}
+            onSelect={setDetailBarFile}
           />
         )}
       </div>
@@ -80,6 +97,12 @@ export function FilesPage() {
         file={selectedFile}
         isOpen={isDownloadModalOpen}
         onClose={() => setIsDownloadModalOpen(false)}
+      />
+
+      <ViewFileModal
+        file={selectedFile}
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
       />
     </div>
   )
