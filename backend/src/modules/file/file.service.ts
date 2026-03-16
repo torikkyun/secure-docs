@@ -189,7 +189,14 @@ export class FileService {
   })
   async getUserFiles(
     userId: string,
-    { page = 1, limit = 20, search, filter }: QueryFileDto,
+    {
+      page = 1,
+      limit = 20,
+      search,
+      filter,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    }: QueryFileDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
 
@@ -280,7 +287,7 @@ export class FileService {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { [sortBy]: sortOrder as Prisma.SortOrder },
         where,
         skip,
         take,

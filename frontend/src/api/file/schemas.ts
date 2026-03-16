@@ -7,6 +7,8 @@ export const queryFileSchema = z.object({
   limit: z.number().min(1).max(100).optional(),
   search: z.string().optional(),
   filter: z.enum(['all', 'shared', 'owned']).optional(),
+  sortBy: z.enum(['filename', 'createdAt', 'size']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 })
 
 export const getFileByIdSchema = z.object({

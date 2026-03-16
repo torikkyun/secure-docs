@@ -2,7 +2,6 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getSortedRowModel,
   useReactTable,
   SortingState,
 } from '@tanstack/react-table'
@@ -52,7 +51,10 @@ interface FileListProps {
   onDownload: (file: FileItem) => void
   onView: (file: FileItem) => void
   onSelect?: (file: FileItem | null) => void
-  onOpenDetail?: (file: FileItem) => void
+  onSortingChange?: (
+    sortBy: string | undefined,
+    sortOrder: 'asc' | 'desc',
+  ) => void
 }
 
 const columns: ColumnDef<FileItem>[] = [
@@ -172,64 +174,69 @@ const columns: ColumnDef<FileItem>[] = [
       }
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(buttonVariants({ variant: 'ghost' }), 'h-8 w-8 p-0')}
-          >
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => onOpenDetail(file)}>
-                <Info className="mr-2 h-4 w-4" />
-                Thông tin chi tiết
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              {file.mimeType === 'application/pdf' && (
-                <DropdownMenuItem onClick={() => onView(file)}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Xem
-                </DropdownMenuItem>
+        <div onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                buttonVariants({ variant: 'ghost' }),
+                'h-8 w-8 p-0',
               )}
-              <DropdownMenuItem onClick={() => onDownload(file)}>
-                <Download className="mr-2 h-4 w-4" />
-                Tải xuống
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onShare(file)}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Chia sẻ
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                disabled
-                onClick={() => toast.info('Tính năng đang phát triển')}
-              >
-                Đổi tên
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled
-                onClick={() => toast.info('Tính năng đang phát triển')}
-              >
-                Di chuyển
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                disabled
-                className="text-destructive"
-                onClick={() => toast.info('Tính năng đang phát triển')}
-              >
-                Xóa
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            >
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => onOpenDetail(file)}>
+                  <Info className="mr-2 h-4 w-4" />
+                  Thông tin chi tiết
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {file.mimeType === 'application/pdf' && (
+                  <DropdownMenuItem onClick={() => onView(file)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Xem
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => onDownload(file)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Tải xuống
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onShare(file)}>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Chia sẻ
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  disabled
+                  onClick={() => toast.info('Tính năng đang phát triển')}
+                >
+                  Đổi tên
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled
+                  onClick={() => toast.info('Tính năng đang phát triển')}
+                >
+                  Di chuyển
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  disabled
+                  className="text-destructive"
+                  onClick={() => toast.info('Tính năng đang phát triển')}
+                >
+                  Xóa
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )
     },
   },
@@ -241,6 +248,7 @@ export function FileList({
   onDownload,
   onView,
   onSelect,
+  onSortingChange,
 }: FileListProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
@@ -267,6 +275,19 @@ export function FileList({
     onSelect?.(isAlreadySelected ? null : file)
   }
 
+  const handleSortingChange = (
+    updater: SortingState | ((prev: SortingState) => SortingState),
+  ) => {
+    const newSorting =
+      typeof updater === 'function' ? updater(sorting) : updater
+    setSorting(newSorting)
+    if (newSorting.length > 0) {
+      onSortingChange?.(newSorting[0].id, newSorting[0].desc ? 'desc' : 'asc')
+    } else {
+      onSortingChange?.(undefined, 'desc')
+    }
+  }
+
   const handleOpenDetail = (file: FileItem) => {
     setSelectedFile(file)
     if (!isDetailBarOpen) toggleDetailBar()
@@ -280,9 +301,9 @@ export function FileList({
   const table = useReactTable({
     data: files,
     columns,
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    manualSorting: true,
     state: { sorting },
     meta: {
       onShare,

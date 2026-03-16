@@ -21,6 +21,10 @@ export function FilesPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [sortBy, setSortBy] = useState<
+    'filename' | 'createdAt' | 'size' | undefined
+  >(undefined)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const { setSelectedFile: setDetailBarFile } = useDetailBar()
 
   useEffect(() => {
@@ -31,8 +35,8 @@ export function FilesPage() {
 
   // Fetch real files data
   const { data: filesData, isLoading } = useQuery({
-    queryKey: ['files'],
-    queryFn: () => getFilesFn({ data: {} }),
+    queryKey: ['files', sortBy, sortOrder],
+    queryFn: () => getFilesFn({ data: { sortBy, sortOrder } }),
   })
 
   const files: FileItem[] = filesData?.files || []
@@ -50,6 +54,14 @@ export function FilesPage() {
   const handleView = (file: FileItem) => {
     setSelectedFile(file)
     setIsViewModalOpen(true)
+  }
+
+  const handleSortingChange = (
+    newSortBy: string | undefined,
+    newSortOrder: 'asc' | 'desc',
+  ) => {
+    setSortBy(newSortBy as 'filename' | 'createdAt' | 'size' | undefined)
+    setSortOrder(newSortOrder)
   }
 
   return (
@@ -82,6 +94,7 @@ export function FilesPage() {
             onDownload={handleDownload}
             onView={handleView}
             onSelect={setDetailBarFile}
+            onSortingChange={handleSortingChange}
           />
         )}
       </div>

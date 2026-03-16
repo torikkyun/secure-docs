@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Upload, FileText, Shield, X, LockKeyhole, Loader2 } from 'lucide-react'
+import { Upload, FileText, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -233,19 +233,18 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
                 className="flex items-center justify-between"
               >
                 <span>Passcode xác nhận</span>
-                <LockKeyhole className="h-3 w-3 text-muted-foreground" />
               </Label>
               <Input
                 id="passcode"
                 type="password"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="******"
+                placeholder="Yêu cầu 6 ký tự"
                 maxLength={6}
-                className="text-center tracking-widest text-lg font-mono h-12"
+                className="text-center text-sm h-11.5 placeholder:text-muted-foreground/70"
               />
               <p className="text-[10px] text-muted-foreground">
-                Dùng để ký số và mã hóa dữ liệu của bạn
+                Dùng để mã hóa dữ liệu của bạn
               </p>
             </div>
 
@@ -297,10 +296,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
                 Đang xử lý...
               </>
             ) : (
-              <>
-                <Shield className="mr-2 h-4 w-4" />
-                Mã hóa & Tải lên
-              </>
+              <>Mã hóa & Tải lên</>
             )}
           </Button>
         </DialogFooter>

@@ -47,6 +47,8 @@ export const getFilesFn = createServerFn({ method: 'GET' })
     if (data.limit) params.append('limit', data.limit.toString())
     if (data.search) params.append('search', data.search)
     if (data.filter) params.append('filter', data.filter)
+    if (data.sortBy) params.append('sortBy', data.sortBy)
+    if (data.sortOrder) params.append('sortOrder', data.sortOrder)
 
     const url = `${API_URL}/files${params.toString() ? `?${params.toString()}` : ''}`
 
