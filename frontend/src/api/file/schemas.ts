@@ -9,6 +9,9 @@ export const queryFileSchema = z.object({
   filter: z.enum(['all', 'shared', 'owned']).optional(),
   sortBy: z.enum(['filename', 'createdAt', 'size']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
+  fileType: z.enum(['pdf', 'word', 'excel', 'image']).optional(),
+  ownerId: z.string().optional(),
+  sharedWithId: z.string().optional(),
 })
 
 export const getFileByIdSchema = z.object({

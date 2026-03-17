@@ -12,8 +12,8 @@ import {
 } from '@/lib/crypto'
 import { getGeminiApiKey, summarizeWithGemini } from '@/lib/gemini'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PasscodeInput } from '@/components/passcode-input'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,6 @@ import {
 import { toast } from 'sonner'
 import {
   Loader2,
-  LockKeyhole,
   FileText,
   X,
   ChevronLeft,
@@ -394,35 +393,13 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="view-passcode"
-                    className="flex items-center justify-between"
-                  >
-                    <span>Passcode xác nhận</span>
-                    <LockKeyhole className="h-3 w-3 text-muted-foreground" />
+                <div className="space-y-3 pt-2 border-t mt-2">
+                  <Label className="flex items-center gap-1.5">
+                    Passcode xác nhận
                   </Label>
-                  <Input
-                    id="view-passcode"
-                    type="password"
-                    placeholder="******"
-                    value={passcode}
-                    onChange={(e) => setPasscode(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (
-                        e.key === 'Enter' &&
-                        passcode &&
-                        !viewMutation.isPending
-                      ) {
-                        viewMutation.mutate()
-                      }
-                    }}
-                    maxLength={6}
-                    autoFocus
-                    className="text-center tracking-widest text-lg font-mono h-12"
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    Dùng để giải mã khóa riêng tư của bạn
+                  <PasscodeInput value={passcode} onChange={setPasscode} />
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Nhập 6 số passcode để giải mã và xem tài liệu
                   </p>
                 </div>
               </div>
@@ -433,7 +410,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
                 <Button
                   type="button"
                   onClick={() => viewMutation.mutate()}
-                  disabled={!passcode || viewMutation.isPending}
+                  disabled={passcode.length < 6 || viewMutation.isPending}
                   className="w-full sm:w-auto min-w-30"
                 >
                   {viewMutation.isPending ? (

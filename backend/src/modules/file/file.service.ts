@@ -196,13 +196,22 @@ export class FileService {
       filter,
       sortBy = "createdAt",
       sortOrder = "desc",
+      fileType,
+      ownerId,
+      sharedWithId,
     }: QueryFileDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
 
     let accessFilter: Prisma.FileWhereInput = {};
 
-    if (filter === "shared") {
+    if (sharedWithId) {
+      // Lọc file hiện tại user sở hữu và đã chia sẻ với sharedWithId
+      accessFilter = {
+        ownerId: userId,
+        shares: { some: { recipientId: sharedWithId } },
+      };
+    } else if (filter === "shared") {
       accessFilter = { shares: { some: { recipientId: userId } } };
     } else if (filter === "owned") {
       accessFilter = { ownerId: userId };
@@ -247,9 +256,40 @@ export class FileService {
         }
       : {};
 
+    let fileTypeFilter: Prisma.FileWhereInput = {};
+    if (fileType === "pdf") {
+      fileTypeFilter = { mimeType: "application/pdf" };
+    } else if (fileType === "word") {
+      fileTypeFilter = {
+        mimeType: {
+          in: [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/msword",
+          ],
+        },
+      };
+    } else if (fileType === "excel") {
+      fileTypeFilter = {
+        mimeType: {
+          in: [
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+            "application/vnd.ms-excel.sheet.macroEnabled.12",
+            "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
+          ],
+        },
+      };
+    } else if (fileType === "image") {
+      fileTypeFilter = { mimeType: { startsWith: "image/" } };
+    }
+
     const where: Prisma.FileWhereInput = {
-      ...accessFilter,
-      ...(search ? searchFilter : {}),
+      AND: [
+        accessFilter,
+        ...(search ? [searchFilter] : []),
+        ...(fileType ? [fileTypeFilter] : []),
+        ...(ownerId ? [{ ownerId }] : []),
+      ],
     };
 
     const [files, total] = await Promise.all([

@@ -10,8 +10,8 @@ import {
   toBase64,
 } from '@/lib/crypto'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PasscodeInput } from '@/components/passcode-input'
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Loader2, LockKeyhole, FileText, ShieldCheck } from 'lucide-react'
+import { Loader2, FileText, ShieldCheck } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import {
   downloadFileStreamFn,
@@ -188,26 +188,13 @@ export function DownloadFileModal({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label
-              htmlFor="passcode"
-              className="flex items-center justify-between"
-            >
-              <span>Passcode xác nhận</span>
-              <LockKeyhole className="h-3 w-3 text-muted-foreground" />
+          <div className="space-y-3 pt-2 border-t mt-2">
+            <Label className="flex items-center gap-1.5">
+              Passcode xác nhận
             </Label>
-            <Input
-              id="passcode"
-              type="password"
-              placeholder="******"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              maxLength={6}
-              autoFocus
-              className="text-center tracking-widest text-lg font-mono h-12"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              Dùng để giải mã khóa riêng tư của bạn
+            <PasscodeInput value={passcode} onChange={setPasscode} />
+            <p className="text-[10px] text-muted-foreground text-center">
+              Nhập 6 số passcode để giải mã và tải xuống
             </p>
           </div>
         </div>
@@ -216,7 +203,7 @@ export function DownloadFileModal({
           <Button
             type="button"
             onClick={() => downloadMutation.mutate()}
-            disabled={!passcode || downloadMutation.isPending}
+            disabled={passcode.length < 6 || downloadMutation.isPending}
             className="w-full sm:w-auto min-w-30"
           >
             {downloadMutation.isPending ? (

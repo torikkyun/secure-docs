@@ -26,7 +26,13 @@ export function FilesPage() {
     'filename' | 'createdAt' | 'size' | undefined
   >(undefined)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const { setSelectedFile: setDetailBarFile, viewMode } = useDetailBar()
+  const {
+    setSelectedFile: setDetailBarFile,
+    viewMode,
+    fileType,
+    selectedPerson,
+    setKnownPeople,
+  } = useDetailBar()
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -43,15 +49,56 @@ export function FilesPage() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ['files', sortBy, sortOrder],
+    queryKey: [
+      'files',
+      sortBy,
+      sortOrder,
+      fileType,
+      selectedPerson?.id,
+      selectedPerson?.role,
+    ],
     queryFn: ({ pageParam }) =>
-      getFilesFn({ data: { sortBy, sortOrder, page: pageParam, limit: 20 } }),
+      getFilesFn({
+        data: {
+          sortBy,
+          sortOrder,
+          page: pageParam,
+          limit: 20,
+          fileType,
+          ownerId:
+            selectedPerson?.role === 'owner' ? selectedPerson.id : undefined,
+          sharedWithId:
+            selectedPerson?.role === 'shared' ? selectedPerson.id : undefined,
+        },
+      }),
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
     initialPageParam: 1,
   })
 
   const files: FileItem[] = filesData?.pages.flatMap((p) => p.files) ?? []
+
+  // Accumulate unique owners seen across all loaded pages (never shrinks)
+  useEffect(() => {
+    if (!filesData) return
+    setKnownPeople((prev) => {
+      const next = new Map(prev)
+      filesData.pages.forEach((page) => {
+        page.files.forEach((file) => {
+          const owner = file.owner
+          if (owner && !next.has(owner.id)) {
+            next.set(owner.id, {
+              id: owner.id,
+              name: owner.name,
+              email: owner.email,
+              avatar: owner.avatar,
+            })
+          }
+        })
+      })
+      return next
+    })
+  }, [filesData])
 
   const onSentinel = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -94,7 +141,7 @@ export function FilesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col h-full gap-4">
       {/* Main Content Area */}
       <div className="flex-1">
         {isLoading ? (

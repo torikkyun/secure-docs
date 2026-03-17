@@ -35,10 +35,21 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
-import { createContext, useContext, useState } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  Dispatch,
+  SetStateAction,
+} from 'react'
 import { cn } from '@/lib/utils'
 import { UploadFileForm } from './-components/upload-file-form'
 import { DetailBar } from './-components/detail-bar'
+import {
+  FileFilters,
+  FileTypeFilter,
+  PersonFilter,
+} from './-components/file-filters'
 import { useRouterState } from '@tanstack/react-router'
 import { FileItem } from '@/api/file/types'
 
@@ -49,6 +60,12 @@ interface DetailBarContextValue {
   setSelectedFile: (file: FileItem | null) => void
   viewMode: 'list' | 'grid'
   setViewMode: (mode: 'list' | 'grid') => void
+  fileType: FileTypeFilter | undefined
+  setFileType: (type: FileTypeFilter | undefined) => void
+  selectedPerson: PersonFilter | null
+  setSelectedPerson: (person: PersonFilter | null) => void
+  knownPeople: Map<string, PersonFilter>
+  setKnownPeople: Dispatch<SetStateAction<Map<string, PersonFilter>>>
 }
 
 export const DetailBarContext = createContext<DetailBarContextValue>({
@@ -58,6 +75,12 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   setSelectedFile: () => {},
   viewMode: 'list',
   setViewMode: () => {},
+  fileType: undefined,
+  setFileType: () => {},
+  selectedPerson: null,
+  setSelectedPerson: () => {},
+  knownPeople: new Map(),
+  setKnownPeople: () => {},
 })
 
 export function useDetailBar() {
@@ -74,7 +97,17 @@ const navigation = [
 
 function PageToolbar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
-  const { isOpen, toggle, viewMode, setViewMode } = useDetailBar()
+  const {
+    isOpen,
+    toggle,
+    viewMode,
+    setViewMode,
+    fileType,
+    setFileType,
+    selectedPerson,
+    setSelectedPerson,
+    knownPeople,
+  } = useDetailBar()
   const currentNav = navigation.find(
     (item) =>
       currentPath === item.href || currentPath.startsWith(item.href + '/'),
@@ -85,47 +118,60 @@ function PageToolbar() {
     currentPath === '/files' || currentPath.startsWith('/files/')
 
   return (
-    <div className="sticky top-0 bg-background z-20 flex items-center justify-between">
-      <h1 className="text-2xl font-semibold tracking-tight py-4">
-        {currentNav.name}
-      </h1>
-      <div className="flex items-center gap-1">
-        {isFilesPage && (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setViewMode('list')}
-              aria-label="Dạng danh sách"
-              className={cn('h-8 w-8', viewMode === 'list' && 'bg-muted')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setViewMode('grid')}
-              aria-label="Dạng lưới"
-              className={cn('h-8 w-8', viewMode === 'grid' && 'bg-muted')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-          </>
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggle}
-          aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
-          className={cn(isOpen ? 'bg-muted mr-4' : 'mr-3')}
-        >
-          {isOpen ? (
-            <PanelRightClose className="h-5 w-5" />
-          ) : (
-            <PanelRightOpen className="h-5 w-5" />
+    <div className="sticky top-0 bg-background z-20">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight py-4">
+          {currentNav.name}
+        </h1>
+        <div className="flex items-center gap-1">
+          {isFilesPage && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode('list')}
+                aria-label="Dạng danh sách"
+                className={cn('h-8 w-8', viewMode === 'list' && 'bg-muted')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setViewMode('grid')}
+                aria-label="Dạng lưới"
+                className={cn('h-8 w-8', viewMode === 'grid' && 'bg-muted')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </>
           )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
+            className={cn(isOpen ? 'bg-muted mr-4' : 'mr-3')}
+          >
+            {isOpen ? (
+              <PanelRightClose className="h-5 w-5" />
+            ) : (
+              <PanelRightOpen className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
+      {isFilesPage && (
+        <div className="pb-3">
+          <FileFilters
+            fileType={fileType}
+            selectedPerson={selectedPerson}
+            availablePeople={Array.from(knownPeople.values())}
+            onFileTypeChange={setFileType}
+            onPersonChange={setSelectedPerson}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -151,6 +197,15 @@ function AppLayout() {
   const [isDetailBarOpen, setIsDetailBarOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [fileType, setFileType] = useState<FileTypeFilter | undefined>(
+    undefined,
+  )
+  const [selectedPerson, setSelectedPerson] = useState<PersonFilter | null>(
+    null,
+  )
+  const [knownPeople, setKnownPeople] = useState<Map<string, PersonFilter>>(
+    new Map(),
+  )
 
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
@@ -215,6 +270,12 @@ function AppLayout() {
         setSelectedFile,
         viewMode,
         setViewMode,
+        fileType,
+        setFileType,
+        selectedPerson,
+        setSelectedPerson,
+        knownPeople,
+        setKnownPeople,
       }}
     >
       <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden bg-muted/40">

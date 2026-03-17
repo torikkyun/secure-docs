@@ -24,4 +24,20 @@ export class QueryFileDto extends OffsetPaginationQueryDto {
   @IsIn(["asc", "desc"])
   @ApiPropertyOptional({ enum: ["asc", "desc"] })
   sortOrder?: "asc" | "desc";
+
+  @IsOptional()
+  @IsString()
+  @IsIn(["pdf", "word", "excel", "image"])
+  @ApiPropertyOptional({ enum: ["pdf", "word", "excel", "image"] })
+  fileType?: "pdf" | "word" | "excel" | "image";
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional()
+  ownerId?: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiPropertyOptional()
+  sharedWithId?: string;
 }
