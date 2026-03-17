@@ -38,34 +38,6 @@ function SharedPage() {
 
   return (
     <div className="flex flex-col h-full gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between sticky top-0 bg-background/95 backdrop-blur z-20 pb-4 border-b">
-        {!isLoading && (
-          <p className="text-sm text-muted-foreground">
-            {files.length} tệp tin từ người khác
-          </p>
-        )}
-
-        <div className="flex items-center gap-3">
-          {!isLoading && files.length > 0 && (
-            <Badge variant="outline">
-              <Share2 className="h-3 w-3 mr-1" />
-              {files.length} tệp
-            </Badge>
-          )}
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Tìm theo tên tệp hoặc người chia sẻ..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 bg-muted/50 border-none focus-visible:ring-1"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
       <div className="flex-1">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">

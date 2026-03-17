@@ -270,7 +270,7 @@ export function FileFilters({
                       </Avatar>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-sm font-medium leading-none mb-1 truncate">
+                      <span className="text-sm font-medium leading-none mb-1 truncate h-4">
                         {person.name || person.email}
                       </span>
                       {person.name && (

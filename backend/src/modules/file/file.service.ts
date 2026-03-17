@@ -312,16 +312,25 @@ export class FileService {
             },
           },
           shares: {
-            where: { recipientId: userId },
             select: {
               id: true,
               wrappedAesKey: true,
               createdAt: true,
+              recipientId: true,
               sender: {
                 select: {
                   id: true,
                   name: true,
                   email: true,
+                  avatar: true,
+                },
+              },
+              recipient: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
                 },
               },
             },
@@ -337,14 +346,19 @@ export class FileService {
 
     const mapped = files.map((file) => {
       const owner = this.isOwner(file, userId);
+      const myShare = owner
+        ? null
+        : file.shares.find((s) => s.recipientId === userId);
       return {
         ...file,
         size: file.size.toString(),
         isOwner: owner,
-        wrappedAesKey: owner
-          ? file.wrappedAesKey
-          : file.shares[0]?.wrappedAesKey,
+        wrappedAesKey: owner ? file.wrappedAesKey : myShare?.wrappedAesKey,
         sharedBy: owner ? null : file.owner,
+        sharedWith: owner ? file.shares.map((s) => s.recipient) : undefined,
+        shares: file.shares.map(
+          ({ recipientId: _rid, wrappedAesKey: _wak, ...rest }) => rest,
+        ),
       };
     });
 
@@ -377,12 +391,21 @@ export class FileService {
             id: true,
             name: true,
             email: true,
+            avatar: true,
           },
         },
         shares: {
           where: { recipientId: userId },
           select: {
             wrappedAesKey: true,
+            recipient: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
           },
         },
       },
@@ -401,6 +424,7 @@ export class FileService {
           id: string;
           name: string;
           email: string;
+          avatar: string;
         }[]
       | undefined;
 
@@ -413,6 +437,7 @@ export class FileService {
               id: true,
               name: true,
               email: true,
+              avatar: true,
             },
           },
         },

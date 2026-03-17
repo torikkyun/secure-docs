@@ -20,9 +20,6 @@ export function DetailBar() {
   }
 
   const { Icon: FileIcon, colorClass } = getFileIcon(selectedFile.mimeType)
-  const ownerInitials = (selectedFile.owner.name || selectedFile.owner.email)
-    .substring(0, 2)
-    .toUpperCase()
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -53,18 +50,6 @@ export function DetailBar() {
               </p>
             </div>
           </div>
-          {/* <div className="flex items-start gap-2.5">
-            <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs text-muted-foreground">Loại tệp</p>
-              <p
-                className="text-sm truncate max-w-45"
-                title={selectedFile.mimeType}
-              >
-                {selectedFile.mimeType}
-              </p>
-            </div>
-          </div> */}
           <div className="flex items-start gap-2.5">
             <Calendar className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>
@@ -88,7 +73,6 @@ export function DetailBar() {
               src={selectedFile.owner.avatar}
               alt={selectedFile.owner.name}
             />
-            <AvatarFallback className="text-xs">{ownerInitials}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">
@@ -103,37 +87,40 @@ export function DetailBar() {
         </div>
       </div>
 
-      {selectedFile.shares && selectedFile.shares.length > 0 && (
-        <>
-          <Separator />
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Đã chia sẻ ({selectedFile.shares.length})
-            </h3>
-            <div className="space-y-2">
-              {selectedFile.shares.map((share) => {
-                const initials = (share.sender.name || share.sender.email)
-                  .substring(0, 2)
-                  .toUpperCase()
-                return (
-                  <div key={share.id} className="flex items-center gap-2.5">
-                    <Avatar className="h-7 w-7">
-                      <AvatarFallback className="text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="text-sm truncate">
-                        {share.sender.name || share.sender.email}
-                      </p>
+      {selectedFile.isOwner &&
+        selectedFile.sharedWith &&
+        selectedFile.sharedWith.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Đã chia sẻ với ({selectedFile.sharedWith.length})
+              </h3>
+              <div className="space-y-2">
+                {selectedFile.sharedWith.map((person) => {
+                  const initials = (person.name || person.email)
+                    .substring(0, 2)
+                    .toUpperCase()
+                  return (
+                    <div key={person.id} className="flex items-center gap-2.5">
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={person.avatar} alt={person.name} />
+                        <AvatarFallback className="text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className="text-sm truncate">
+                          {person.name || person.email}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
     </div>
   )
 }

@@ -1,4 +1,11 @@
-import { MoreHorizontal, Download, Share2, Eye, Info } from 'lucide-react'
+import {
+  MoreHorizontal,
+  Download,
+  Share2,
+  Eye,
+  Info,
+  UserX,
+} from 'lucide-react'
 import { getFileIcon, formatFileSize, formatDate } from '@/lib/file-utils'
 import { toast } from 'sonner'
 import { useState, useRef, useEffect } from 'react'
@@ -28,6 +35,7 @@ interface FileGridProps {
   onShare: (file: FileItem) => void
   onDownload: (file: FileItem) => void
   onView: (file: FileItem) => void
+  onRevokeShare: (file: FileItem) => void
   onSelect?: (file: FileItem | null) => void
 }
 
@@ -38,6 +46,7 @@ interface FileCardProps {
   onShare: (file: FileItem) => void
   onDownload: (file: FileItem) => void
   onView: (file: FileItem) => void
+  onRevokeShare: (file: FileItem) => void
   onOpenDetail: (file: FileItem) => void
 }
 
@@ -48,6 +57,7 @@ function FileCard({
   onShare,
   onDownload,
   onView,
+  onRevokeShare,
   onOpenDetail,
 }: FileCardProps) {
   const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
@@ -94,7 +104,7 @@ function FileCard({
                   <MoreHorizontal className="h-4 w-4" />
                   <span className="sr-only">Mở menu</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-54">
                   <DropdownMenuGroup>
                     <DropdownMenuItem onClick={() => onOpenDetail(file)}>
                       <Info className="h-4 w-4" />
@@ -113,16 +123,29 @@ function FileCard({
                       <Download className="h-4 w-4" />
                       Tải xuống
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onShare(file)}>
-                      <Share2 className="h-4 w-4" />
-                      Chia sẻ
-                    </DropdownMenuItem>
+                    {file.isOwner && (
+                      <DropdownMenuItem onClick={() => onShare(file)}>
+                        <Share2 className="h-4 w-4" />
+                        Chia sẻ
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
+                    {file.isOwner &&
+                      file.sharedWith &&
+                      file.sharedWith.length > 0 && (
+                        <DropdownMenuItem
+                          onClick={() => onRevokeShare(file)}
+                          variant="destructive"
+                        >
+                          <UserX className="h-4 w-4" />
+                          Thu hồi quyền truy cập
+                        </DropdownMenuItem>
+                      )}
                     <DropdownMenuItem
                       disabled
-                      className="text-destructive"
+                      variant="destructive"
                       onClick={() => toast.info('Tính năng đang phát triển')}
                     >
                       Xóa
@@ -160,7 +183,7 @@ function FileCard({
           </div>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
+      <ContextMenuContent className="w-54">
         <ContextMenuItem onClick={() => onOpenDetail(file)}>
           <Info className="h-4 w-4" />
           Thông tin chi tiết
@@ -176,14 +199,25 @@ function FileCard({
           <Download className="h-4 w-4" />
           Tải xuống
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => onShare(file)}>
-          <Share2 className="h-4 w-4" />
-          Chia sẻ
-        </ContextMenuItem>
+        {file.isOwner && (
+          <ContextMenuItem onClick={() => onShare(file)}>
+            <Share2 className="h-4 w-4" />
+            Chia sẻ
+          </ContextMenuItem>
+        )}
         <ContextMenuSeparator />
+        {file.isOwner && file.sharedWith && file.sharedWith.length > 0 && (
+          <ContextMenuItem
+            onClick={() => onRevokeShare(file)}
+            variant="destructive"
+          >
+            <UserX className="h-4 w-4" />
+            Thu hồi quyền truy cập
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           disabled
-          className="text-destructive"
+          variant="destructive"
           onClick={() => toast.info('Tính năng đang phát triển')}
         >
           Xóa
@@ -198,6 +232,7 @@ export function FileGrid({
   onShare,
   onDownload,
   onView,
+  onRevokeShare,
   onSelect,
 }: FileGridProps) {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
@@ -257,6 +292,7 @@ export function FileGrid({
           onShare={onShare}
           onDownload={onDownload}
           onView={onView}
+          onRevokeShare={onRevokeShare}
           onOpenDetail={handleOpenDetail}
         />
       ))}

@@ -13,6 +13,7 @@ import {
   Share2,
   Eye,
   Info,
+  UserX,
 } from 'lucide-react'
 import { getFileIcon, formatFileSize, formatDate } from '@/lib/file-utils'
 import { toast } from 'sonner'
@@ -35,7 +36,6 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -51,6 +51,7 @@ interface FileListProps {
   onShare: (file: FileItem) => void
   onDownload: (file: FileItem) => void
   onView: (file: FileItem) => void
+  onRevokeShare: (file: FileItem) => void
   onSelect?: (file: FileItem | null) => void
   onSortingChange?: (
     sortBy: string | undefined,
@@ -69,7 +70,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Tên
-          <ArrowUpDown className="ml-2 h-2 w-2" />
+          <ArrowUpDown className="h-2 w-2" />
         </Button>
       )
     },
@@ -126,7 +127,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Ngày tải lên
-          <ArrowUpDown className="ml-2 h-2 w-2" />
+          <ArrowUpDown className="h-2 w-2" />
         </Button>
       )
     },
@@ -148,7 +149,7 @@ const columns: ColumnDef<FileItem>[] = [
           className="h-auto p-0 font-medium"
         >
           Kích thước
-          <ArrowUpDown className="ml-2 h-2 w-2" />
+          <ArrowUpDown className="h-2 w-2" />
         </Button>
       )
     },
@@ -165,11 +166,12 @@ const columns: ColumnDef<FileItem>[] = [
     enableHiding: false,
     cell: ({ row, table }) => {
       const file = row.original
-      const { onShare, onDownload, onView, onOpenDetail } = table.options
-        .meta as {
+      const { onShare, onDownload, onView, onRevokeShare, onOpenDetail } = table
+        .options.meta as {
         onShare: (file: FileItem) => void
         onDownload: (file: FileItem) => void
         onView: (file: FileItem) => void
+        onRevokeShare: (file: FileItem) => void
         onSelect: (file: FileItem | null) => void
         onOpenDetail: (file: FileItem) => void
       }
@@ -186,7 +188,7 @@ const columns: ColumnDef<FileItem>[] = [
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-54">
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => onOpenDetail(file)}>
                   <Info className="h-4 w-4" />
@@ -205,16 +207,29 @@ const columns: ColumnDef<FileItem>[] = [
                   <Download className="h-4 w-4" />
                   Tải xuống
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onShare(file)}>
-                  <Share2 className="h-4 w-4" />
-                  Chia sẻ
-                </DropdownMenuItem>
+                {file.isOwner && (
+                  <DropdownMenuItem onClick={() => onShare(file)}>
+                    <Share2 className="h-4 w-4" />
+                    Chia sẻ
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
+                {file.isOwner &&
+                  file.sharedWith &&
+                  file.sharedWith.length > 0 && (
+                    <DropdownMenuItem
+                      onClick={() => onRevokeShare(file)}
+                      variant="destructive"
+                    >
+                      <UserX className="h-4 w-4" />
+                      Thu hồi quyền truy cập
+                    </DropdownMenuItem>
+                  )}
                 <DropdownMenuItem
                   disabled
-                  className="text-destructive"
+                  variant="destructive"
                   onClick={() => toast.info('Tính năng đang phát triển')}
                 >
                   Xóa
@@ -233,6 +248,7 @@ export function FileList({
   onShare,
   onDownload,
   onView,
+  onRevokeShare,
   onSelect,
   onSortingChange,
 }: FileListProps) {
@@ -307,15 +323,16 @@ export function FileList({
       onShare,
       onDownload,
       onView,
+      onRevokeShare,
       onSelect,
       onOpenDetail: handleOpenDetail,
     },
   })
 
   return (
-    <div ref={tableRef} className="rounded-md">
-      <Table>
-        <TableHeader>
+    <div ref={tableRef} className="rounded-md h-full">
+      <table className="w-full caption-bottom text-sm">
+        <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -355,7 +372,7 @@ export function FileList({
                     </TableCell>
                   ))}
                 </ContextMenuTrigger>
-                <ContextMenuContent className="w-48">
+                <ContextMenuContent className="w-54">
                   <ContextMenuItem
                     onClick={() => handleOpenDetail(row.original)}
                   >
@@ -373,14 +390,28 @@ export function FileList({
                     <Download className="h-4 w-4" />
                     Tải xuống
                   </ContextMenuItem>
-                  <ContextMenuItem onClick={() => onShare(row.original)}>
-                    <Share2 className="h-4 w-4" />
-                    Chia sẻ
-                  </ContextMenuItem>
+                  {row.original.isOwner && (
+                    <ContextMenuItem onClick={() => onShare(row.original)}>
+                      <Share2 className="h-4 w-4" />
+                      Chia sẻ
+                    </ContextMenuItem>
+                  )}
+
                   <ContextMenuSeparator />
+                  {row.original.isOwner &&
+                    row.original.sharedWith &&
+                    row.original.sharedWith.length > 0 && (
+                      <ContextMenuItem
+                        onClick={() => onRevokeShare(row.original)}
+                        variant="destructive"
+                      >
+                        <UserX className="h-4 w-4" />
+                        Thu hồi quyền truy cập
+                      </ContextMenuItem>
+                    )}
                   <ContextMenuItem
                     disabled
-                    className="text-destructive"
+                    variant="destructive"
                     onClick={() => toast.info('Tính năng đang phát triển')}
                   >
                     Xóa
@@ -399,7 +430,7 @@ export function FileList({
             </TableRow>
           )}
         </TableBody>
-      </Table>
+      </table>
     </div>
   )
 }

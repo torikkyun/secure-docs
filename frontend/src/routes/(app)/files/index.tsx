@@ -7,6 +7,7 @@ import { FileGrid } from './-components/file-grid'
 import { ShareFileModal } from './-components/share-file-modal'
 import { DownloadFileModal } from './-components/download-file-modal'
 import { ViewFileModal } from './-components/view-file-modal'
+import { RevokeShareModal } from './-components/revoke-share-modal'
 import { createFileRoute } from '@tanstack/react-router'
 import { getFilesFn } from '@/api/file/functions'
 import { useDetailBar } from '../route'
@@ -22,6 +23,7 @@ export function FilesPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false)
   const [sortBy, setSortBy] = useState<
     'filename' | 'createdAt' | 'size' | undefined
   >(undefined)
@@ -132,6 +134,11 @@ export function FilesPage() {
     setIsViewModalOpen(true)
   }
 
+  const handleRevokeShare = (file: FileItem) => {
+    setSelectedFile(file)
+    setIsRevokeModalOpen(true)
+  }
+
   const handleSortingChange = (
     newSortBy: string | undefined,
     newSortOrder: 'asc' | 'desc',
@@ -141,9 +148,9 @@ export function FilesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col h-full min-h-0">
       {/* Main Content Area */}
-      <div className="flex-1">
+      <div>
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-muted-foreground">Đang tải tài liệu...</div>
@@ -169,6 +176,7 @@ export function FilesPage() {
             onShare={handleShare}
             onDownload={handleDownload}
             onView={handleView}
+            onRevokeShare={handleRevokeShare}
             onSelect={setDetailBarFile}
             onSortingChange={handleSortingChange}
           />
@@ -178,6 +186,7 @@ export function FilesPage() {
             onShare={handleShare}
             onDownload={handleDownload}
             onView={handleView}
+            onRevokeShare={handleRevokeShare}
             onSelect={setDetailBarFile}
           />
         )}
@@ -208,6 +217,12 @@ export function FilesPage() {
         file={selectedFile}
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
+      />
+
+      <RevokeShareModal
+        file={selectedFile}
+        isOpen={isRevokeModalOpen}
+        onClose={() => setIsRevokeModalOpen(false)}
       />
     </div>
   )

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   decryptPrivateKey,
@@ -9,19 +8,8 @@ import {
   deriveWrappingKeyFromSharedSecret,
   toBase64,
 } from '@/lib/crypto'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { PasscodeInput } from '@/components/passcode-input'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
 import { toast } from 'sonner'
-import { Loader2, FileText, ShieldCheck } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import {
   downloadFileStreamFn,
@@ -39,12 +27,10 @@ export function DownloadFileModal({
   isOpen,
   onClose,
 }: DownloadFileModalProps) {
-  const [passcode, setPasscode] = useState('')
-
   const downloadMutation = useMutation({
-    mutationFn: async () => {
-      if (!file || !passcode) {
-        throw new Error('Vui lòng nhập passcode')
+    mutationFn: async (passcode: string) => {
+      if (!file) {
+        throw new Error('Không tìm thấy file')
       }
 
       const userKeys = getUserKeys()
@@ -155,77 +141,18 @@ export function DownloadFileModal({
 
   const handleClose = () => {
     onClose()
-    setPasscode('')
     downloadMutation.reset()
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Tải xuống bảo mật
-          </DialogTitle>
-          <DialogDescription>
-            Tài liệu được mã hóa đầu cuối. Vui lòng xác thực để giải mã và tải
-            xuống.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-4 py-4">
-          <div className="bg-muted/50 p-3 rounded-lg flex items-center gap-3">
-            <div className="bg-background p-2 rounded-md shadow-sm">
-              <FileText className="h-6 w-6 text-blue-500" />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="font-medium text-sm break-all">{file?.filename}</p>
-              {!file?.isOwner && file?.sharedBy && (
-                <p className="text-xs text-muted-foreground truncate">
-                  Chia sẻ bởi: {file.sharedBy.name}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-2 border-t mt-2">
-            <Label className="flex items-center gap-1.5">
-              Passcode xác nhận
-            </Label>
-            <PasscodeInput value={passcode} onChange={setPasscode} />
-            <p className="text-[10px] text-muted-foreground text-center">
-              Nhập 6 số passcode để giải mã và tải xuống
-            </p>
-          </div>
-        </div>
-
-        <DialogFooter className="sm:justify-between sm:flex-row-reverse gap-2">
-          <Button
-            type="button"
-            onClick={() => downloadMutation.mutate()}
-            disabled={passcode.length < 6 || downloadMutation.isPending}
-            className="w-full sm:w-auto min-w-30"
-          >
-            {downloadMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Đang giải mã...
-              </>
-            ) : (
-              'Giải mã & Tải xuống'
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleClose}
-            disabled={downloadMutation.isPending}
-            className="w-full sm:w-auto"
-          >
-            Hủy
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <PasscodeConfirmModal
+      isOpen={isOpen}
+      onConfirm={(passcode) => downloadMutation.mutate(passcode)}
+      onCancel={handleClose}
+      isPending={downloadMutation.isPending}
+      title="Xác nhận tải xuống"
+      description="Nhập passcode để giải mã và tải xuống tệp của bạn."
+      confirmLabel="Giải mã & Tải xuống"
+    />
   )
 }

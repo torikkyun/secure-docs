@@ -51,7 +51,7 @@ export function PasscodeConfirmModal({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LockKeyhole className="h-4 w-4 text-primary" />
+            {/* <LockKeyhole className="h-4 w-4 text-primary" /> */}
             {title}
           </DialogTitle>
           <DialogDescription>{description}</DialogDescription>
@@ -64,7 +64,7 @@ export function PasscodeConfirmModal({
             form.handleSubmit()
           }}
         >
-          <div className="py-4 space-y-3">
+          <div className="pt-4 pb-8 space-y-3">
             <Label className="text-sm text-muted-foreground block text-center">
               Passcode của bạn
             </Label>

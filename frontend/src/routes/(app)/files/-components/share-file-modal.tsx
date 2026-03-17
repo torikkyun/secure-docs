@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   decryptPrivateKey,
@@ -25,7 +24,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
-import { PasscodeInput } from '@/components/passcode-input'
+import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
 import { FileItem } from '@/api/file/types'
 import { getUsersFn } from '@/api/user/functions'
 import { createShareFn } from '@/api/share/functions'
@@ -43,20 +42,7 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
   const [selectedUsers, setSelectedUsers] = useState<any[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const form = useForm({
-    defaultValues: { passcode: '' },
-    onSubmit: async ({ value }) => {
-      if (selectedUsers.length === 0) {
-        toast.error('Vui lòng chọn ít nhất một người nhận')
-        return
-      }
-      try {
-        await shareMutation.mutateAsync(value.passcode)
-      } catch {
-        // errors handled by onError
-      }
-    },
-  })
+  const [showPasscode, setShowPasscode] = useState(false)
 
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
@@ -170,7 +156,7 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
 
   const handleClose = () => {
     onClose()
-    form.reset()
+    setShowPasscode(false)
     setSelectedUsers([])
     setSearchQuery('')
     setSearchResults([])
@@ -196,26 +182,32 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Chia sẻ tài liệu</DialogTitle>
-          <DialogDescription>
-            Chia sẻ{' '}
-            <span className="font-medium text-foreground break-all">
-              {file?.filename}
-            </span>{' '}
-            với người dùng khác.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <PasscodeConfirmModal
+        isOpen={showPasscode}
+        onConfirm={(passcode) => shareMutation.mutate(passcode)}
+        onCancel={() => setShowPasscode(false)}
+        isPending={shareMutation.isPending}
+        title="Xác nhận chia sẻ"
+        description="Nhập passcode để xác nhận chia sẻ tài liệu."
+        confirmLabel="Chia sẻ"
+      />
+      <Dialog
+        open={isOpen && !showPasscode}
+        onOpenChange={(open) => !open && handleClose()}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Chia sẻ tài liệu</DialogTitle>
+            <DialogDescription>
+              Chia sẻ{' '}
+              <span className="font-medium text-foreground break-all">
+                {file?.filename}
+              </span>{' '}
+              với người dùng khác.
+            </DialogDescription>
+          </DialogHeader>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
-          }}
-        >
           <div className="space-y-4 py-2">
             {/* Search Users */}
             <div className="space-y-2">
@@ -309,25 +301,6 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                 </div>
               </div>
             )}
-
-            {/* Passcode — OTP style */}
-            <div className="space-y-3 pt-2 border-t mt-4">
-              <Label className="flex items-center gap-1.5">
-                Passcode xác nhận
-              </Label>
-              <form.Field
-                name="passcode"
-                children={(field) => (
-                  <PasscodeInput
-                    value={field.state.value}
-                    onChange={field.handleChange}
-                  />
-                )}
-              />
-              <p className="text-[10px] text-muted-foreground text-center">
-                Nhập 6 số passcode để xác nhận chia sẻ
-              </p>
-            </div>
           </div>
 
           <DialogFooter className="sm:justify-end gap-2 pt-4">
@@ -339,31 +312,19 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
             >
               Hủy
             </Button>
-            <form.Subscribe
-              selector={(state) => ({
-                passcode: state.values.passcode,
-                isSubmitting: state.isSubmitting,
-              })}
-              children={({ passcode, isSubmitting }) => (
-                <Button
-                  type="submit"
-                  disabled={
-                    selectedUsers.length === 0 ||
-                    passcode.length < 6 ||
-                    isSubmitting ||
-                    shareMutation.isPending
-                  }
-                >
-                  {(isSubmitting || shareMutation.isPending) && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Chia sẻ
-                </Button>
+            <Button
+              type="button"
+              disabled={selectedUsers.length === 0 || shareMutation.isPending}
+              onClick={() => setShowPasscode(true)}
+            >
+              {shareMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-            />
+              Chia sẻ
+            </Button>
           </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

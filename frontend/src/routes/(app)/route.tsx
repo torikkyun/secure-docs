@@ -90,8 +90,8 @@ export function useDetailBar() {
 const navigation = [
   { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tài liệu của tôi', href: '/files', icon: FileText },
-  { name: 'Được chia sẻ', href: '/shared', icon: Share2 },
-  { name: 'Hoạt động', href: '/file-activity', icon: FileClock },
+  { name: 'Được chia sẻ với tôi', href: '/shared', icon: Share2 },
+  { name: 'Hoạt động gần đây', href: '/file-activity', icon: FileClock },
   { name: 'Cài đặt', href: '/settings', icon: Settings },
 ]
 
@@ -118,7 +118,7 @@ function PageToolbar() {
     currentPath === '/files' || currentPath.startsWith('/files/')
 
   return (
-    <div className="sticky top-0 bg-background z-20">
+    <div className="sticky bg-background">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight py-4">
           {currentNav.name}
@@ -151,7 +151,7 @@ function PageToolbar() {
             size="icon"
             onClick={toggle}
             aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
-            className={cn(isOpen ? 'bg-muted mr-4' : 'mr-3')}
+            className={cn(isOpen ? 'bg-muted mr-5' : 'mr-3')}
           >
             {isOpen ? (
               <PanelRightClose className="h-5 w-5" />
@@ -214,7 +214,7 @@ function AppLayout() {
   }
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col gap-2">
+    <div className="flex h-full flex-col gap-4">
       <div className="flex h-14 items-center border-b px-6 lg:h-15">
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -226,16 +226,15 @@ function AppLayout() {
       <div className={cn('lg:px-4 mt-2 px-2')}>
         <Button
           onClick={() => setIsUploadOpen(true)}
-          className="justify-start gap-2 h-10"
-          variant="outline"
+          className={'justify-start gap-2 h-10'}
           size="lg"
         >
           <Plus className="h-4 w-4" />
-          Mới
+          <span className="text-sm font-medium">Mới</span>
         </Button>
       </div>
-      <div className="flex-1 overflow-auto py-2">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-1">
+      <div className="flex-1 overflow-auto">
+        <nav className="grid items-start px-4 text-sm font-medium space-y-1">
           {navigation.map((item) => {
             const isActive =
               currentPath === item.href ||
@@ -245,13 +244,15 @@ function AppLayout() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all outline-none ring-primary/50 focus-visible:ring-2',
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all outline-none',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
+                    ? 'bg-primary/10 text-primary font-medium'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon
+                  className={cn('h-4 w-4', isActive ? 'text-primary' : '')}
+                />
                 {item.name}
               </Link>
             )
@@ -278,14 +279,14 @@ function AppLayout() {
         setKnownPeople,
       }}
     >
-      <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden bg-muted/40">
+      <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
         {isUploadOpen && (
           <UploadFileForm onClose={() => setIsUploadOpen(false)} />
         )}
         <div className="hidden border-r bg-background md:block dark:bg-zinc-950/50">
           <SidebarContent />
         </div>
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col overflow-hidden min-h-0 h-full">
           <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-15 lg:px-6 shrink-0 z-10">
             <Sheet>
               <SheetTrigger
@@ -371,10 +372,12 @@ function AppLayout() {
               )}
             </div>
           </header>
-          <div className="flex flex-1 overflow-hidden">
-            <main className="flex flex-1 flex-col gap-4 pl-4 lg:gap-6 lg:pl-6 overflow-y-auto bg-background/50">
+          <div className="flex flex-1 overflow-hidden min-h-0">
+            <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
               <PageToolbar />
-              <Outlet />
+              <div className="flex-1 overflow-y-auto pb-6">
+                <Outlet />
+              </div>
             </main>
             <aside
               className={cn(
@@ -385,6 +388,22 @@ function AppLayout() {
               <DetailBar />
             </aside>
           </div>
+          <footer className="mt-auto py-3 px-6 border-t bg-background flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground shrink-0">
+            <p>
+              &copy; {new Date().getFullYear()} SecureDocs. All rights reserved.
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-foreground transition-colors">
+                Bảo mật
+              </a>
+              <a href="#" className="hover:text-foreground transition-colors">
+                Điều khoản
+              </a>
+              <a href="#" className="hover:text-foreground transition-colors">
+                Trợ giúp
+              </a>
+            </div>
+          </footer>
         </div>
       </div>
     </DetailBarContext.Provider>

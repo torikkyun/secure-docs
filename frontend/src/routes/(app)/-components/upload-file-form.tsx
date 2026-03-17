@@ -270,7 +270,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
               onClick={onClose}
               disabled={uploadMutation.isPending}
             >
-              Hủy bỏ
+              Hủy
             </Button>
             <Button
               onClick={() => setShowPasscode(true)}

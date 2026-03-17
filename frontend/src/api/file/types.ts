@@ -14,6 +14,13 @@ export type FileShare = {
     id: string
     name: string
     email: string
+    avatar: string
+  }
+  recipient: {
+    id: string
+    name: string
+    email: string
+    avatar: string
   }
 }
 
@@ -30,6 +37,7 @@ export type FileItem = {
   isOwner: boolean
   sharedBy: FileOwner | null
   shares?: FileShare[]
+  sharedWith?: { id: string; name: string; email: string; avatar: string }[]
 }
 
 export type UploadFileResult = {

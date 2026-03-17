@@ -12,8 +12,7 @@ import {
 } from '@/lib/crypto'
 import { getGeminiApiKey, summarizeWithGemini } from '@/lib/gemini'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { PasscodeInput } from '@/components/passcode-input'
+import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
 import {
   Dialog,
   DialogContent,
@@ -48,7 +47,6 @@ interface ViewFileModalProps {
 }
 
 export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
-  const [passcode, setPasscode] = useState('')
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null)
   const [numPages, setNumPages] = useState(0)
@@ -63,7 +61,6 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
     if (!isOpen) {
       setPdfUrl(null)
       setPdfBuffer(null)
-      setPasscode('')
       setNumPages(0)
       setCurrentPage(1)
       setSummary(null)
@@ -92,7 +89,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   }, [pdfUrl])
 
   const viewMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (passcode: string) => {
       if (!file || !passcode) throw new Error('Vui lòng nhập passcode')
 
       const userKeys = getUserKeys()
@@ -175,7 +172,6 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   const handleClose = () => {
     setPdfUrl(null)
     setPdfBuffer(null)
-    setPasscode('')
     setSummary(null)
     setIsSummarizing(false)
     setShowSummary(false)
@@ -357,84 +353,35 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   return (
     <>
       {pdfViewer}
-      <Dialog
-        open={isOpen && !pdfUrl}
-        onOpenChange={(open) => !open && handleClose()}
-      >
-        <DialogContent showCloseButton={false} className="sm:max-w-md">
-          <>
+      <PasscodeConfirmModal
+        isOpen={isOpen && !pdfUrl && !!isPdf}
+        onConfirm={(passcode) => viewMutation.mutate(passcode)}
+        onCancel={handleClose}
+        isPending={viewMutation.isPending}
+        title="Xem tài liệu"
+        description="Tài liệu được mã hóa đầu cuối. Nhập passcode để giải mã và xem ngay trên trình duyệt."
+        confirmLabel="Giải mã & Xem"
+      />
+      {isOpen && !pdfUrl && !isPdf && (
+        <Dialog open onOpenChange={(open) => !open && handleClose()}>
+          <DialogContent showCloseButton={false} className="sm:max-w-sm">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
                 Xem trực tuyến
               </DialogTitle>
               <DialogDescription>
-                {isPdf
-                  ? 'Tài liệu được mã hóa đầu cuối. Nhập passcode để giải mã và xem ngay trên trình duyệt.'
-                  : 'Chỉ hỗ trợ xem trực tuyến file PDF.'}
+                Chỉ hỗ trợ xem trực tuyến file PDF.
               </DialogDescription>
             </DialogHeader>
-
-            {isPdf && (
-              <div className="flex flex-col gap-4 py-4">
-                <div className="bg-muted/50 p-3 rounded-lg flex items-center gap-3">
-                  <div className="bg-background p-2 rounded-md shadow-sm">
-                    <FileText className="h-6 w-6 text-blue-500" />
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="font-medium text-sm break-all">
-                      {file?.filename}
-                    </p>
-                    {!file?.isOwner && file?.sharedBy && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        Chia sẻ bởi: {file.sharedBy.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-2 border-t mt-2">
-                  <Label className="flex items-center gap-1.5">
-                    Passcode xác nhận
-                  </Label>
-                  <PasscodeInput value={passcode} onChange={setPasscode} />
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    Nhập 6 số passcode để giải mã và xem tài liệu
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <DialogFooter className="sm:justify-between sm:flex-row-reverse gap-2">
-              {isPdf && (
-                <Button
-                  type="button"
-                  onClick={() => viewMutation.mutate()}
-                  disabled={passcode.length < 6 || viewMutation.isPending}
-                  className="w-full sm:w-auto min-w-30"
-                >
-                  {viewMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang giải mã...
-                    </>
-                  ) : (
-                    'Giải mã & Xem'
-                  )}
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="w-full sm:w-auto"
-              >
+            <DialogFooter>
+              <Button variant="outline" onClick={handleClose}>
                 Đóng
               </Button>
             </DialogFooter>
-          </>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }
