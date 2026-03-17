@@ -53,7 +53,7 @@ export function DetailBar() {
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-2.5">
+          {/* <div className="flex items-start gap-2.5">
             <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>
               <p className="text-xs text-muted-foreground">Loại tệp</p>
@@ -64,7 +64,7 @@ export function DetailBar() {
                 {selectedFile.mimeType}
               </p>
             </div>
-          </div>
+          </div> */}
           <div className="flex items-start gap-2.5">
             <Calendar className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div>

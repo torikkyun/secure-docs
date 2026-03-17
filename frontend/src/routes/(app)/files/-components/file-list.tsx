@@ -185,10 +185,10 @@ const columns: ColumnDef<FileItem>[] = [
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={() => onOpenDetail(file)}>
-                  <Info className="mr-2 h-4 w-4" />
+                  <Info className="h-4 w-4" />
                   Thông tin chi tiết
                 </DropdownMenuItem>
               </DropdownMenuGroup>
@@ -196,32 +196,17 @@ const columns: ColumnDef<FileItem>[] = [
               <DropdownMenuGroup>
                 {file.mimeType === 'application/pdf' && (
                   <DropdownMenuItem onClick={() => onView(file)}>
-                    <Eye className="mr-2 h-4 w-4" />
+                    <Eye className="h-4 w-4" />
                     Xem
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => onDownload(file)}>
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="h-4 w-4" />
                   Tải xuống
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onShare(file)}>
-                  <Share2 className="mr-2 h-4 w-4" />
+                  <Share2 className="h-4 w-4" />
                   Chia sẻ
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  disabled
-                  onClick={() => toast.info('Tính năng đang phát triển')}
-                >
-                  Đổi tên
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled
-                  onClick={() => toast.info('Tính năng đang phát triển')}
-                >
-                  Di chuyển
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -263,13 +248,21 @@ export function FileList({
     const handleClickOutside = (e: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
         setSelectedRowId(null)
+        setSelectedFile(null)
+        onSelect?.(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onSelect])
+  }, [onSelect, setSelectedFile])
 
   const handleRowClick = (rowId: string, file: FileItem) => {
+    if (isDetailBarOpen) {
+      // Detail bar is open: always update it with the clicked file (no toggle)
+      setSelectedRowId(rowId)
+      setSelectedFile(file)
+      return
+    }
     const isAlreadySelected = selectedRowId === rowId
     setSelectedRowId(isAlreadySelected ? null : rowId)
     onSelect?.(isAlreadySelected ? null : file)
@@ -361,36 +354,23 @@ export function FileList({
                   <ContextMenuItem
                     onClick={() => handleOpenDetail(row.original)}
                   >
-                    <Info className="mr-2 h-4 w-4" />
+                    <Info className="h-4 w-4" />
                     Thông tin chi tiết
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   {row.original.mimeType === 'application/pdf' && (
                     <ContextMenuItem onClick={() => onView(row.original)}>
-                      <Eye className="mr-2 h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                       Xem
                     </ContextMenuItem>
                   )}
                   <ContextMenuItem onClick={() => onDownload(row.original)}>
-                    <Download className="mr-2 h-4 w-4" />
+                    <Download className="h-4 w-4" />
                     Tải xuống
                   </ContextMenuItem>
                   <ContextMenuItem onClick={() => onShare(row.original)}>
-                    <Share2 className="mr-2 h-4 w-4" />
+                    <Share2 className="h-4 w-4" />
                     Chia sẻ
-                  </ContextMenuItem>
-                  <ContextMenuSeparator />
-                  <ContextMenuItem
-                    disabled
-                    onClick={() => toast.info('Tính năng đang phát triển')}
-                  >
-                    Đổi tên
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    disabled
-                    onClick={() => toast.info('Tính năng đang phát triển')}
-                  >
-                    Di chuyển
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem

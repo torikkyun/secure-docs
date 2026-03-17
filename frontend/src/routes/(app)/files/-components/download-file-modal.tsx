@@ -217,7 +217,7 @@ export function DownloadFileModal({
             type="button"
             onClick={() => downloadMutation.mutate()}
             disabled={!passcode || downloadMutation.isPending}
-            className="w-full sm:w-auto min-w-[120px]"
+            className="w-full sm:w-auto min-w-30"
           >
             {downloadMutation.isPending ? (
               <>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Upload, FileText } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { Upload, FileText, Loader2 } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import { FileList } from './-components/file-list'
 import { ShareFileModal } from './-components/share-file-modal'
@@ -26,6 +26,7 @@ export function FilesPage() {
   >(undefined)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const { setSelectedFile: setDetailBarFile } = useDetailBar()
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     return () => {
@@ -34,12 +35,39 @@ export function FilesPage() {
   }, [])
 
   // Fetch real files data
-  const { data: filesData, isLoading } = useQuery({
+  const {
+    data: filesData,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
     queryKey: ['files', sortBy, sortOrder],
-    queryFn: () => getFilesFn({ data: { sortBy, sortOrder } }),
+    queryFn: ({ pageParam }) =>
+      getFilesFn({ data: { sortBy, sortOrder, page: pageParam, limit: 20 } }),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    initialPageParam: 1,
   })
 
-  const files: FileItem[] = filesData?.files || []
+  const files: FileItem[] = filesData?.pages.flatMap((p) => p.files) ?? []
+
+  const onSentinel = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage()
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
+  )
+
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(onSentinel, { threshold: 0.1 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [onSentinel])
 
   const handleShare = (file: FileItem) => {
     setSelectedFile(file)
@@ -98,6 +126,14 @@ export function FilesPage() {
           />
         )}
       </div>
+
+      {/* Infinite scroll sentinel + bottom loader */}
+      <div ref={sentinelRef} className="h-1" />
+      {isFetchingNextPage && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
 
       {/* Modals */}
       <ShareFileModal

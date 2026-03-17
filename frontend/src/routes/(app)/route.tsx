@@ -245,7 +245,7 @@ function AppLayout() {
                           routerInstance.navigate({ to: '/settings' })
                         }
                       >
-                        <User className="mr-2 h-4 w-4" />
+                        <User className="h-4 w-4" />
                         <span>Tài khoản</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -253,16 +253,16 @@ function AppLayout() {
                           routerInstance.navigate({ to: '/settings' })
                         }
                       >
-                        <Settings className="mr-2 h-4 w-4" />
+                        <Settings className="h-4 w-4" />
                         <span>Cài đặt</span>
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="text-red-500 focus:text-red-500 font-medium"
+                      variant="destructive"
                     >
-                      <LogOut className="mr-2 h-4 w-4" />
+                      <LogOut className="h-4 w-4" />
                       <span>Đăng xuất</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -279,7 +279,12 @@ function AppLayout() {
               <PageToolbar />
               <Outlet />
             </main>
-            <aside className={cn('w-80 shrink-0 border-l bg-background overflow-y-auto', !isDetailBarOpen && 'hidden')}>
+            <aside
+              className={cn(
+                'w-80 shrink-0 border-l bg-background overflow-y-auto',
+                !isDetailBarOpen && 'hidden',
+              )}
+            >
               <DetailBar />
             </aside>
           </div>
