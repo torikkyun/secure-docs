@@ -20,6 +20,8 @@ import {
   Plus,
   PanelRightOpen,
   PanelRightClose,
+  LayoutGrid,
+  List,
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -45,6 +47,8 @@ interface DetailBarContextValue {
   toggle: () => void
   selectedFile: FileItem | null
   setSelectedFile: (file: FileItem | null) => void
+  viewMode: 'list' | 'grid'
+  setViewMode: (mode: 'list' | 'grid') => void
 }
 
 export const DetailBarContext = createContext<DetailBarContextValue>({
@@ -52,6 +56,8 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   toggle: () => {},
   selectedFile: null,
   setSelectedFile: () => {},
+  viewMode: 'list',
+  setViewMode: () => {},
 })
 
 export function useDetailBar() {
@@ -68,31 +74,58 @@ const navigation = [
 
 function PageToolbar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
-  const { isOpen, toggle } = useDetailBar()
+  const { isOpen, toggle, viewMode, setViewMode } = useDetailBar()
   const currentNav = navigation.find(
     (item) =>
       currentPath === item.href || currentPath.startsWith(item.href + '/'),
   )
   if (!currentNav) return null
 
+  const isFilesPage =
+    currentPath === '/files' || currentPath.startsWith('/files/')
+
   return (
-    <div className="sticky top-0 bg-background/50 backdrop-blur z-20 flex items-center justify-between">
-      <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="sticky top-0 bg-background z-20 flex items-center justify-between">
+      <h1 className="text-2xl font-semibold tracking-tight py-4">
         {currentNav.name}
       </h1>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggle}
-        aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
-        className={cn(isOpen && 'bg-muted')}
-      >
-        {isOpen ? (
-          <PanelRightClose className="h-5 w-5" />
-        ) : (
-          <PanelRightOpen className="h-5 w-5" />
+      <div className="flex items-center gap-1">
+        {isFilesPage && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode('list')}
+              aria-label="Dạng danh sách"
+              className={cn('h-8 w-8', viewMode === 'list' && 'bg-muted')}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode('grid')}
+              aria-label="Dạng lưới"
+              className={cn('h-8 w-8', viewMode === 'grid' && 'bg-muted')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </>
         )}
-      </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggle}
+          aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
+          className={cn(isOpen ? 'bg-muted mr-4' : 'mr-3')}
+        >
+          {isOpen ? (
+            <PanelRightClose className="h-5 w-5" />
+          ) : (
+            <PanelRightOpen className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
     </div>
   )
 }
@@ -117,6 +150,7 @@ function AppLayout() {
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isDetailBarOpen, setIsDetailBarOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
 
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
@@ -179,6 +213,8 @@ function AppLayout() {
         toggle: () => setIsDetailBarOpen((v) => !v),
         selectedFile,
         setSelectedFile,
+        viewMode,
+        setViewMode,
       }}
     >
       <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden bg-muted/40">
@@ -275,7 +311,7 @@ function AppLayout() {
             </div>
           </header>
           <div className="flex flex-1 overflow-hidden">
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-y-auto bg-background/50">
+            <main className="flex flex-1 flex-col gap-4 pl-4 lg:gap-6 lg:pl-6 overflow-y-auto bg-background/50">
               <PageToolbar />
               <Outlet />
             </main>

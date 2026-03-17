@@ -4,6 +4,7 @@ import {
   getCoreRowModel,
   useReactTable,
   SortingState,
+  VisibilityState,
 } from '@tanstack/react-table'
 import {
   MoreHorizontal,
@@ -77,11 +78,11 @@ const columns: ColumnDef<FileItem>[] = [
       const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
 
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 bg-muted rounded flex items-center justify-center shrink-0">
             <FileIcon className={cn('h-4 w-4', colorClass)} />
           </div>
-          <span className="font-medium truncate" title={file.filename}>
+          <span className="font-medium truncate max-w-xs" title={file.filename}>
             {file.filename}
           </span>
         </div>
@@ -244,6 +245,10 @@ export function FileList({
     setSelectedFile,
   } = useDetailBar()
 
+  const columnVisibility: VisibilityState = isDetailBarOpen
+    ? { owner: false, createdAt: false, size: false }
+    : {}
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
@@ -297,7 +302,7 @@ export function FileList({
     onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
-    state: { sorting },
+    state: { sorting, columnVisibility },
     meta: {
       onShare,
       onDownload,

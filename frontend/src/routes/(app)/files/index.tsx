@@ -3,6 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { Upload, FileText, Loader2 } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import { FileList } from './-components/file-list'
+import { FileGrid } from './-components/file-grid'
 import { ShareFileModal } from './-components/share-file-modal'
 import { DownloadFileModal } from './-components/download-file-modal'
 import { ViewFileModal } from './-components/view-file-modal'
@@ -25,7 +26,7 @@ export function FilesPage() {
     'filename' | 'createdAt' | 'size' | undefined
   >(undefined)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const { setSelectedFile: setDetailBarFile } = useDetailBar()
+  const { setSelectedFile: setDetailBarFile, viewMode } = useDetailBar()
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export function FilesPage() {
               Sử dụng nút "Mới" trên thanh bên để tải tệp
             </div>
           </div>
-        ) : (
+        ) : viewMode === 'list' ? (
           <FileList
             files={files}
             onShare={handleShare}
@@ -123,6 +124,14 @@ export function FilesPage() {
             onView={handleView}
             onSelect={setDetailBarFile}
             onSortingChange={handleSortingChange}
+          />
+        ) : (
+          <FileGrid
+            files={files}
+            onShare={handleShare}
+            onDownload={handleDownload}
+            onView={handleView}
+            onSelect={setDetailBarFile}
           />
         )}
       </div>
