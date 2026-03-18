@@ -88,11 +88,11 @@ export function useDetailBar() {
 }
 
 const navigation = [
-  { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
+  // { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tài liệu của tôi', href: '/files', icon: FileText },
   { name: 'Được chia sẻ với tôi', href: '/shared', icon: Share2 },
   { name: 'Hoạt động gần đây', href: '/file-activity', icon: FileClock },
-  { name: 'Cài đặt', href: '/settings', icon: Settings },
+  { name: 'Cài đặt cá nhân', href: '/settings', icon: Settings },
 ]
 
 function PageToolbar() {
@@ -118,7 +118,10 @@ function PageToolbar() {
     currentPath === '/files' || currentPath.startsWith('/files/')
   const isSharedPage =
     currentPath === '/shared' || currentPath.startsWith('/shared/')
-  const showViewToggle = isFilesPage || isSharedPage
+  const isActivityPage =
+    currentPath === '/file-activity' ||
+    currentPath.startsWith('/file-activity/')
+  const showViewToggle = isFilesPage || isSharedPage || isActivityPage
 
   return (
     <div className="sticky bg-background">
@@ -219,7 +222,7 @@ function AppLayout() {
   const SidebarContent = () => (
     <div className="flex h-full flex-col gap-4">
       <div className="flex h-14 items-center border-b px-6 lg:h-15">
-        <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
+        <Link to="/files" className="flex items-center gap-2 font-semibold">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Shield className="h-5 w-5" />
           </div>

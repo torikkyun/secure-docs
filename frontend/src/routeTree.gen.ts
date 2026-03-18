@@ -17,7 +17,6 @@ import { Route as appSharedIndexRouteImport } from './routes/(app)/shared/index'
 import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
 import { Route as appFilesIndexRouteImport } from './routes/(app)/files/index'
 import { Route as appFileActivityIndexRouteImport } from './routes/(app)/file-activity/index'
-import { Route as appDashboardIndexRouteImport } from './routes/(app)/dashboard/index'
 
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
@@ -58,15 +57,9 @@ const appFileActivityIndexRoute = appFileActivityIndexRouteImport.update({
   path: '/file-activity/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appDashboardIndexRoute = appDashboardIndexRouteImport.update({
-  id: '/dashboard/',
-  path: '/dashboard/',
-  getParentRoute: () => appRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof appIndexRoute
-  '/dashboard/': typeof appDashboardIndexRoute
   '/file-activity/': typeof appFileActivityIndexRoute
   '/files/': typeof appFilesIndexRoute
   '/settings/': typeof appSettingsIndexRoute
@@ -76,7 +69,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof appIndexRoute
-  '/dashboard': typeof appDashboardIndexRoute
   '/file-activity': typeof appFileActivityIndexRoute
   '/files': typeof appFilesIndexRoute
   '/settings': typeof appSettingsIndexRoute
@@ -88,7 +80,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
   '/(app)/': typeof appIndexRoute
-  '/(app)/dashboard/': typeof appDashboardIndexRoute
   '/(app)/file-activity/': typeof appFileActivityIndexRoute
   '/(app)/files/': typeof appFilesIndexRoute
   '/(app)/settings/': typeof appSettingsIndexRoute
@@ -100,7 +91,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard/'
     | '/file-activity/'
     | '/files/'
     | '/settings/'
@@ -110,7 +100,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
     | '/file-activity'
     | '/files'
     | '/settings'
@@ -121,7 +110,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/(app)'
     | '/(app)/'
-    | '/(app)/dashboard/'
     | '/(app)/file-activity/'
     | '/(app)/files/'
     | '/(app)/settings/'
@@ -194,19 +182,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appFileActivityIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/dashboard/': {
-      id: '/(app)/dashboard/'
-      path: '/dashboard'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof appDashboardIndexRouteImport
-      parentRoute: typeof appRouteRoute
-    }
   }
 }
 
 interface appRouteRouteChildren {
   appIndexRoute: typeof appIndexRoute
-  appDashboardIndexRoute: typeof appDashboardIndexRoute
   appFileActivityIndexRoute: typeof appFileActivityIndexRoute
   appFilesIndexRoute: typeof appFilesIndexRoute
   appSettingsIndexRoute: typeof appSettingsIndexRoute
@@ -215,7 +195,6 @@ interface appRouteRouteChildren {
 
 const appRouteRouteChildren: appRouteRouteChildren = {
   appIndexRoute: appIndexRoute,
-  appDashboardIndexRoute: appDashboardIndexRoute,
   appFileActivityIndexRoute: appFileActivityIndexRoute,
   appFilesIndexRoute: appFilesIndexRoute,
   appSettingsIndexRoute: appSettingsIndexRoute,
