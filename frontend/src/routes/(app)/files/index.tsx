@@ -92,22 +92,30 @@ export function FilesPage() {
     if (updated) setDetailBarFile(updated)
   }, [files])
 
-  // Accumulate unique owners seen across all loaded pages (never shrinks)
+  // Accumulate unique people seen across all loaded pages (never shrinks)
   useEffect(() => {
     if (!filesData) return
     setKnownPeople((prev) => {
       const next = new Map(prev)
       filesData.pages.forEach((page) => {
         page.files.forEach((file) => {
-          const owner = file.owner
-          if (owner && !next.has(owner.id)) {
-            next.set(owner.id, {
-              id: owner.id,
-              name: owner.name,
-              email: owner.email,
-              avatar: owner.avatar,
-            })
+          const addPerson = (p: {
+            id: string
+            name: string
+            email: string
+            avatar: string
+          }) => {
+            if (p && !next.has(p.id)) {
+              next.set(p.id, {
+                id: p.id,
+                name: p.name,
+                email: p.email,
+                avatar: p.avatar,
+              })
+            }
           }
+          addPerson(file.owner)
+          file.sharedWith?.forEach(addPerson)
         })
       })
       return next

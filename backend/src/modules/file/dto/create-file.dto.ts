@@ -14,14 +14,14 @@ export class UploadFilesDto {
   @ArrayNotEmpty()
   @IsString({ each: true })
   @Transform(({ value }) => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       try {
-        return JSON.parse(value)
+        return JSON.parse(value);
       } catch (error) {
-        return [value]
+        return [value];
       }
     }
-    return value
+    return value;
   })
   @ApiProperty({
     type: [String],
@@ -30,7 +30,9 @@ export class UploadFilesDto {
 
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => value === "true" || value === true)
-  @ApiPropertyOptional({ default: true })
+  @Transform(({ value }) => value === "true")
+  @ApiPropertyOptional({
+    default: true,
+  })
   enableBlockchainLogging?: boolean;
 }

@@ -165,7 +165,7 @@ function PageToolbar() {
         </div>
       </div>
       {(isFilesPage || isSharedPage) && (
-        <div className="pb-3">
+        <div className="pb-2">
           <FileFilters
             fileType={fileType}
             selectedPerson={selectedPerson}
@@ -378,7 +378,7 @@ function AppLayout() {
           <div className="flex flex-1 overflow-hidden min-h-0">
             <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
               <PageToolbar />
-              <div className="flex-1 overflow-y-auto px-1 py-2">
+              <div className="flex-1 overflow-y-auto px-1 pb-2">
                 <Outlet />
               </div>
             </main>

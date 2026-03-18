@@ -22,7 +22,13 @@ function SharedPage() {
     'filename' | 'createdAt' | 'size' | undefined
   >(undefined)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const { setSelectedFile: setDetailBarFile, viewMode } = useDetailBar()
+  const {
+    setSelectedFile: setDetailBarFile,
+    viewMode,
+    fileType,
+    selectedPerson,
+    setKnownPeople,
+  } = useDetailBar()
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -38,7 +44,15 @@ function SharedPage() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ['files', 'shared', sortBy, sortOrder],
+    queryKey: [
+      'files',
+      'shared',
+      sortBy,
+      sortOrder,
+      fileType,
+      selectedPerson?.id,
+      selectedPerson?.role,
+    ],
     queryFn: ({ pageParam }) =>
       getFilesFn({
         data: {
@@ -47,6 +61,11 @@ function SharedPage() {
           sortOrder,
           page: pageParam,
           limit: 20,
+          fileType,
+          ownerId:
+            selectedPerson?.role === 'owner' ? selectedPerson.id : undefined,
+          sharedWithId:
+            selectedPerson?.role === 'shared' ? selectedPerson.id : undefined,
         },
       }),
     getNextPageParam: (lastPage) =>
@@ -55,6 +74,28 @@ function SharedPage() {
   })
 
   const files: FileItem[] = filesData?.pages.flatMap((p) => p.files) ?? []
+
+  // Accumulate unique sharers seen across all loaded pages
+  useEffect(() => {
+    if (!filesData) return
+    setKnownPeople((prev) => {
+      const next = new Map(prev)
+      filesData.pages.forEach((page) => {
+        page.files.forEach((file) => {
+          const person = file.sharedBy ?? file.owner
+          if (person && !next.has(person.id)) {
+            next.set(person.id, {
+              id: person.id,
+              name: person.name,
+              email: person.email,
+              avatar: person.avatar,
+            })
+          }
+        })
+      })
+      return next
+    })
+  }, [filesData])
 
   const onSentinel = useCallback(
     (entries: IntersectionObserverEntry[]) => {
