@@ -117,6 +117,7 @@ export class ShareService {
     await this.cacheVersion.bump(`file-activity:user:${senderId}:version`);
     await this.cacheVersion.bump(`file-activity:file:${fileId}:version`);
     await this.cacheVersion.bump(`files:file:${fileId}:version`);
+    await this.cacheVersion.bump(`files:user:${senderId}:version`);
 
     await Promise.all(
       created.map((share) =>

@@ -116,6 +116,9 @@ function PageToolbar() {
 
   const isFilesPage =
     currentPath === '/files' || currentPath.startsWith('/files/')
+  const isSharedPage =
+    currentPath === '/shared' || currentPath.startsWith('/shared/')
+  const showViewToggle = isFilesPage || isSharedPage
 
   return (
     <div className="sticky bg-background">
@@ -124,7 +127,7 @@ function PageToolbar() {
           {currentNav.name}
         </h1>
         <div className="flex items-center gap-1">
-          {isFilesPage && (
+          {showViewToggle && (
             <>
               <Button
                 variant="ghost"
@@ -161,7 +164,7 @@ function PageToolbar() {
           </Button>
         </div>
       </div>
-      {isFilesPage && (
+      {(isFilesPage || isSharedPage) && (
         <div className="pb-3">
           <FileFilters
             fileType={fileType}
@@ -375,7 +378,7 @@ function AppLayout() {
           <div className="flex flex-1 overflow-hidden min-h-0">
             <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
               <PageToolbar />
-              <div className="flex-1 overflow-y-auto pb-6">
+              <div className="flex-1 overflow-y-auto px-1 py-2">
                 <Outlet />
               </div>
             </main>

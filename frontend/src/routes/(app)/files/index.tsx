@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { Upload, FileText, Loader2 } from 'lucide-react'
+import { FileText, Loader2, Plus } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import { FileList } from './-components/file-list'
 import { FileGrid } from './-components/file-grid'
@@ -8,6 +8,7 @@ import { ShareFileModal } from './-components/share-file-modal'
 import { DownloadFileModal } from './-components/download-file-modal'
 import { ViewFileModal } from './-components/view-file-modal'
 import { RevokeShareModal } from './-components/revoke-share-modal'
+import { DeleteFileModal } from './-components/delete-file-modal'
 import { createFileRoute } from '@tanstack/react-router'
 import { getFilesFn } from '@/api/file/functions'
 import { useDetailBar } from '../route'
@@ -24,12 +25,14 @@ export function FilesPage() {
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [sortBy, setSortBy] = useState<
     'filename' | 'createdAt' | 'size' | undefined
   >(undefined)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const {
     setSelectedFile: setDetailBarFile,
+    selectedFile: detailBarFile,
     viewMode,
     fileType,
     selectedPerson,
@@ -79,6 +82,15 @@ export function FilesPage() {
   })
 
   const files: FileItem[] = filesData?.pages.flatMap((p) => p.files) ?? []
+
+  // Sync detail bar's selected file with the latest query data so that
+  // sharedWith / revoke-share option reflects the current state immediately
+  // after a share or revoke action invalidates the query.
+  useEffect(() => {
+    if (!detailBarFile) return
+    const updated = files.find((f) => f.id === detailBarFile.id)
+    if (updated) setDetailBarFile(updated)
+  }, [files])
 
   // Accumulate unique owners seen across all loaded pages (never shrinks)
   useEffect(() => {
@@ -139,6 +151,11 @@ export function FilesPage() {
     setIsRevokeModalOpen(true)
   }
 
+  const handleDelete = (file: FileItem) => {
+    setSelectedFile(file)
+    setIsDeleteModalOpen(true)
+  }
+
   const handleSortingChange = (
     newSortBy: string | undefined,
     newSortOrder: 'asc' | 'desc',
@@ -148,7 +165,7 @@ export function FilesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col">
       {/* Main Content Area */}
       <div>
         {isLoading ? (
@@ -156,8 +173,8 @@ export function FilesPage() {
             <div className="text-muted-foreground">Đang tải tài liệu...</div>
           </div>
         ) : files.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="bg-muted/30 p-6 rounded-full mb-6">
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="bg-muted/30 p-6 rounded-full mb-4">
               <FileText className="h-16 w-16 text-muted-foreground/50" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Chưa có tài liệu nào</h3>
@@ -166,7 +183,7 @@ export function FilesPage() {
               cách nhấn nút <strong>Mới</strong> ở thanh bên.
             </p>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Upload className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Sử dụng nút "Mới" trên thanh bên để tải tệp
             </div>
           </div>
@@ -177,6 +194,7 @@ export function FilesPage() {
             onDownload={handleDownload}
             onView={handleView}
             onRevokeShare={handleRevokeShare}
+            onDelete={handleDelete}
             onSelect={setDetailBarFile}
             onSortingChange={handleSortingChange}
           />
@@ -187,6 +205,7 @@ export function FilesPage() {
             onDownload={handleDownload}
             onView={handleView}
             onRevokeShare={handleRevokeShare}
+            onDelete={handleDelete}
             onSelect={setDetailBarFile}
           />
         )}
@@ -223,6 +242,12 @@ export function FilesPage() {
         file={selectedFile}
         isOpen={isRevokeModalOpen}
         onClose={() => setIsRevokeModalOpen(false)}
+      />
+
+      <DeleteFileModal
+        file={selectedFile}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
       />
     </div>
   )

@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
 import { FileItem } from '@/api/file/types'
@@ -248,6 +248,10 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                           <AvatarFallback>
                             {user.name?.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
+                          <AvatarImage
+                            src={user.avatar}
+                            alt={user.name ?? ''}
+                          />
                         </Avatar>
                         <div className="flex-1 overflow-hidden">
                           <p className="text-sm font-medium leading-none truncate">
@@ -287,6 +291,7 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                         <AvatarFallback className="text-[10px]">
                           {user.name?.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
+                        <AvatarImage src={user.avatar} alt={user.name ?? ''} />
                       </Avatar>
                       <span className="truncate max-w-30">{user.name}</span>
                       <button

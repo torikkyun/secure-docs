@@ -146,21 +146,6 @@ export class FileService {
           },
         });
 
-        await this.fileActivity.logFileActivity(
-          {
-            userId,
-            fileId: record.id,
-            action: FileActivityAction.UPLOAD,
-            metadata: {
-              filename: record.filename,
-              mimeType: record.mimeType,
-              size: record.size.toString(),
-            },
-            req,
-          },
-          enableBlockchainLogging,
-        );
-
         // Bump cache version cho file cụ thể
         await this.cacheVersion.bump(`files:file:${record.id}:version`);
         await this.cacheVersion.bump(`file-activity:file:${record.id}:version`);
@@ -285,6 +270,7 @@ export class FileService {
 
     const where: Prisma.FileWhereInput = {
       AND: [
+        { isDeleted: false },
         accessFilter,
         ...(search ? [searchFilter] : []),
         ...(fileType ? [fileTypeFilter] : []),
@@ -533,6 +519,12 @@ export class FileService {
       where: {
         id: fileId,
         ownerId: userId,
+        isDeleted: false,
+      },
+      include: {
+        shares: {
+          select: { recipientId: true },
+        },
       },
     });
 
@@ -541,6 +533,8 @@ export class FileService {
         "Không tìm thấy file hoặc không có quyền truy cập",
       );
     }
+
+    const recipientIds = file.shares.map((s) => s.recipientId);
 
     await this.fileActivity.logFileActivity({
       userId,
@@ -552,23 +546,32 @@ export class FileService {
       req,
     });
 
-    // if (fs.existsSync(file.filePath)) {
-    //   fs.unlinkSync(file.filePath);
-    // }
+    // Cập nhật DB trước, chỉ xóa file vật lý sau khi DB thành công
+    await this.prisma.$transaction([
+      this.prisma.file.update({
+        where: { id: fileId },
+        data: { isDeleted: true },
+      }),
+      this.prisma.share.deleteMany({
+        where: { fileId },
+      }),
+    ]);
 
-    // await this.prisma.file.delete({
-    //   where: { id: fileId },
-    // });
-
-    await this.prisma.file.update({
-      where: { id: fileId },
-      data: { isDeleted: true },
-    });
+    if (fs.existsSync(file.filePath)) {
+      fs.unlinkSync(file.filePath);
+    }
 
     await this.cacheVersion.bump(`files:user:${userId}:version`);
     await this.cacheVersion.bump(`files:file:${fileId}:version`);
     await this.cacheVersion.bump(`file-activity:user:${userId}:version`);
     await this.cacheVersion.bump(`file-activity:file:${fileId}:version`);
+
+    // Invalidate cache cho tất cả recipient đã nhận share
+    await Promise.all(
+      recipientIds.map((id) =>
+        this.cacheVersion.bump(`files:user:${id}:version`),
+      ),
+    );
 
     return { message: "Xóa file thành công" };
   }

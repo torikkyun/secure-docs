@@ -82,7 +82,6 @@ model Share {
 }
 
 enum FileActivityAction {
-  UPLOAD
   SHARE
   DOWNLOAD
   DELETE

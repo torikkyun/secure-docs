@@ -258,15 +258,6 @@ export class FileActivityService {
       };
     }
 
-    if (activity.action === FileActivityAction.UPLOAD) {
-      return {
-        ...baseActivity,
-        filename: activity.metadata?.filename,
-        mimeType: activity.metadata?.mimeType,
-        size: activity.metadata?.size,
-      };
-    }
-
     return baseActivity;
   }
 

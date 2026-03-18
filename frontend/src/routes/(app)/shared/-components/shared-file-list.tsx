@@ -6,17 +6,8 @@ import {
   SortingState,
   VisibilityState,
 } from '@tanstack/react-table'
-import {
-  MoreHorizontal,
-  ArrowUpDown,
-  Download,
-  Share2,
-  Eye,
-  Info,
-  UserX,
-  Trash2,
-} from 'lucide-react'
-import { getFileIcon, formatFileSize, formatDate } from '@/lib/file-utils'
+import { MoreHorizontal, ArrowUpDown, Download, Eye, Info } from 'lucide-react'
+import { getFileIcon, formatDate } from '@/lib/file-utils'
 import { useState, useRef, useEffect } from 'react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -46,13 +37,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { FileItem } from '@/api/file/types'
 import { useDetailBar } from '@/routes/(app)/route'
 
-interface FileListProps {
+interface SharedFileListProps {
   files: FileItem[]
-  onShare: (file: FileItem) => void
   onDownload: (file: FileItem) => void
   onView: (file: FileItem) => void
-  onRevokeShare: (file: FileItem) => void
-  onDelete: (file: FileItem) => void
   onSelect?: (file: FileItem | null) => void
   onSortingChange?: (
     sortBy: string | undefined,
@@ -64,22 +52,19 @@ const columns: ColumnDef<FileItem>[] = [
   {
     accessorKey: 'filename',
     meta: { className: 'w-1/2' },
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-auto p-0 font-medium"
-        >
-          Tên
-          <ArrowUpDown className="h-2 w-2" />
-        </Button>
-      )
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        className="h-auto p-0 font-medium"
+      >
+        Tên
+        <ArrowUpDown className="h-2 w-2" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const file = row.original
       const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
-
       return (
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 bg-muted rounded flex items-center justify-center shrink-0">
@@ -93,75 +78,46 @@ const columns: ColumnDef<FileItem>[] = [
     },
   },
   {
-    id: 'owner',
-    header: 'Chủ sở hữu',
+    id: 'sharedBy',
+    header: 'Người chia sẻ',
     cell: ({ row }) => {
-      const file = row.original
-      const person = file.isOwner ? file.owner : (file.sharedBy ?? file.owner)
-      const displayName = file.isOwner ? 'Tôi' : person?.name || '—'
-      const initials = person?.name
-        ? person.name
-            .split(' ')
-            .map((w) => w[0])
-            .slice(0, 2)
-            .join('')
-            .toUpperCase()
-        : (person?.email?.substring(0, 2).toUpperCase() ?? '?')
-
+      const person = row.original.sharedBy
+      if (!person)
+        return <span className="text-sm text-muted-foreground">—</span>
+      const initials = person.name
+        .split(' ')
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
       return (
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={person?.avatar} alt={person?.name ?? ''} />
+            <AvatarImage src={person.avatar} alt={person.name} />
             <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
           </Avatar>
-          <span className="text-sm text-muted-foreground">{displayName}</span>
+          <span className="text-sm text-muted-foreground">{person.name}</span>
         </div>
       )
     },
   },
   {
     accessorKey: 'createdAt',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-auto p-0 font-medium"
-        >
-          Ngày tải lên
-          <ArrowUpDown className="h-2 w-2" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      return (
-        <div className="text-sm text-muted-foreground">
-          {formatDate(row.getValue('createdAt'))}
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: 'size',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          className="h-auto p-0 font-medium"
-        >
-          Kích thước
-          <ArrowUpDown className="h-2 w-2" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      return (
-        <div className="text-sm text-muted-foreground">
-          {formatFileSize(Number(row.getValue('size')))}
-        </div>
-      )
-    },
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        className="h-auto p-0 font-medium"
+      >
+        Ngày chia sẻ
+        <ArrowUpDown className="h-2 w-2" />
+      </Button>
+    ),
+    cell: ({ row }) => (
+      <div className="text-sm text-muted-foreground">
+        {formatDate(row.getValue('createdAt'))}
+      </div>
+    ),
   },
   {
     id: 'actions',
@@ -169,23 +125,11 @@ const columns: ColumnDef<FileItem>[] = [
     enableHiding: false,
     cell: ({ row, table }) => {
       const file = row.original
-      const {
-        onShare,
-        onDownload,
-        onView,
-        onRevokeShare,
-        onDelete,
-        onOpenDetail,
-      } = table.options.meta as {
-        onShare: (file: FileItem) => void
+      const { onDownload, onView, onOpenDetail } = table.options.meta as {
         onDownload: (file: FileItem) => void
         onView: (file: FileItem) => void
-        onRevokeShare: (file: FileItem) => void
-        onDelete: (file: FileItem) => void
-        onSelect: (file: FileItem | null) => void
         onOpenDetail: (file: FileItem) => void
       }
-
       return (
         <div onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
@@ -195,7 +139,7 @@ const columns: ColumnDef<FileItem>[] = [
                 'h-8 w-8 p-0',
               )}
             >
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">Mở menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-54">
@@ -207,46 +151,15 @@ const columns: ColumnDef<FileItem>[] = [
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => onView(file)}
-                  disabled={file.mimeType !== 'application/pdf'}
-                >
-                  <Eye className="h-4 w-4" />
-                  Xem
-                </DropdownMenuItem>
+                {file.mimeType === 'application/pdf' && (
+                  <DropdownMenuItem onClick={() => onView(file)}>
+                    <Eye className="h-4 w-4" />
+                    Xem
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onDownload(file)}>
                   <Download className="h-4 w-4" />
                   Tải xuống
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onShare(file)}
-                  disabled={!file.isOwner}
-                >
-                  <Share2 className="h-4 w-4" />
-                  Chia sẻ
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  onClick={() => onRevokeShare(file)}
-                  variant="destructive"
-                  disabled={
-                    !file.isOwner ||
-                    !file.sharedWith ||
-                    file.sharedWith.length === 0
-                  }
-                >
-                  <UserX className="h-4 w-4" />
-                  Thu hồi quyền truy cập
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => onDelete(file)}
-                  disabled={!file.isOwner}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Xóa
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -257,16 +170,13 @@ const columns: ColumnDef<FileItem>[] = [
   },
 ]
 
-export function FileList({
+export function SharedFileList({
   files,
-  onShare,
   onDownload,
   onView,
-  onRevokeShare,
-  onDelete,
   onSelect,
   onSortingChange,
-}: FileListProps) {
+}: SharedFileListProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
   const tableRef = useRef<HTMLDivElement>(null)
@@ -277,7 +187,7 @@ export function FileList({
   } = useDetailBar()
 
   const columnVisibility: VisibilityState = isDetailBarOpen
-    ? { owner: false, createdAt: false, size: false }
+    ? { sharedBy: false, createdAt: false }
     : {}
 
   useEffect(() => {
@@ -294,7 +204,6 @@ export function FileList({
 
   const handleRowClick = (rowId: string, file: FileItem) => {
     if (isDetailBarOpen) {
-      // Detail bar is open: always update it with the clicked file (no toggle)
       setSelectedRowId(rowId)
       setSelectedFile(file)
       return
@@ -335,11 +244,8 @@ export function FileList({
     manualSorting: true,
     state: { sorting, columnVisibility },
     meta: {
-      onShare,
       onDownload,
       onView,
-      onRevokeShare,
-      onDelete,
       onSelect,
       onOpenDetail: handleOpenDetail,
     },
@@ -362,8 +268,11 @@ export function FileList({
                       ? isDetailBarOpen
                         ? 'w-full'
                         : 'w-1/2'
-                      : (header.column.columnDef.meta as { className?: string })
-                          ?.className
+                      : (
+                          header.column.columnDef.meta as {
+                            className?: string
+                          }
+                        )?.className
                   }
                 >
                   {header.isPlaceholder
@@ -422,45 +331,15 @@ export function FileList({
                     Thông tin chi tiết
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem
-                    onClick={() => onView(row.original)}
-                    disabled={row.original.mimeType !== 'application/pdf'}
-                  >
-                    <Eye className="h-4 w-4" />
-                    Xem
-                  </ContextMenuItem>
+                  {row.original.mimeType === 'application/pdf' && (
+                    <ContextMenuItem onClick={() => onView(row.original)}>
+                      <Eye className="h-4 w-4" />
+                      Xem
+                    </ContextMenuItem>
+                  )}
                   <ContextMenuItem onClick={() => onDownload(row.original)}>
                     <Download className="h-4 w-4" />
                     Tải xuống
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    onClick={() => onShare(row.original)}
-                    disabled={!row.original.isOwner}
-                  >
-                    <Share2 className="h-4 w-4" />
-                    Chia sẻ
-                  </ContextMenuItem>
-
-                  <ContextMenuSeparator />
-                  <ContextMenuItem
-                    onClick={() => onRevokeShare(row.original)}
-                    variant="destructive"
-                    disabled={
-                      !row.original.isOwner ||
-                      !row.original.sharedWith ||
-                      row.original.sharedWith.length === 0
-                    }
-                  >
-                    <UserX className="h-4 w-4" />
-                    Thu hồi quyền truy cập
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    variant="destructive"
-                    onClick={() => onDelete(row.original)}
-                    disabled={!row.original.isOwner}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Xóa
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
