@@ -34,6 +34,7 @@ const config = defineConfig(({ mode }) => {
     define: {
       'process.env.SESSION_SECRET': JSON.stringify(env.SESSION_SECRET),
       'process.env.NODE_ENV': JSON.stringify(env.NODE_ENV || mode),
+      'process.env.VITE_BACKEND_URL': JSON.stringify(env.VITE_BACKEND_URL),
     },
   }
 })

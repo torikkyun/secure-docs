@@ -99,7 +99,7 @@ function Register() {
 
   const handleFinish = () => {
     setShowMnemonicDialog(false)
-    router.navigate({ to: '/dashboard' })
+    router.navigate({ to: '/files' })
   }
 
   return (

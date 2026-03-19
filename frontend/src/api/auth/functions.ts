@@ -15,12 +15,16 @@ export const loginFn = createServerFn({ method: 'POST' })
       body: JSON.stringify(data),
     })
 
+    console.log(res)
+
     if (!res.ok) {
       const error = await res.json()
       throw new Error(error.message)
     }
 
     const result = await res.json()
+
+    console.log('Login successful, received result:', result)
 
     try {
       const session = await useAppSession()

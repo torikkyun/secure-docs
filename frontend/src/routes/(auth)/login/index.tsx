@@ -43,7 +43,7 @@ function Login() {
       try {
         await loginFn({ data: value })
         toast.success('Đăng nhập thành công!')
-        router.navigate({ to: '/dashboard' })
+        router.navigate({ to: '/files' })
       } catch (error: any) {
         toast.error(`Lỗi: ${error.message}`)
       } finally {
