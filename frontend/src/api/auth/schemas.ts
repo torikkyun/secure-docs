@@ -5,8 +5,11 @@ export const loginSchema = z.object({
   password: z.string().min(6, 'Mật khẩu ít nhất 6 ký tự'),
 })
 
-export const registerFormSchema = loginSchema.extend({
+export const registerInfoFormSchema = loginSchema.extend({
   name: z.string().min(2, 'Tên quá ngắn'),
+})
+
+export const registerFormSchema = registerInfoFormSchema.extend({
   passcode: z
     .string()
     .length(6, 'Mã khóa phải đúng 6 ký tự')

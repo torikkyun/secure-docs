@@ -8,23 +8,15 @@ import {
 import { Public } from "src/common/decorators/public.decorator";
 import { PrismaService } from "src/database/prisma.service";
 
-@Controller("health")
+@Controller("api/health")
 @ApiTags("health")
 @Public()
 export class HealthController {
-  private readonly health: HealthCheckService;
-  private readonly prismaHealth: PrismaHealthIndicator;
-  private readonly prisma: PrismaService;
-
   constructor(
-    health: HealthCheckService,
-    prismaHealth: PrismaHealthIndicator,
-    prisma: PrismaService
-  ) {
-    this.health = health;
-    this.prismaHealth = prismaHealth;
-    this.prisma = prisma;
-  }
+    private readonly health: HealthCheckService,
+    private readonly prismaHealth: PrismaHealthIndicator,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get()
   @HealthCheck()

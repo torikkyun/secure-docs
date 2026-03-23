@@ -26,27 +26,26 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group'
-import {
-  Loader2,
-  Mail,
-  User,
-  Lock,
-  KeyRound,
-  CheckCircle2,
-  Copy,
-} from 'lucide-react'
+import { Loader2, Mail, User, Lock, CheckCircle2, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { registerFn } from '@/api/auth/functions'
-import { registerFormSchema } from '@/api/auth/schemas'
+import { registerInfoFormSchema } from '@/api/auth/schemas'
+import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
 
 export const Route = createFileRoute('/(auth)/register/')({
   component: Register,
 })
 
 function Register() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPasscodeModal, setShowPasscodeModal] = useState(false)
+  const [isRegistering, setIsRegistering] = useState(false)
   const [showMnemonicDialog, setShowMnemonicDialog] = useState(false)
   const [mnemonic, setMnemonic] = useState<string>('')
+  const [pendingValues, setPendingValues] = useState<{
+    email: string
+    password: string
+    name: string
+  } | null>(null)
 
   const router = useRouter()
 
@@ -55,42 +54,49 @@ function Register() {
       email: '',
       password: '',
       name: '',
-      passcode: '',
     },
     validators: {
-      onChange: registerFormSchema,
+      onChange: registerInfoFormSchema,
     },
     onSubmit: async ({ value }) => {
-      setIsSubmitting(true)
-      try {
-        const keyPair = await generateKeyPair()
-        const encryptedPrivateKey = await encryptPrivateKey(
-          keyPair.privateKey,
-          value.passcode,
-        )
-
-        localStorage.setItem('userPublicKey', keyPair.publicKey)
-        localStorage.setItem(
-          'encryptedPrivateKey',
-          JSON.stringify(encryptedPrivateKey),
-        )
-
-        await registerFn({
-          data: {
-            ...value,
-            publicKey: keyPair.publicKey,
-          },
-        })
-
-        setMnemonic(keyPair.mnemonic)
-        setShowMnemonicDialog(true)
-      } catch (error: { message: string } | any) {
-        toast.error(`Lỗi: ${error.message}`)
-      } finally {
-        setIsSubmitting(false)
-      }
+      setPendingValues(value)
+      setShowPasscodeModal(true)
     },
   })
+
+  const handlePasscodeConfirm = async (passcode: string) => {
+    if (!pendingValues) return
+    setIsRegistering(true)
+    try {
+      const keyPair = await generateKeyPair()
+      const encryptedPrivateKey = await encryptPrivateKey(
+        keyPair.privateKey,
+        passcode,
+      )
+
+      localStorage.setItem('userPublicKey', keyPair.publicKey)
+      localStorage.setItem(
+        'encryptedPrivateKey',
+        JSON.stringify(encryptedPrivateKey),
+      )
+
+      await registerFn({
+        data: {
+          ...pendingValues,
+          passcode,
+          publicKey: keyPair.publicKey,
+        },
+      })
+
+      setShowPasscodeModal(false)
+      setMnemonic(keyPair.mnemonic)
+      setShowMnemonicDialog(true)
+    } catch (error: { message: string } | any) {
+      toast.error(`Lỗi: ${error.message}`)
+    } finally {
+      setIsRegistering(false)
+    }
+  }
 
   const handleCopyMnemonic = () => {
     navigator.clipboard.writeText(mnemonic)
@@ -195,59 +201,27 @@ function Register() {
                 </div>
               )}
             />
-
-            <form.Field
-              name="passcode"
-              children={(field) => (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor={field.name} className="text-sm font-medium">
-                      Passcode (6 số)
-                    </Label>
-                    <span className="text-xs text-muted-foreground">
-                      Để mã hóa khóa riêng tư
-                    </span>
-                  </div>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <KeyRound className="size-4" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id={field.name}
-                      type="password"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => {
-                        const v = e.target.value
-                          .replace(/[^0-9]/g, '')
-                          .slice(0, 6)
-                        field.handleChange(v)
-                      }}
-                      maxLength={6}
-                      inputMode="numeric"
-                      placeholder="••••••"
-                    />
-                  </InputGroup>
-                  <FieldInfo field={field} />
-                </div>
-              )}
-            />
           </CardContent>
           <CardFooter className="pt-2 block mt-5">
-            <Button
-              type="submit"
-              className="w-full text-base font-medium py-5 mb-4"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Đang xử lý...
-                </>
-              ) : (
-                'Đăng ký tài khoản'
+            <form.Subscribe
+              selector={(state) => state.isSubmitting}
+              children={(isSubmitting) => (
+                <Button
+                  type="submit"
+                  className="w-full text-base font-medium py-5 mb-4"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    'Tiếp tục'
+                  )}
+                </Button>
               )}
-            </Button>
+            />
             <div className="w-full text-center text-sm">
               Đã có tài khoản?{' '}
               <Link
@@ -260,6 +234,16 @@ function Register() {
           </CardFooter>
         </form>
       </Card>
+      <PasscodeConfirmModal
+        isOpen={showPasscodeModal}
+        onConfirm={handlePasscodeConfirm}
+        onCancel={() => setShowPasscodeModal(false)}
+        isPending={isRegistering}
+        title="Tạo Passcode"
+        description="Nhập 6 chữ số passcode. Passcode này sẽ dùng để mã hóa khóa riêng tư của bạn. Hãy ghi nhớ và giữ bí mật."
+        confirmLabel="Đăng ký"
+      />
+
       <Dialog open={showMnemonicDialog} onOpenChange={setShowMnemonicDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

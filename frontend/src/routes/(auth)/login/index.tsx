@@ -1,6 +1,5 @@
 import { createFileRoute, useRouter, Link } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
-import { useState } from 'react'
 import FieldInfo from '@/components/field-info'
 import {
   Card,
@@ -27,7 +26,6 @@ export const Route = createFileRoute('/(auth)/login/')({
 })
 
 function Login() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
 
   const form = useForm({
@@ -39,22 +37,19 @@ function Login() {
       onChange: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      setIsSubmitting(true)
       try {
         await loginFn({ data: value })
         toast.success('Đăng nhập thành công!')
         router.navigate({ to: '/files' })
       } catch (error: any) {
         toast.error(`Lỗi: ${error.message}`)
-      } finally {
-        setIsSubmitting(false)
       }
     },
   })
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 dark:bg-gray-900/50">
-      <Card className="w-full max-w-md shadow-lg">
+      <Card className="w-full max-w-lg shadow-lg">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold tracking-tight">
             Đăng nhập
@@ -130,20 +125,25 @@ function Login() {
             />
           </CardContent>
           <CardFooter className="pt-2 mt-5 block">
-            <Button
-              type="submit"
-              className="w-full text-base font-medium py-5 mb-4"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Đang đăng nhập...
-                </>
-              ) : (
-                'Đăng nhập'
+            <form.Subscribe
+              selector={(state) => state.isSubmitting}
+              children={(isSubmitting) => (
+                <Button
+                  type="submit"
+                  className="w-full text-base font-medium py-5 mb-4"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Đang đăng nhập...
+                    </>
+                  ) : (
+                    'Đăng nhập'
+                  )}
+                </Button>
               )}
-            </Button>
+            />
             <div className="w-full text-center text-sm">
               Bạn chưa có tài khoản?{' '}
               <Link
