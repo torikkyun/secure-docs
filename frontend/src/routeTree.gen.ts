@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
 import { Route as authRegisterIndexRouteImport } from './routes/(auth)/register/index'
@@ -18,6 +19,10 @@ import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/in
 import { Route as appFilesIndexRouteImport } from './routes/(app)/files/index'
 import { Route as appFileActivityIndexRouteImport } from './routes/(app)/file-activity/index'
 
+const authRouteRoute = authRouteRouteImport.update({
+  id: '/(auth)',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
   getParentRoute: () => rootRouteImport,
@@ -28,14 +33,14 @@ const appIndexRoute = appIndexRouteImport.update({
   getParentRoute: () => appRouteRoute,
 } as any)
 const authRegisterIndexRoute = authRegisterIndexRouteImport.update({
-  id: '/(auth)/register/',
+  id: '/register/',
   path: '/register/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => authRouteRoute,
 } as any)
 const authLoginIndexRoute = authLoginIndexRouteImport.update({
-  id: '/(auth)/login/',
+  id: '/login/',
   path: '/login/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => authRouteRoute,
 } as any)
 const appSharedIndexRoute = appSharedIndexRouteImport.update({
   id: '/shared/',
@@ -79,6 +84,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
+  '/(auth)': typeof authRouteRouteWithChildren
   '/(app)/': typeof appIndexRoute
   '/(app)/file-activity/': typeof appFileActivityIndexRoute
   '/(app)/files/': typeof appFilesIndexRoute
@@ -109,6 +115,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/(app)'
+    | '/(auth)'
     | '/(app)/'
     | '/(app)/file-activity/'
     | '/(app)/files/'
@@ -120,12 +127,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   appRouteRoute: typeof appRouteRouteWithChildren
-  authLoginIndexRoute: typeof authLoginIndexRoute
-  authRegisterIndexRoute: typeof authRegisterIndexRoute
+  authRouteRoute: typeof authRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/(auth)': {
+      id: '/(auth)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(app)': {
       id: '/(app)'
       path: ''
@@ -145,14 +158,14 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register/'
       preLoaderRoute: typeof authRegisterIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof authRouteRoute
     }
     '/(auth)/login/': {
       id: '/(auth)/login/'
       path: '/login'
       fullPath: '/login/'
       preLoaderRoute: typeof authLoginIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof authRouteRoute
     }
     '/(app)/shared/': {
       id: '/(app)/shared/'
@@ -205,10 +218,23 @@ const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
   appRouteRouteChildren,
 )
 
-const rootRouteChildren: RootRouteChildren = {
-  appRouteRoute: appRouteRouteWithChildren,
+interface authRouteRouteChildren {
+  authLoginIndexRoute: typeof authLoginIndexRoute
+  authRegisterIndexRoute: typeof authRegisterIndexRoute
+}
+
+const authRouteRouteChildren: authRouteRouteChildren = {
   authLoginIndexRoute: authLoginIndexRoute,
   authRegisterIndexRoute: authRegisterIndexRoute,
+}
+
+const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
+  authRouteRouteChildren,
+)
+
+const rootRouteChildren: RootRouteChildren = {
+  appRouteRoute: appRouteRouteWithChildren,
+  authRouteRoute: authRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

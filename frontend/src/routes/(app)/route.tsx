@@ -7,7 +7,6 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import {
-  LayoutDashboard,
   FileText,
   Share2,
   Settings,
@@ -226,7 +225,7 @@ function AppLayout() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Shield className="h-5 w-5" />
           </div>
-          <span className="text-lg">SecureDocs</span>
+          <span className="text-lg">Secure Docs</span>
         </Link>
       </div>
       <div className={cn('lg:px-4 mt-2 px-2')}>

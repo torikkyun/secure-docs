@@ -3,14 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { useState } from 'react'
 import { generateKeyPair, encryptPrivateKey } from '@/lib/crypto'
 import FieldInfo from '@/components/field-info'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import {
   Dialog,
   DialogContent,
@@ -109,131 +102,133 @@ function Register() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50/50 p-4 dark:bg-gray-900/50">
-      <Card className="w-full max-w-lg shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold tracking-tight">
+    <>
+      <div className="w-full space-y-6">
+        <div className="space-y-1.5">
+          <h2 className="text-2xl font-bold tracking-tight">
             Đăng ký tài khoản
-          </CardTitle>
-          <CardDescription className="text-base">
+          </h2>
+          <p className="text-sm text-muted-foreground">
             Tạo tài khoản mới để bắt đầu chia sẻ tài liệu an toàn.
-          </CardDescription>
-        </CardHeader>
+          </p>
+        </div>
+
+        <Separator />
+
         <form
+          className="space-y-5"
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
             form.handleSubmit()
           }}
         >
-          <CardContent className="space-y-5">
-            <form.Field
-              name="email"
-              children={(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name} className="text-sm font-medium">
-                    Email
-                  </Label>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <Mail className="size-4" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id={field.name}
-                      type="email"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="name@example.com"
-                    />
-                  </InputGroup>
-                  <FieldInfo field={field} />
-                </div>
-              )}
-            />
+          <form.Field
+            name="email"
+            children={(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name} className="text-sm font-medium">
+                  Email
+                </Label>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <Mail className="size-4" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id={field.name}
+                    type="email"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="name@example.com"
+                  />
+                </InputGroup>
+                <FieldInfo field={field} />
+              </div>
+            )}
+          />
 
-            <form.Field
-              name="name"
-              children={(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name} className="text-sm font-medium">
-                    Họ tên
-                  </Label>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <User className="size-4" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id={field.name}
-                      type="text"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="Nguyễn Văn A"
-                    />
-                  </InputGroup>
-                  <FieldInfo field={field} />
-                </div>
-              )}
-            />
+          <form.Field
+            name="name"
+            children={(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name} className="text-sm font-medium">
+                  Họ tên
+                </Label>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <User className="size-4" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id={field.name}
+                    type="text"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Nguyễn Văn A"
+                  />
+                </InputGroup>
+                <FieldInfo field={field} />
+              </div>
+            )}
+          />
 
-            <form.Field
-              name="password"
-              children={(field) => (
-                <div className="space-y-2">
-                  <Label htmlFor={field.name} className="text-sm font-medium">
-                    Mật khẩu
-                  </Label>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <Lock className="size-4" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id={field.name}
-                      type="password"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="••••••"
-                    />
-                  </InputGroup>
-                  <FieldInfo field={field} />
-                </div>
-              )}
-            />
-          </CardContent>
-          <CardFooter className="pt-2 block mt-5">
-            <form.Subscribe
-              selector={(state) => state.isSubmitting}
-              children={(isSubmitting) => (
-                <Button
-                  type="submit"
-                  className="w-full text-base font-medium py-5 mb-4"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    'Tiếp tục'
-                  )}
-                </Button>
-              )}
-            />
-            <div className="w-full text-center text-sm">
-              Đã có tài khoản?{' '}
-              <Link
-                to="/login"
-                className="underline underline-offset-4 hover:text-primary"
+          <form.Field
+            name="password"
+            children={(field) => (
+              <div className="space-y-2">
+                <Label htmlFor={field.name} className="text-sm font-medium">
+                  Mật khẩu
+                </Label>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <Lock className="size-4" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id={field.name}
+                    type="password"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="••••••"
+                  />
+                </InputGroup>
+                <FieldInfo field={field} />
+              </div>
+            )}
+          />
+
+          <form.Subscribe
+            selector={(state) => state.isSubmitting}
+            children={(isSubmitting) => (
+              <Button
+                type="submit"
+                className="w-full text-base font-medium py-5"
+                disabled={isSubmitting}
               >
-                Đăng nhập
-              </Link>
-            </div>
-          </CardFooter>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  'Tiếp tục'
+                )}
+              </Button>
+            )}
+          />
+
+          <div className="text-center text-sm">
+            Đã có tài khoản?{' '}
+            <Link
+              to="/login"
+              className="underline underline-offset-4 hover:text-primary"
+            >
+              Đăng nhập
+            </Link>
+          </div>
         </form>
-      </Card>
+      </div>
       <PasscodeConfirmModal
         isOpen={showPasscodeModal}
         onConfirm={handlePasscodeConfirm}
@@ -300,6 +295,6 @@ function Register() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
