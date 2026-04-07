@@ -9,12 +9,12 @@ export function extractIpAndUserAgent(req: Request): {
   }
 
   // Prefer x-forwarded-for forwarded by the frontend (TanStack Start),
-  // fall back to req.ip if the header is missing (e.g. frontend could not
-  // determine client IP and did not forward the header).
+  // fall back to x-real-ip (set directly by some Nginx configs), then req.ip.
   const xForwardedFor = req.headers["x-forwarded-for"] as string;
+  const xRealIp = req.headers["x-real-ip"] as string;
   const ipAddress = xForwardedFor
     ? xForwardedFor.split(",")[0].trim()
-    : (req.ip ?? "");
+    : xRealIp || req.ip || "";
 
   const userAgent = (req.headers["user-agent"] as string) || "";
 

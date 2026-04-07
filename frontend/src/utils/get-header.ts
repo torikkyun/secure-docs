@@ -5,7 +5,11 @@ import { useAppSession } from './session'
 export const getForwardHeaders = () => {
   const forwardHeaders: Record<string, string> = {}
 
-  const ip = getRequestIP({ xForwardedFor: true })
+  // getRequestIP({ xForwardedFor: true }) reads X-Forwarded-For set by the
+  // upstream proxy (Nginx). Fall back to X-Real-IP which some Nginx configs
+  // set via `proxy_set_header X-Real-IP $remote_addr`.
+  const ip =
+    getRequestIP({ xForwardedFor: true }) || getRequestHeader('x-real-ip')
   if (ip) {
     forwardHeaders['x-forwarded-for'] = ip
   }

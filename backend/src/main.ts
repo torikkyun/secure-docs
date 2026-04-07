@@ -14,6 +14,9 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.enableCors();
+  // Trust exactly one upstream proxy (Nginx / frontend server on localhost).
+  // This makes req.ip reflect the real client IP from X-Forwarded-For.
+  app.set("trust proxy", 1);
   app.use(json({ limit: "50mb" }));
   app.use(urlencoded({ extended: true, limit: "50mb" }));
 
