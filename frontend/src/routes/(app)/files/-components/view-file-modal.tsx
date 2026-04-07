@@ -32,10 +32,39 @@ import {
 } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
 import { viewFileStreamFn, getFileForDownloadFn } from '@/api/file/functions'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 // Lazy-load PdfViewer so pdfjs-dist never executes in Node.js/SSR context.
 // pdfjs-dist v5 uses browser-only APIs (DOMMatrix, OffscreenCanvas) at module
 // init time, which would crash during server-side rendering.
 const PdfViewer = lazy(() => import('./pdf-viewer'))
+
+// Pre-process [N], [N-M] and [N, M, ...] citation markers (from Gemini) into
+// markdown links so they can be intercepted by the custom `a` component.
+// Single-pass to avoid re-matching already-converted text.
+function preprocessCitations(markdown: string): string {
+  return markdown.replace(
+    /\[(\d+(?:\s*[,\-\u2013\u2014]\s*\d+)*)\]/g,
+    (_, inner: string) => {
+      // Range: [19-20] or [19 – 20]
+      const rangeMatch = inner.match(/^(\d+)\s*[-\u2013\u2014]\s*(\d+)$/)
+      if (rangeMatch) {
+        const [, from, to] = rangeMatch
+        return `[${from}\u2013${to}](#page-range-${from}-${to})`
+      }
+      // Comma list: [1, 2] or [1, 2, 3]
+      if (inner.includes(',')) {
+        return inner
+          .split(',')
+          .map((n) => n.trim())
+          .map((n) => `[${n}](#page-${n})`)
+          .join('')
+      }
+      // Single: [19]
+      return `[${inner}](#page-${inner})`
+    },
+  )
+}
 
 interface ViewFileModalProps {
   file: FileItem | null
@@ -208,14 +237,14 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
         pageTexts.push(text)
       }
 
-      const fullText = pageTexts.join('\n\n').trim()
-      if (!fullText) {
+      const hasText = pageTexts.some((t) => t.trim())
+      if (!hasText) {
         toast.error('Không thể trích xuất văn bản từ PDF này')
         setShowSummary(false)
         return
       }
 
-      const result = await summarizeWithGemini(fullText)
+      const result = await summarizeWithGemini(pageTexts)
       setSummary(result)
     } catch (err: any) {
       toast.error('Tóm tắt thất bại', { description: err.message })
@@ -223,6 +252,10 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
     } finally {
       setIsSummarizing(false)
     }
+  }
+
+  const onCitationClick = (page: number) => {
+    if (page >= 1 && page <= numPages) setCurrentPage(page)
   }
 
   const isPdf = file?.mimeType === 'application/pdf'
@@ -291,7 +324,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
           <div className="flex-1 flex overflow-hidden">
             <div
               ref={containerRef}
-              className="flex-1 overflow-y-auto flex justify-center py-6 px-4"
+              className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden flex justify-center py-6 px-4"
               onContextMenu={(e) => e.preventDefault()}
             >
               <Suspense
@@ -336,7 +369,109 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
                       Đang tóm tắt...
                     </div>
                   ) : (
-                    <p className="whitespace-pre-wrap">{summary}</p>
+                    <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ children }) => (
+                            <h1 className="text-base font-bold mt-4 mb-2">
+                              {children}
+                            </h1>
+                          ),
+                          h2: ({ children }) => (
+                            <h2 className="text-sm font-bold mt-3 mb-1.5">
+                              {children}
+                            </h2>
+                          ),
+                          h3: ({ children }) => (
+                            <h3 className="text-sm font-semibold mt-2 mb-1">
+                              {children}
+                            </h3>
+                          ),
+                          p: ({ children }) => (
+                            <p className="mb-2 last:mb-0 leading-relaxed">
+                              {children}
+                            </p>
+                          ),
+                          ul: ({ children }) => (
+                            <ul className="list-disc list-inside mb-2 space-y-0.5">
+                              {children}
+                            </ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="list-decimal list-inside mb-2 space-y-0.5">
+                              {children}
+                            </ol>
+                          ),
+                          li: ({ children }) => (
+                            <li className="leading-relaxed">{children}</li>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-semibold">
+                              {children}
+                            </strong>
+                          ),
+                          em: ({ children }) => (
+                            <em className="italic">{children}</em>
+                          ),
+                          code: ({ children }) => (
+                            <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
+                              {children}
+                            </code>
+                          ),
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-2 border-border pl-3 text-muted-foreground italic mb-2">
+                              {children}
+                            </blockquote>
+                          ),
+                          hr: () => <hr className="border-border my-3" />,
+                          a: ({ href, children }) => {
+                            // Range citation: #page-range-N-M
+                            const rangeMatch = href?.match(
+                              /^#page-range-(\d+)-(\d+)$/,
+                            )
+                            if (rangeMatch) {
+                              const from = parseInt(rangeMatch[1], 10)
+                              const to = parseInt(rangeMatch[2], 10)
+                              return (
+                                <button
+                                  onClick={() => onCitationClick(from)}
+                                  className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 text-[10px] font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full cursor-pointer transition-colors mx-0.5 align-text-top shadow-sm"
+                                  title={`Đến trang ${from}–${to}`}
+                                >
+                                  {children}
+                                </button>
+                              )
+                            }
+                            // Single citation: #page-N
+                            const match = href?.match(/^#page-(\d+)$/)
+                            if (match) {
+                              const page = parseInt(match[1], 10)
+                              return (
+                                <button
+                                  onClick={() => onCitationClick(page)}
+                                  className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 text-[10px] font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full cursor-pointer transition-colors mx-0.5 align-text-top shadow-sm"
+                                  title={`Đến trang ${page}`}
+                                >
+                                  {children}
+                                </button>
+                              )
+                            }
+                            return (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {children}
+                              </a>
+                            )
+                          },
+                        }}
+                      >
+                        {preprocessCitations(summary ?? '')}
+                      </ReactMarkdown>
+                    </div>
                   )}
                 </div>
               </div>
