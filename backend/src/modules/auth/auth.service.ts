@@ -5,11 +5,11 @@ import {
   OnModuleInit,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { comparePassword, hashPassword } from "src/common/utils/hash.util";
-import { PrismaService } from "src/database/prisma.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { VerifyPasscodeDto } from "./dto/verify-passcode.dto";
+import { PrismaService } from "@/database/prisma.service";
+import { comparePassword, hashPassword } from "@/common/utils/hash.util";
 
 @Injectable()
 export class AuthService implements OnModuleInit {

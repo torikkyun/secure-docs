@@ -46,9 +46,15 @@ export const FileActivityLoggerABI = [
       },
       {
         indexed: false,
-        internalType: "string[]",
-        name: "recipients",
-        type: "string[]",
+        internalType: "string",
+        name: "recipient",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "expiresAt",
+        type: "uint256",
       },
       {
         indexed: false,
@@ -58,6 +64,31 @@ export const FileActivityLoggerABI = [
       },
     ],
     name: "FileShared",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "string",
+        name: "fileId",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "viewer",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "timestamp",
+        type: "uint256",
+      },
+    ],
+    name: "FileViewed",
     type: "event",
   },
   {
@@ -110,6 +141,11 @@ export const FileActivityLoggerABI = [
       {
         internalType: "uint256",
         name: "totalDownloads",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "totalViews",
         type: "uint256",
       },
     ],
@@ -167,11 +203,78 @@ export const FileActivityLoggerABI = [
         type: "string",
       },
     ],
+    name: "getShareExpiry",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "expiresAt",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "fileId",
+        type: "string",
+      },
+    ],
+    name: "getViewCount",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "count",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "fileId",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "recipient",
+        type: "string",
+      },
+    ],
     name: "hasRecipientDownloaded",
     outputs: [
       {
         internalType: "bool",
         name: "hasDownloaded",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "fileId",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "recipient",
+        type: "string",
+      },
+    ],
+    name: "isShareExpired",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
         type: "bool",
       },
     ],
@@ -209,12 +312,35 @@ export const FileActivityLoggerABI = [
         type: "string",
       },
       {
-        internalType: "string[]",
-        name: "recipients",
-        type: "string[]",
+        internalType: "string",
+        name: "recipient",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "expiresAt",
+        type: "uint256",
       },
     ],
     name: "logFileShare",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "fileId",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "viewer",
+        type: "string",
+      },
+    ],
+    name: "logFileView",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",

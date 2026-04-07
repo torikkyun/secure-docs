@@ -1,5 +1,5 @@
 import type { Cache } from "cache-manager";
-import { hashObject } from "src/common/utils/hash.util";
+import { hashObject } from "@/common/utils/hash.util";
 
 export interface VersionedCacheOptions {
   /** prefix của cache key, ví dụ: users:list */
@@ -30,8 +30,11 @@ export function VersionedCache(options: VersionedCacheOptions) {
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
-      const cache: Cache | undefined = this.cache || this.cacheManager;
+    descriptor.value = async function (
+      this: { cache?: Cache; cacheManager?: Cache },
+      ...args: any[]
+    ) {
+      const cache: Cache | undefined = this.cache ?? this.cacheManager;
 
       if (!cache) {
         return originalMethod.apply(this, args);

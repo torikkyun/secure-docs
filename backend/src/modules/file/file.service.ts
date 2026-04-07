@@ -9,17 +9,17 @@ import {
 import { Request, Response } from "express";
 import * as fs from "fs";
 import * as path from "path";
-import { PrismaService } from "src/database/prisma.service";
-import { FileActivityAction } from "generated/prisma/enums";
 import { UploadFilesDto } from "./dto/create-file.dto";
 import { QueryFileDto } from "./dto/query-file.dto";
-import { Prisma } from "generated/prisma/client";
-import { getOffsetPagination } from "src/common/utils/pagination.util";
 import { FileActivityService } from "../file-activity/file-activity.service";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { VersionedCache } from "src/infrastructure/cache/decorators/versioned-cache.decorator";
 import type { Cache } from "cache-manager";
-import { CacheVersionService } from "src/infrastructure/cache/cache-version.service";
+import { PrismaService } from "@/database/prisma.service";
+import { CacheVersionService } from "@/infrastructure/cache/cache-version.service";
+import { FileActivityAction } from "@/prisma/enums";
+import { getOffsetPagination } from "@/common/utils/pagination.util";
+import { Prisma } from "@/prisma/client";
+import { VersionedCache } from "@/infrastructure/cache/decorators/versioned-cache.decorator";
 
 @Injectable()
 export class FileService {
@@ -145,6 +145,22 @@ export class FileService {
             enableBlockchainLogging,
           },
         });
+
+        // Log UPLOAD activity
+        await this.fileActivity.logFileActivity(
+          {
+            userId,
+            fileId: record.id,
+            action: FileActivityAction.UPLOAD,
+            metadata: {
+              filename: file.originalname,
+              mimeType: file.mimetype,
+              size: file.size,
+            },
+            req,
+          },
+          false,
+        );
 
         // Bump cache version cho file cụ thể
         await this.cacheVersion.bump(`files:file:${record.id}:version`);

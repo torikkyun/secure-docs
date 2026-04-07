@@ -5,10 +5,10 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
 import { CreateShareDto } from "./dto/create-share.dto";
-import { FileActivityAction } from "generated/prisma/enums";
 import { FileActivityService } from "../file-activity/file-activity.service";
 import { Request } from "express";
-import { CacheVersionService } from "src/infrastructure/cache/cache-version.service";
+import { CacheVersionService } from "@/infrastructure/cache/cache-version.service";
+import { FileActivityAction } from "@/prisma/enums";
 
 @Injectable()
 export class ShareService {
@@ -19,7 +19,7 @@ export class ShareService {
   ) {}
 
   async createShare(
-    { fileId, recipients }: CreateShareDto,
+    { fileId, recipients, expiresAt }: CreateShareDto,
     senderId: string,
     req: Request,
   ) {
@@ -87,6 +87,7 @@ export class ShareService {
             senderId,
             recipientId: r.recipientId,
             wrappedAesKey: r.wrappedAesKey,
+            expiresAt: expiresAt ? new Date(expiresAt) : null,
           },
           select: {
             id: true,
@@ -94,10 +95,15 @@ export class ShareService {
               select: { id: true, name: true, email: true },
             },
             createdAt: true,
+            expiresAt: true,
           },
         }),
       ),
     );
+
+    const expiresAtUnix = expiresAt
+      ? Math.floor(new Date(expiresAt).getTime() / 1000)
+      : 0;
 
     await this.fileActivity.logFileActivity(
       {
@@ -107,6 +113,7 @@ export class ShareService {
         metadata: {
           recipientIds,
           shareCount: created.length,
+          expiresAt: expiresAtUnix,
           errors: existingShares.length > 0 ? existingShares : undefined,
         },
         req,

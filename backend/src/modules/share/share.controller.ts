@@ -2,8 +2,8 @@ import { Controller, Post, Body, Req, Delete, Param } from "@nestjs/common";
 import { ShareService } from "./share.service";
 import { CreateShareDto } from "./dto/create-share.dto";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { AuthUser } from "src/common/types/auth-user.type";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
+import { AuthUser } from "@/common/types/auth-user.type";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
 import { Request } from "express";
 
 @Controller("api/shares")

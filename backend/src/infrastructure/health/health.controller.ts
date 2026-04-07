@@ -5,8 +5,8 @@ import {
   HealthCheckService,
   PrismaHealthIndicator,
 } from "@nestjs/terminus";
-import { Public } from "src/common/decorators/public.decorator";
-import { PrismaService } from "src/database/prisma.service";
+import { Public } from "@/common/decorators/public.decorator";
+import { PrismaService } from "@/database/prisma.service";
 
 @Controller("api/health")
 @ApiTags("health")

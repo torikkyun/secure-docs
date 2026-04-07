@@ -51,8 +51,8 @@ model File {
   ownerId                 String   @map("owner_id")
   owner                   User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   filename                String
-  filePath                String   @map("file_path") // Path to encrypted file on server
-  wrappedAesKey           String   @map("wrapped_aes_key") // AES key wrapped by owner's public key
+  filePath                String   @map("file_path")
+  wrappedAesKey           String   @map("wrapped_aes_key")
   mimeType                String   @map("mime_type")
   size                    BigInt
   createdAt               DateTime @default(now()) @map("created_at")
@@ -67,15 +67,16 @@ model File {
 }
 
 model Share {
-  id            String   @id @default(uuid())
-  fileId        String   @map("file_id")
-  file          File     @relation("FileShares", fields: [fileId], references: [id], onDelete: Restrict)
-  senderId      String   @map("sender_id")
-  sender        User     @relation("ShareSender", fields: [senderId], references: [id], onDelete: Restrict)
-  recipientId   String   @map("recipient_id")
-  recipient     User     @relation("ShareRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
-  wrappedAesKey String   @map("wrapped_aes_key")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id            String    @id @default(uuid())
+  fileId        String    @map("file_id")
+  file          File      @relation("FileShares", fields: [fileId], references: [id], onDelete: Restrict)
+  senderId      String    @map("sender_id")
+  sender        User      @relation("ShareSender", fields: [senderId], references: [id], onDelete: Restrict)
+  recipientId   String    @map("recipient_id")
+  recipient     User      @relation("ShareRecipient", fields: [recipientId], references: [id], onDelete: Restrict)
+  wrappedAesKey String    @map("wrapped_aes_key")
+  expiresAt     DateTime? @map("expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   @@unique([fileId, recipientId])
   @@map("shares")
@@ -86,6 +87,8 @@ enum FileActivityAction {
   DOWNLOAD
   DELETE
   REVOKE_SHARE
+  VIEW
+  UPLOAD
 }
 
 model FileActivity {

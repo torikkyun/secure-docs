@@ -4,6 +4,8 @@ import {
   IsArray,
   ArrayMinSize,
   ValidateNested,
+  IsOptional,
+  IsISO8601,
 } from "class-validator";
 import { Type } from "class-transformer";
 
@@ -27,4 +29,8 @@ export class CreateShareDto {
   @ValidateNested({ each: true })
   @Type(() => RecipientShareDto)
   recipients: RecipientShareDto[];
+
+  @IsOptional()
+  @IsISO8601()
+  expiresAt?: string;
 }

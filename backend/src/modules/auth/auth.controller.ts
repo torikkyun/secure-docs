@@ -1,12 +1,12 @@
 import { Body, Controller, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { Public } from "src/common/decorators/public.decorator";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
-import { AuthUser } from "src/common/types/auth-user.type";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
 import { VerifyPasscodeDto } from "./dto/verify-passcode.dto";
+import { Public } from "@/common/decorators/public.decorator";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { AuthUser } from "@/common/types/auth-user.type";
 
 @Controller("api/auth")
 @ApiTags("auth")

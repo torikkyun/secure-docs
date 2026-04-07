@@ -1,10 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
-import { PrismaService } from "src/database/prisma.service";
+import { PrismaService } from "@/database/prisma.service";
 import { BlockchainService } from "../blockchain.service";
 import {
   BlockchainLogShareEvent,
   BlockchainLogDownloadEvent,
+  BlockchainLogViewEvent,
 } from "../events/blockchain-log.event";
 
 @Injectable()
@@ -30,23 +31,29 @@ export class BlockchainEventListener {
       select: { id: true, email: true },
     });
 
-    const recipientEmails = recipients.map((r) => r.email);
-
-    if (recipientEmails.length === 0) {
+    if (recipients.length === 0) {
       return;
     }
 
-    const txHash = await this.blockchainService.logFileShare({
-      fileId: event.fileId,
-      senderEmail: sender.email,
-      recipientEmails,
-      timestamp: event.timestamp,
-    });
+    // Send one transaction per recipient
+    const txHashes: string[] = [];
+    for (const recipient of recipients) {
+      const txHash = await this.blockchainService.logFileShare({
+        fileId: event.fileId,
+        senderEmail: sender.email,
+        recipientEmail: recipient.email,
+        expiresAt: event.expiresAt,
+        timestamp: event.timestamp,
+      });
+      if (txHash) {
+        txHashes.push(txHash);
+      }
+    }
 
-    if (txHash) {
+    if (txHashes.length > 0) {
       await this.prisma.fileActivity.update({
         where: { id: event.activityId },
-        data: { blockchainTxHash: txHash },
+        data: { blockchainTxHash: txHashes.join(",") },
       });
     }
   }
@@ -65,6 +72,31 @@ export class BlockchainEventListener {
     const txHash = await this.blockchainService.logFileDownload({
       fileId: event.fileId,
       recipientEmail: user.email,
+      timestamp: event.timestamp,
+    });
+
+    if (txHash) {
+      await this.prisma.fileActivity.update({
+        where: { id: event.activityId },
+        data: { blockchainTxHash: txHash },
+      });
+    }
+  }
+
+  @OnEvent("blockchain.log.view", { async: true })
+  async handleFileViewLog(event: BlockchainLogViewEvent) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: event.viewerId },
+      select: { email: true },
+    });
+
+    if (!user?.email) {
+      return;
+    }
+
+    const txHash = await this.blockchainService.logFileView({
+      fileId: event.fileId,
+      viewerEmail: user.email,
       timestamp: event.timestamp,
     });
 

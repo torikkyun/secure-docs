@@ -4,6 +4,7 @@ import { LoginDto } from "./login.dto";
 
 export class RegisterDto extends LoginDto {
   @IsNotEmpty()
+  @IsString()
   @ApiProperty({ example: "John Doe" })
   name: string;
 

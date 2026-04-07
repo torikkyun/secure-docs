@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { PasscodeInput } from '@/components/passcode-input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Loader2, LockKeyhole } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,

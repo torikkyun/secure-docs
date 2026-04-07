@@ -19,9 +19,9 @@ import { FileService } from "./file.service";
 import { UploadFilesDto } from "./dto/create-file.dto";
 import * as path from "path";
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { AuthUser } from "src/common/types/auth-user.type";
 import { QueryFileDto } from "./dto/query-file.dto";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { AuthUser } from "@/common/types/auth-user.type";
 
 @Controller("api/files")
 @ApiTags("files")

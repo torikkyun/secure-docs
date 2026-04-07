@@ -49,7 +49,8 @@ export class BlockchainService implements OnModuleInit {
   async logFileShare(data: {
     fileId: string;
     senderEmail: string;
-    recipientEmails: string[];
+    recipientEmail: string;
+    expiresAt: number;
     timestamp: number;
   }): Promise<string | null> {
     if (!this.contract || !this.wallet) {
@@ -60,7 +61,8 @@ export class BlockchainService implements OnModuleInit {
     const tx = await this.contract.logFileShare(
       data.fileId,
       data.senderEmail,
-      data.recipientEmails,
+      data.recipientEmail,
+      data.expiresAt,
     );
 
     // Wait for confirmation
@@ -87,6 +89,24 @@ export class BlockchainService implements OnModuleInit {
     );
 
     // Wait for confirmation
+    await tx.wait();
+    return tx.hash;
+  }
+
+  /**
+   * Log file view activity on blockchain
+   */
+  async logFileView(data: {
+    fileId: string;
+    viewerEmail: string;
+    timestamp: number;
+  }): Promise<string | null> {
+    if (!this.contract || !this.wallet) {
+      throw new InternalServerErrorException("Blockchain not initialized");
+    }
+
+    const tx = await this.contract.logFileView(data.fileId, data.viewerEmail);
+
     await tx.wait();
     return tx.hash;
   }
@@ -169,11 +189,12 @@ export class BlockchainService implements OnModuleInit {
       throw new InternalServerErrorException("Blockchain not initialized");
     }
 
-    const [totalShares, totalDownloads] =
+    const [totalShares, totalDownloads, totalViews] =
       await this.contract.getContractStats();
     return {
       totalShares: Number(totalShares),
       totalDownloads: Number(totalDownloads),
+      totalViews: Number(totalViews),
     };
   }
 }

@@ -4,15 +4,15 @@ import {
   BadRequestException,
   Inject,
 } from "@nestjs/common";
-import { Prisma } from "generated/prisma/client";
-import { getOffsetPagination } from "src/common/utils/pagination.util";
-import { PrismaService } from "src/database/prisma.service";
+import { getOffsetPagination } from "@/common/utils/pagination.util";
+import { PrismaService } from "@/database/prisma.service";
 import { QueryUserDto } from "./dto/query-user.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
-import { CacheVersionService } from "src/infrastructure/cache/cache-version.service";
+import { CacheVersionService } from "@/infrastructure/cache/cache-version.service";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
-import { VersionedCache } from "src/infrastructure/cache/decorators/versioned-cache.decorator";
+import { VersionedCache } from "@/infrastructure/cache/decorators/versioned-cache.decorator";
 import type { Cache } from "cache-manager";
+import { Prisma } from "@/prisma/client";
 
 @Injectable()
 export class UserService {

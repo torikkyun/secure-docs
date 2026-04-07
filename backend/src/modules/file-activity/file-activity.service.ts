@@ -1,16 +1,17 @@
 import { BadRequestException, Injectable, Version } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
-import { FileActivityAction } from "generated/prisma/enums";
-import { PrismaService } from "src/database/prisma.service";
-import { getOffsetPagination } from "src/common/utils/pagination.util";
+import { PrismaService } from "@/database/prisma.service";
+import { getOffsetPagination } from "@/common/utils/pagination.util";
 import {
   BlockchainLogShareEvent,
   BlockchainLogDownloadEvent,
-} from "src/infrastructure/blockchain/events/blockchain-log.event";
-import { getIpAddress, getUserAgent } from "src/common/utils/request.util";
+  BlockchainLogViewEvent,
+} from "@/infrastructure/blockchain/events/blockchain-log.event";
+import { getIpAddress, getUserAgent } from "@/common/utils/request.util";
 import { Request } from "express";
 import { QueryFileActivityDto } from "./dto/query-file-activity.dto";
-import { VersionedCache } from "src/infrastructure/cache/decorators/versioned-cache.decorator";
+import { VersionedCache } from "@/infrastructure/cache/decorators/versioned-cache.decorator";
+import { FileActivityAction } from "@/prisma/enums";
 
 @Injectable()
 export class FileActivityService {
@@ -57,11 +58,13 @@ export class FileActivityService {
     // - Upload: No blockchain logging
     // - Share: Optional blockchain logging (configurable)
     // - Download: Log when downloaded (for tracking)
+    // - View: Log when viewed (for tracking)
     // - Delete/Revoke: No blockchain logging
 
     return (
       action === FileActivityAction.SHARE ||
-      action === FileActivityAction.DOWNLOAD
+      action === FileActivityAction.DOWNLOAD ||
+      action === FileActivityAction.VIEW
     );
   }
 
@@ -84,6 +87,7 @@ export class FileActivityService {
         userId,
         metadata?.recipientIds || [],
         timestamp,
+        metadata?.expiresAt ?? 0,
       );
       this.eventEmitter.emit("blockchain.log.share", event);
     } else if (action === FileActivityAction.DOWNLOAD) {
@@ -94,6 +98,14 @@ export class FileActivityService {
         timestamp,
       );
       this.eventEmitter.emit("blockchain.log.download", event);
+    } else if (action === FileActivityAction.VIEW) {
+      const event = new BlockchainLogViewEvent(
+        activityId,
+        fileId,
+        userId,
+        timestamp,
+      );
+      this.eventEmitter.emit("blockchain.log.view", event);
     }
   }
 

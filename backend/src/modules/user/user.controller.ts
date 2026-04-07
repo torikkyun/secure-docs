@@ -3,8 +3,8 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { QueryUserDto } from "./dto/query-user.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { UserService } from "./user.service";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { AuthUser } from "src/common/types/auth-user.type";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { AuthUser } from "@/common/types/auth-user.type";
 
 @Controller("api/users")
 @ApiTags("users")

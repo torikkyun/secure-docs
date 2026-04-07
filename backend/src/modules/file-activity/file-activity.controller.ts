@@ -1,9 +1,9 @@
 import { Controller, Get, Query, Param } from "@nestjs/common";
 import { FileActivityService } from "./file-activity.service";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { CurrentUser } from "src/common/decorators/current-user.decorator";
-import { AuthUser } from "src/common/types/auth-user.type";
 import { QueryFileActivityDto } from "./dto/query-file-activity.dto";
+import { CurrentUser } from "@/common/decorators/current-user.decorator";
+import { AuthUser } from "@/common/types/auth-user.type";
 
 @Controller("api/file-activity")
 @ApiTags("file-activity")
