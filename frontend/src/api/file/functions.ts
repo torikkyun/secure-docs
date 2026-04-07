@@ -138,6 +138,40 @@ export const downloadFileStreamFn = createServerFn({ method: 'GET' })
     return { blob, filename }
   })
 
+export const viewFileStreamFn = createServerFn({ method: 'GET' })
+  .inputValidator(getFileByIdSchema)
+  .handler(async ({ data }): Promise<{ blob: string; filename: string }> => {
+    const headers = await getHeaders()
+    const res = await fetch(`${API_URL}/files/${data.fileId}/view`, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.message)
+    }
+
+    const contentDisposition = res.headers.get('Content-Disposition')
+    let filename = 'file'
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+)/)
+      if (filenameMatch) {
+        filename = decodeURIComponent(filenameMatch[1])
+      }
+    }
+
+    const arrayBuffer = await res.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join(
+      '',
+    )
+    const blob = btoa(binary)
+
+    return { blob, filename }
+  })
+
 export const deleteFileFn = createServerFn({ method: 'POST' })
   .inputValidator(deleteFileSchema)
   .handler(async ({ data }): Promise<DeleteFileResult> => {

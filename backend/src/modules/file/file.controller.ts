@@ -119,6 +119,16 @@ export class FileController {
     return this.fileService.downloadFile(fileId, id, res, req);
   }
 
+  @Get(":fileId/view")
+  viewFile(
+    @Param("fileId") fileId: string,
+    @CurrentUser() { id }: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ): Promise<StreamableFile> {
+    return this.fileService.viewFile(fileId, id, res, req);
+  }
+
   @Delete(":fileId")
   deleteFile(
     @Param("fileId") fileId: string,

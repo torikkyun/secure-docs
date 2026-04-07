@@ -31,10 +31,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { FileItem } from '@/api/file/types'
-import {
-  downloadFileStreamFn,
-  getFileForDownloadFn,
-} from '@/api/file/functions'
+import { viewFileStreamFn, getFileForDownloadFn } from '@/api/file/functions'
 // Lazy-load PdfViewer so pdfjs-dist never executes in Node.js/SSR context.
 // pdfjs-dist v5 uses browser-only APIs (DOMMatrix, OffscreenCanvas) at module
 // init time, which would crash during server-side rendering.
@@ -132,8 +129,8 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
         )
       }
 
-      // 4. Download encrypted blob
-      const { blob: encryptedBase64 } = await downloadFileStreamFn({
+      // 4. Fetch encrypted blob via view endpoint (logs VIEW activity)
+      const { blob: encryptedBase64 } = await viewFileStreamFn({
         data: { fileId: file.id },
       })
 

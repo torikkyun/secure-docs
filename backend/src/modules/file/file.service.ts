@@ -530,6 +530,45 @@ export class FileService {
     return new StreamableFile(fileStream);
   }
 
+  async viewFile(
+    fileId: string,
+    userId: string,
+    res: Response,
+    req: Request,
+  ): Promise<StreamableFile> {
+    const { file, isOwner, wrappedAesKey } =
+      await this.resolveDownloadPermission(fileId, userId);
+
+    await this.fileActivity.logFileActivity(
+      {
+        userId,
+        fileId: file.id,
+        action: FileActivityAction.VIEW,
+        metadata: {
+          filename: file.filename,
+          viewedByOwner: isOwner,
+        },
+        req,
+      },
+      file.enableBlockchainLogging ?? true,
+    );
+
+    await this.cacheVersion.bump(`file-activity:user:${userId}:version`);
+    await this.cacheVersion.bump(`file-activity:file:${file.id}:version`);
+
+    const fileStream = fs.createReadStream(file.filePath);
+
+    res.set({
+      "Content-Type": file.mimeType,
+      "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
+      "Content-Length": file.size.toString(),
+      "X-File-ID": file.id,
+      "X-Is-Owner": isOwner.toString(),
+    });
+
+    return new StreamableFile(fileStream);
+  }
+
   async deleteFile(fileId: string, userId: string, req: Request) {
     const file = await this.prisma.file.findFirst({
       where: {
