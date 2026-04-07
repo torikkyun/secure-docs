@@ -8,6 +8,7 @@ import {
   Trash2,
   ShieldOff,
   Link2,
+  Eye,
 } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,7 +21,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { getFileIcon } from '@/lib/file-utils'
-import { FileActivity, ShareActivity } from '@/api/file-activity/types'
+import {
+  FileActivity,
+  ShareActivity,
+  ViewActivity,
+} from '@/api/file-activity/types'
 
 interface ActivityListProps {
   activities: FileActivity[]
@@ -63,6 +68,12 @@ const actionConfig: Record<string, ActionConfig> = {
     label: 'Thu hồi quyền',
     colorClass: 'text-orange-600',
     bgClass: 'bg-orange-50 dark:bg-orange-950/50',
+  },
+  VIEW: {
+    icon: Eye,
+    label: 'Xem tài liệu',
+    colorClass: 'text-sky-600',
+    bgClass: 'bg-sky-50 dark:bg-sky-950/50',
   },
 }
 
@@ -142,6 +153,9 @@ function ActivityItem({
     } else if (count > 0) {
       shareDetails = `với ${count} người`
     }
+  } else if (activity.action === 'VIEW') {
+    const a = activity as ViewActivity
+    shareDetails = a.viewedByOwner ? 'bởi chủ sở hữu' : 'bởi người được chia sẻ'
   }
 
   return (

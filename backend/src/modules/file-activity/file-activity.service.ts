@@ -270,6 +270,13 @@ export class FileActivityService {
       };
     }
 
+    if (activity.action === FileActivityAction.VIEW) {
+      return {
+        ...baseActivity,
+        viewedByOwner: activity.metadata?.viewedByOwner ?? false,
+      };
+    }
+
     return baseActivity;
   }
 

@@ -42,10 +42,16 @@ export type UploadActivity = BaseFileActivity & {
   size: string
 }
 
+export type ViewActivity = BaseFileActivity & {
+  action: 'VIEW'
+  viewedByOwner: boolean
+}
+
 export type FileActivity =
   | ShareActivity
   | DownloadActivity
   | UploadActivity
+  | ViewActivity
   | BaseFileActivity
 
 export type FileActivitiesResult = {
