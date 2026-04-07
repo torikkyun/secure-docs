@@ -2,16 +2,20 @@ import { createServerFn } from '@tanstack/react-start'
 import { useAppSession } from '@/utils/session'
 import { API_URL } from '../env'
 import { z } from 'zod'
-import { getHeaders } from '@/utils/get-header'
+import { getHeaders, getForwardHeaders } from '@/utils/get-header'
 import { LoginResult, RegisterResult, VerifyPasscodeResult } from './types'
 import { loginSchema, registerSchema } from './schemas'
 
 export const loginFn = createServerFn({ method: 'POST' })
   .inputValidator(loginSchema)
   .handler(async ({ data }): Promise<LoginResult> => {
+    const forwardHeaders = getForwardHeaders()
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...forwardHeaders,
+      },
       body: JSON.stringify(data),
     })
 
@@ -40,9 +44,13 @@ export const loginFn = createServerFn({ method: 'POST' })
 export const registerFn = createServerFn({ method: 'POST' })
   .inputValidator(registerSchema)
   .handler(async ({ data }): Promise<RegisterResult> => {
+    const forwardHeaders = getForwardHeaders()
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...forwardHeaders,
+      },
       body: JSON.stringify(data),
     })
 

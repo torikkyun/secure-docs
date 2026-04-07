@@ -436,7 +436,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
                               return (
                                 <button
                                   onClick={() => onCitationClick(from)}
-                                  className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 text-[10px] font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full cursor-pointer transition-colors mx-0.5 align-text-top shadow-sm"
+                                  className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 text-[10px] font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-sm cursor-pointer transition-colors mx-0.5 align-text-top shadow-sm"
                                   title={`Đến trang ${from}–${to}`}
                                 >
                                   {children}
@@ -450,7 +450,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
                               return (
                                 <button
                                   onClick={() => onCitationClick(page)}
-                                  className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 text-[10px] font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-full cursor-pointer transition-colors mx-0.5 align-text-top shadow-sm"
+                                  className="inline-flex items-center justify-center h-4.5 min-w-4.5 px-1 text-[10px] font-medium text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-sm cursor-pointer transition-colors mx-0.5 align-text-top shadow-sm"
                                   title={`Đến trang ${page}`}
                                 >
                                   {children}

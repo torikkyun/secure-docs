@@ -8,21 +8,16 @@ export function extractIpAndUserAgent(req: Request): {
     return { ipAddress: "", userAgent: "" };
   }
 
-  const xForwardedFor =
-    (req.headers["x-forwarded-for"] as string) ||
-    (req.headers["X-Forwarded-For"] as unknown as string);
-  let ipAddress: string;
-  if (xForwardedFor) {
-    ipAddress = xForwardedFor.split(",")[0].trim();
-  } else {
-    ipAddress =
-      (req.headers["x-real-ip"] as string) ||
-      req.ip ||
-      req.socket?.remoteAddress ||
-      "";
-  }
+  // Prefer x-forwarded-for forwarded by the frontend (TanStack Start),
+  // fall back to req.ip if the header is missing (e.g. frontend could not
+  // determine client IP and did not forward the header).
+  const xForwardedFor = req.headers["x-forwarded-for"] as string;
+  const ipAddress = xForwardedFor
+    ? xForwardedFor.split(",")[0].trim()
+    : (req.ip ?? "");
 
-  const userAgent = req.headers["user-agent"] as string;
+  const userAgent = (req.headers["user-agent"] as string) || "";
+
   return { ipAddress, userAgent };
 }
 
