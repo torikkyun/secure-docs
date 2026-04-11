@@ -1,3 +1,12 @@
+export type FileClassification =
+  | 'UNCLASSIFIED'
+  | 'PUBLIC'
+  | 'INTERNAL'
+  | 'CONFIDENTIAL'
+  | 'RESTRICTED'
+
+export type ContentFlag = 'SAFE' | 'SENSITIVE' | 'FLAGGED'
+
 export type FileOwner = {
   id: string
   name: string
@@ -38,6 +47,8 @@ export type FileItem = {
   sharedBy: FileOwner | null
   shares?: FileShare[]
   sharedWith?: { id: string; name: string; email: string; avatar: string }[]
+  classification: FileClassification
+  contentFlag: ContentFlag
 }
 
 export type UploadFileResult = {
@@ -67,6 +78,8 @@ export type FileDetailResult = {
   wrappedAesKey: string
   owner: FileOwner
   sharedWith?: FileOwner[]
+  classification: FileClassification
+  contentFlag: ContentFlag
 }
 
 export type FileDownloadResult = {

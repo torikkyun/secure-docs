@@ -16,7 +16,11 @@ import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import type { Cache } from "cache-manager";
 import { PrismaService } from "@/database/prisma.service";
 import { CacheVersionService } from "@/infrastructure/cache/cache-version.service";
-import { FileActivityAction } from "@/prisma/enums";
+import {
+  FileActivityAction,
+  FileClassification,
+  ContentFlag,
+} from "@/prisma/enums";
 import { getOffsetPagination } from "@/common/utils/pagination.util";
 import { Prisma } from "@/prisma/client";
 import { VersionedCache } from "@/infrastructure/cache/decorators/versioned-cache.decorator";
@@ -143,6 +147,9 @@ export class FileService {
             mimeType: file.mimetype,
             size: BigInt(file.size),
             enableBlockchainLogging,
+            classification:
+              dto.classifications?.[index] ?? FileClassification.UNCLASSIFIED,
+            contentFlag: dto.contentFlags?.[index] ?? ContentFlag.SAFE,
           },
         });
 
@@ -200,6 +207,7 @@ export class FileService {
       fileType,
       ownerId,
       sharedWithId,
+      classification,
     }: QueryFileDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
@@ -291,6 +299,7 @@ export class FileService {
         ...(search ? [searchFilter] : []),
         ...(fileType ? [fileTypeFilter] : []),
         ...(ownerId ? [{ ownerId }] : []),
+        ...(classification ? [{ classification }] : []),
       ],
     };
 
@@ -305,6 +314,8 @@ export class FileService {
           createdAt: true,
           updatedAt: true,
           ownerId: true,
+          classification: true,
+          contentFlag: true,
           owner: {
             select: {
               id: true,
@@ -461,6 +472,8 @@ export class FileService {
         : file.shares[0]?.wrappedAesKey,
       owner: file.owner,
       sharedWith,
+      classification: file.classification,
+      contentFlag: file.contentFlag,
     };
   }
 

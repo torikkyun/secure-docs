@@ -43,8 +43,50 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { FileItem } from '@/api/file/types'
+import { FileItem, FileClassification, ContentFlag } from '@/api/file/types'
+import { Badge } from '@/components/ui/badge'
 import { useDetailBar } from '@/routes/(app)/route'
+
+const CLASSIFICATION_CONFIG: Record<
+  FileClassification,
+  { label: string; className: string }
+> = {
+  UNCLASSIFIED: {
+    label: 'Chưa phân loại',
+    className: 'bg-gray-100 text-gray-700 border-gray-200',
+  },
+  PUBLIC: {
+    label: 'Công khai',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  INTERNAL: {
+    label: 'Nội bộ',
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  CONFIDENTIAL: {
+    label: 'Bảo mật',
+    className: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  RESTRICTED: {
+    label: 'Tối mật',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
+}
+
+const FLAG_CONFIG: Record<ContentFlag, { label: string; className: string }> = {
+  SAFE: {
+    label: 'An toàn',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  SENSITIVE: {
+    label: 'Nhạy cảm',
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  FLAGGED: {
+    label: 'Cần xem xét',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
+}
 
 interface FileListProps {
   files: FileItem[]
@@ -159,6 +201,38 @@ const columns: ColumnDef<FileItem>[] = [
       return (
         <div className="text-sm text-muted-foreground">
           {formatFileSize(Number(row.getValue('size')))}
+        </div>
+      )
+    },
+  },
+  {
+    id: 'classification',
+    header: 'Phân loại',
+    cell: ({ row }) => {
+      const { classification, contentFlag } = row.original
+      if (!classification) return null
+      return (
+        <div className="flex flex-col gap-1">
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-[10px] h-5 px-1.5 w-fit',
+              CLASSIFICATION_CONFIG[classification].className,
+            )}
+          >
+            {CLASSIFICATION_CONFIG[classification].label}
+          </Badge>
+          {contentFlag && contentFlag !== 'SAFE' && (
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[10px] h-5 px-1.5 w-fit',
+                FLAG_CONFIG[contentFlag].className,
+              )}
+            >
+              {FLAG_CONFIG[contentFlag].label}
+            </Badge>
+          )}
         </div>
       )
     },

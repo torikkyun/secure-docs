@@ -5,10 +5,15 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
 import { CreateShareDto } from "./dto/create-share.dto";
+import { CreateGroupShareDto } from "./dto/create-group-share.dto";
 import { FileActivityService } from "../file-activity/file-activity.service";
 import { Request } from "express";
 import { CacheVersionService } from "@/infrastructure/cache/cache-version.service";
-import { FileActivityAction } from "@/prisma/enums";
+import {
+  FileActivityAction,
+  FileClassification,
+  ContentFlag,
+} from "@/prisma/enums";
 
 @Injectable()
 export class ShareService {
@@ -32,11 +37,26 @@ export class ShareService {
         id: true,
         filename: true,
         enableBlockchainLogging: true,
+        classification: true,
+        contentFlag: true,
       },
     });
 
     if (!file) {
       throw new NotFoundException("Không tìm thấy tệp hoặc quyền bị từ chối");
+    }
+
+    // Access control theo classification và contentFlag
+    if (file.contentFlag === ContentFlag.FLAGGED) {
+      throw new BadRequestException(
+        "File đã bị đánh dấu cần xem xét (FLAGGED), không thể chia sẻ. Vui lòng liên hệ Admin.",
+      );
+    }
+
+    if (file.classification === FileClassification.RESTRICTED) {
+      throw new BadRequestException(
+        "File tối mật (RESTRICTED) không thể chia sẻ tự động. Vui lòng liên hệ Admin.",
+      );
     }
 
     const recipientIds = [...new Set(recipients.map((r) => r.recipientId))];
@@ -118,7 +138,10 @@ export class ShareService {
         },
         req,
       },
-      file?.enableBlockchainLogging ?? true,
+      // File CONFIDENTIAL bắt buộc ghi blockchain
+      file.classification === FileClassification.CONFIDENTIAL
+        ? true
+        : (file?.enableBlockchainLogging ?? true),
     );
 
     await this.cacheVersion.bump(`file-activity:user:${senderId}:version`);
@@ -228,5 +251,41 @@ export class ShareService {
         email: share.recipient.email,
       },
     };
+  }
+
+  async createGroupShare(
+    dto: CreateGroupShareDto,
+    senderId: string,
+    req: Request,
+  ) {
+    const group = await this.prisma.group.findUnique({
+      where: { id: dto.groupId },
+      select: { id: true, name: true, members: { select: { userId: true } } },
+    });
+
+    if (!group) {
+      throw new NotFoundException("Không tìm thấy nhóm");
+    }
+
+    const groupMemberIds = new Set(group.members.map((m) => m.userId));
+    const invalidRecipients = dto.recipients.filter(
+      (r) => !groupMemberIds.has(r.recipientId),
+    );
+
+    if (invalidRecipients.length > 0) {
+      throw new BadRequestException(
+        "Một hoặc nhiều người nhận không thuộc nhóm đã chọn",
+      );
+    }
+
+    return this.createShare(
+      {
+        fileId: dto.fileId,
+        recipients: dto.recipients,
+        expiresAt: dto.expiresAt,
+      },
+      senderId,
+      req,
+    );
   }
 }

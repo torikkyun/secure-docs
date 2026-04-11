@@ -12,6 +12,9 @@ export const queryFileSchema = z.object({
   fileType: z.enum(['pdf', 'word', 'excel', 'image']).optional(),
   ownerId: z.string().optional(),
   sharedWithId: z.string().optional(),
+  classification: z
+    .enum(['UNCLASSIFIED', 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'])
+    .optional(),
 })
 
 export const getFileByIdSchema = z.object({

@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Req, Delete, Param } from "@nestjs/common";
 import { ShareService } from "./share.service";
 import { CreateShareDto } from "./dto/create-share.dto";
+import { CreateGroupShareDto } from "./dto/create-group-share.dto";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { AuthUser } from "@/common/types/auth-user.type";
 import { CurrentUser } from "@/common/decorators/current-user.decorator";
@@ -19,6 +20,15 @@ export class ShareController {
     @Req() req: Request,
   ) {
     return this.shareService.createShare(dto, id, req);
+  }
+
+  @Post("group")
+  async createGroupShare(
+    @Body() dto: CreateGroupShareDto,
+    @CurrentUser() { id }: AuthUser,
+    @Req() req: Request,
+  ) {
+    return this.shareService.createGroupShare(dto, id, req);
   }
 
   @Delete(":fileId/revoke/:recipientId")

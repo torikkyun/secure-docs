@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { IsIn, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsIn, IsOptional, IsString } from "class-validator";
 import { OffsetPaginationQueryDto } from "@/common/dto/offset-pagination-query.dto";
+import { FileClassification } from "@/prisma/enums";
 
 export class QueryFileDto extends OffsetPaginationQueryDto {
   @IsOptional()
@@ -40,4 +41,9 @@ export class QueryFileDto extends OffsetPaginationQueryDto {
   @IsString()
   @ApiPropertyOptional()
   sharedWithId?: string;
+
+  @IsOptional()
+  @IsEnum(FileClassification)
+  @ApiPropertyOptional({ enum: FileClassification })
+  classification?: FileClassification;
 }

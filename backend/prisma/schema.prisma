@@ -28,10 +28,13 @@ model User {
   isBanned  Boolean  @default(false) @map("is_banned")
   isDeleted Boolean  @default(false) @map("is_deleted")
 
-  ownedFiles     File[]         @relation("FileOwner")
-  sentShares     Share[]        @relation("ShareSender")
-  receivedShares Share[]        @relation("ShareRecipient")
-  fileActivities FileActivity[] @relation("FileActivityUser")
+  ownedFiles       File[]         @relation("FileOwner")
+  sentShares       Share[]        @relation("ShareSender")
+  receivedShares   Share[]        @relation("ShareRecipient")
+  fileActivities   FileActivity[] @relation("FileActivityUser")
+  createdGroups    Group[]        @relation("GroupCreator")
+  groupMemberships GroupMember[]
+  anomalyAlerts    AnomalyAlert[]
 
   @@map("users")
 }
@@ -47,18 +50,20 @@ model Role {
 }
 
 model File {
-  id                      String   @id @default(uuid())
-  ownerId                 String   @map("owner_id")
-  owner                   User     @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  id                      String             @id @default(uuid())
+  ownerId                 String             @map("owner_id")
+  owner                   User               @relation("FileOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   filename                String
-  filePath                String   @map("file_path")
-  wrappedAesKey           String   @map("wrapped_aes_key")
-  mimeType                String   @map("mime_type")
+  filePath                String             @map("file_path")
+  wrappedAesKey           String             @map("wrapped_aes_key")
+  mimeType                String             @map("mime_type")
   size                    BigInt
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
-  isDeleted               Boolean  @default(false) @map("is_deleted")
-  enableBlockchainLogging Boolean  @default(true) @map("enable_blockchain_logging")
+  createdAt               DateTime           @default(now()) @map("created_at")
+  updatedAt               DateTime           @updatedAt @map("updated_at")
+  isDeleted               Boolean            @default(false) @map("is_deleted")
+  enableBlockchainLogging Boolean            @default(true) @map("enable_blockchain_logging")
+  classification          FileClassification @default(UNCLASSIFIED)
+  contentFlag             ContentFlag        @default(SAFE) @map("content_flag")
 
   shares     Share[]        @relation("FileShares")
   activities FileActivity[] @relation("FileActivities")
@@ -89,6 +94,68 @@ enum FileActivityAction {
   REVOKE_SHARE
   VIEW
   UPLOAD
+}
+
+enum FileClassification {
+  UNCLASSIFIED
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
+}
+
+enum ContentFlag {
+  SAFE
+  SENSITIVE
+  FLAGGED
+}
+
+enum AlertLevel {
+  WARNING
+  ALERT
+  CRITICAL
+}
+
+enum AlertType {
+  STATISTICAL
+  POLICY
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation("GroupCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  members GroupMember[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId String @map("group_id")
+  userId  String @map("user_id")
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("group_members")
+}
+
+model AnomalyAlert {
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  user        User       @relation(fields: [userId], references: [id])
+  level       AlertLevel
+  type        AlertType
+  description String
+  metadata    Json       @default("{}")
+  isResolved  Boolean    @default(false) @map("is_resolved")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  @@map("anomaly_alerts")
 }
 
 model FileActivity {

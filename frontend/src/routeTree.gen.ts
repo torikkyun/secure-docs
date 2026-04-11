@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
+import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
 import { Route as authRegisterIndexRouteImport } from './routes/(auth)/register/index'
 import { Route as authLoginIndexRouteImport } from './routes/(auth)/login/index'
@@ -18,6 +19,9 @@ import { Route as appSharedIndexRouteImport } from './routes/(app)/shared/index'
 import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
 import { Route as appFilesIndexRouteImport } from './routes/(app)/files/index'
 import { Route as appFileActivityIndexRouteImport } from './routes/(app)/file-activity/index'
+import { Route as adminUsersIndexRouteImport } from './routes/(admin)/users/index'
+import { Route as adminGroupsIndexRouteImport } from './routes/(admin)/groups/index'
+import { Route as adminAlertsIndexRouteImport } from './routes/(admin)/alerts/index'
 
 const authRouteRoute = authRouteRouteImport.update({
   id: '/(auth)',
@@ -25,6 +29,10 @@ const authRouteRoute = authRouteRouteImport.update({
 } as any)
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const adminRouteRoute = adminRouteRouteImport.update({
+  id: '/(admin)',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appIndexRoute = appIndexRouteImport.update({
@@ -62,9 +70,27 @@ const appFileActivityIndexRoute = appFileActivityIndexRouteImport.update({
   path: '/file-activity/',
   getParentRoute: () => appRouteRoute,
 } as any)
+const adminUsersIndexRoute = adminUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => adminRouteRoute,
+} as any)
+const adminGroupsIndexRoute = adminGroupsIndexRouteImport.update({
+  id: '/groups/',
+  path: '/groups/',
+  getParentRoute: () => adminRouteRoute,
+} as any)
+const adminAlertsIndexRoute = adminAlertsIndexRouteImport.update({
+  id: '/alerts/',
+  path: '/alerts/',
+  getParentRoute: () => adminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof appIndexRoute
+  '/alerts/': typeof adminAlertsIndexRoute
+  '/groups/': typeof adminGroupsIndexRoute
+  '/users/': typeof adminUsersIndexRoute
   '/file-activity/': typeof appFileActivityIndexRoute
   '/files/': typeof appFilesIndexRoute
   '/settings/': typeof appSettingsIndexRoute
@@ -74,6 +100,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof appIndexRoute
+  '/alerts': typeof adminAlertsIndexRoute
+  '/groups': typeof adminGroupsIndexRoute
+  '/users': typeof adminUsersIndexRoute
   '/file-activity': typeof appFileActivityIndexRoute
   '/files': typeof appFilesIndexRoute
   '/settings': typeof appSettingsIndexRoute
@@ -83,9 +112,13 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/(admin)': typeof adminRouteRouteWithChildren
   '/(app)': typeof appRouteRouteWithChildren
   '/(auth)': typeof authRouteRouteWithChildren
   '/(app)/': typeof appIndexRoute
+  '/(admin)/alerts/': typeof adminAlertsIndexRoute
+  '/(admin)/groups/': typeof adminGroupsIndexRoute
+  '/(admin)/users/': typeof adminUsersIndexRoute
   '/(app)/file-activity/': typeof appFileActivityIndexRoute
   '/(app)/files/': typeof appFilesIndexRoute
   '/(app)/settings/': typeof appSettingsIndexRoute
@@ -97,6 +130,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/alerts/'
+    | '/groups/'
+    | '/users/'
     | '/file-activity/'
     | '/files/'
     | '/settings/'
@@ -106,6 +142,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/alerts'
+    | '/groups'
+    | '/users'
     | '/file-activity'
     | '/files'
     | '/settings'
@@ -114,9 +153,13 @@ export interface FileRouteTypes {
     | '/register'
   id:
     | '__root__'
+    | '/(admin)'
     | '/(app)'
     | '/(auth)'
     | '/(app)/'
+    | '/(admin)/alerts/'
+    | '/(admin)/groups/'
+    | '/(admin)/users/'
     | '/(app)/file-activity/'
     | '/(app)/files/'
     | '/(app)/settings/'
@@ -126,6 +169,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  adminRouteRoute: typeof adminRouteRouteWithChildren
   appRouteRoute: typeof appRouteRouteWithChildren
   authRouteRoute: typeof authRouteRouteWithChildren
 }
@@ -144,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof appRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(admin)': {
+      id: '/(admin)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof adminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/': {
@@ -195,8 +246,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appFileActivityIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(admin)/users/': {
+      id: '/(admin)/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof adminUsersIndexRouteImport
+      parentRoute: typeof adminRouteRoute
+    }
+    '/(admin)/groups/': {
+      id: '/(admin)/groups/'
+      path: '/groups'
+      fullPath: '/groups/'
+      preLoaderRoute: typeof adminGroupsIndexRouteImport
+      parentRoute: typeof adminRouteRoute
+    }
+    '/(admin)/alerts/': {
+      id: '/(admin)/alerts/'
+      path: '/alerts'
+      fullPath: '/alerts/'
+      preLoaderRoute: typeof adminAlertsIndexRouteImport
+      parentRoute: typeof adminRouteRoute
+    }
   }
 }
+
+interface adminRouteRouteChildren {
+  adminAlertsIndexRoute: typeof adminAlertsIndexRoute
+  adminGroupsIndexRoute: typeof adminGroupsIndexRoute
+  adminUsersIndexRoute: typeof adminUsersIndexRoute
+}
+
+const adminRouteRouteChildren: adminRouteRouteChildren = {
+  adminAlertsIndexRoute: adminAlertsIndexRoute,
+  adminGroupsIndexRoute: adminGroupsIndexRoute,
+  adminUsersIndexRoute: adminUsersIndexRoute,
+}
+
+const adminRouteRouteWithChildren = adminRouteRoute._addFileChildren(
+  adminRouteRouteChildren,
+)
 
 interface appRouteRouteChildren {
   appIndexRoute: typeof appIndexRoute
@@ -233,6 +321,7 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  adminRouteRoute: adminRouteRouteWithChildren,
   appRouteRoute: appRouteRouteWithChildren,
   authRouteRoute: authRouteRouteWithChildren,
 }

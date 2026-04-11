@@ -35,6 +35,7 @@ export function FilesPage() {
     selectedFile: detailBarFile,
     viewMode,
     fileType,
+    classification,
     selectedPerson,
     setKnownPeople,
   } = useDetailBar()
@@ -59,6 +60,7 @@ export function FilesPage() {
       sortBy,
       sortOrder,
       fileType,
+      classification,
       selectedPerson?.id,
       selectedPerson?.role,
     ],
@@ -70,6 +72,7 @@ export function FilesPage() {
           page: pageParam,
           limit: 20,
           fileType,
+          classification,
           ownerId:
             selectedPerson?.role === 'owner' ? selectedPerson.id : undefined,
           sharedWithId:

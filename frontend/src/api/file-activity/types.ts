@@ -60,4 +60,5 @@ export type FileActivitiesResult = {
   page: number
   limit: number
   totalPages: number
+  stats?: Record<string, number>
 }

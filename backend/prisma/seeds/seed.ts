@@ -19,36 +19,21 @@ async function main() {
 
   switch (environment) {
     case "development": {
-      // Seed roles
       const adminRole = await prisma.role.upsert({
         where: { name: "admin" },
         update: {},
         create: { name: "admin" },
       });
       await prisma.role.upsert({
+        where: { name: "manager" },
+        update: {},
+        create: { name: "manager" },
+      });
+      await prisma.role.upsert({
         where: { name: "user" },
         update: {},
         create: { name: "user" },
       });
-
-      // Seed users
-      // const adminEmail = "admin@gmail.com";
-
-      // const getDicebearAvatar = (seed: string) => {
-      //   return `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(seed)}&background=%23ffffff`;
-      // };
-
-      // await prisma.user.upsert({
-      //   where: { email: adminEmail },
-      //   update: {},
-      //   create: {
-      //     email: adminEmail,
-      //     password: hashPassword("Thisisapassword123"),
-      //     name: "Admin",
-      //     roleId: adminRole.id,
-      //     avatar: getDicebearAvatar(adminEmail),
-      //   },
-      // });
 
       break;
     }

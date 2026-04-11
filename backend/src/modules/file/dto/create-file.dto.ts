@@ -6,8 +6,10 @@ import {
   IsOptional,
   IsArray,
   ArrayNotEmpty,
+  IsEnum,
 } from "class-validator";
 import { Transform } from "class-transformer";
+import { FileClassification, ContentFlag } from "@/prisma/enums";
 
 export class UploadFilesDto {
   @IsArray()
@@ -35,4 +37,44 @@ export class UploadFilesDto {
     default: true,
   })
   enableBlockchainLogging?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(FileClassification, { each: true })
+  @Transform(({ value }) => {
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [value];
+      }
+    }
+    return value;
+  })
+  @ApiPropertyOptional({
+    type: [String],
+    enum: FileClassification,
+    isArray: true,
+  })
+  classifications?: FileClassification[];
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(ContentFlag, { each: true })
+  @Transform(({ value }) => {
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [value];
+      }
+    }
+    return value;
+  })
+  @ApiPropertyOptional({
+    type: [String],
+    enum: ContentFlag,
+    isArray: true,
+  })
+  contentFlags?: ContentFlag[];
 }

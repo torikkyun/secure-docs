@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { EventEmitterModule } from "@nestjs/event-emitter";
+import { ScheduleModule } from "@nestjs/schedule";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtGuard } from "./common/guards/jwt.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
@@ -17,6 +18,8 @@ import { FileModule } from "./modules/file/file.module";
 import { ShareModule } from "./modules/share/share.module";
 import { RedisModule } from "./infrastructure/cache/redis.module";
 import { FileActivityModule } from "./modules/file-activity/file-activity.module";
+import { GroupModule } from "./modules/group/group.module";
+import { AdminModule } from "./modules/admin/admin.module";
 
 @Module({
   imports: [
@@ -28,6 +31,7 @@ import { FileActivityModule } from "./modules/file-activity/file-activity.module
       maxListeners: 20,
       verboseMemoryLeak: true,
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
     BlockchainModule,
@@ -37,6 +41,8 @@ import { FileActivityModule } from "./modules/file-activity/file-activity.module
     FileModule,
     ShareModule,
     FileActivityModule,
+    GroupModule,
+    AdminModule,
   ],
 
   providers: [

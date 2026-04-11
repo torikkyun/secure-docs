@@ -120,7 +120,7 @@ export class FileActivityService {
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
 
-    const [activities, total] = await Promise.all([
+    const [activities, total, actionGroups] = await Promise.all([
       this.prisma.fileActivity.findMany({
         where: { userId },
         include: {
@@ -145,7 +145,20 @@ export class FileActivityService {
         skip,
       }),
       this.prisma.fileActivity.count({ where: { userId } }),
+      this.prisma.fileActivity.groupBy({
+        by: ["action"],
+        where: { userId },
+        _count: { action: true },
+      }),
     ]);
+
+    const stats = actionGroups.reduce(
+      (acc, g) => {
+        acc[g.action] = g._count.action;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Enrich activities with additional data
     const enrichedActivities = await Promise.all(
@@ -158,6 +171,7 @@ export class FileActivityService {
       page,
       limit,
       totalPages: Math.ceil(total / limit),
+      stats,
     };
   }
 

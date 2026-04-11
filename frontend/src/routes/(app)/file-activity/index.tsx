@@ -52,14 +52,8 @@ const statConfig = [
   },
 ]
 
-function ActivityStats({ activities }: { activities: FileActivity[] }) {
-  const counts = activities.reduce(
-    (acc, a) => {
-      acc[a.action] = (acc[a.action] || 0) + 1
-      return acc
-    },
-    {} as Record<string, number>,
-  )
+function ActivityStats({ stats }: { stats: Record<string, number> }) {
+  const counts = stats
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -139,6 +133,9 @@ export function FileActivityPage() {
   const activities: FileActivity[] =
     activitiesData?.pages.flatMap((p) => p.data) ?? []
 
+  // Stats come from the first page (counts all records, not just loaded page)
+  const stats = activitiesData?.pages[0]?.stats ?? {}
+
   const onSentinel = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -185,7 +182,7 @@ export function FileActivityPage() {
 
   return (
     <div className="flex flex-col">
-      <ActivityStats activities={activities} />
+      <ActivityStats stats={stats} />
 
       {viewMode === 'list' ? (
         <ActivityList activities={activities} />

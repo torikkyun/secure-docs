@@ -27,8 +27,50 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { FileItem } from '@/api/file/types'
+import { FileItem, FileClassification, ContentFlag } from '@/api/file/types'
+import { Badge } from '@/components/ui/badge'
 import { useDetailBar } from '@/routes/(app)/route'
+
+const CLASSIFICATION_CONFIG: Record<
+  FileClassification,
+  { label: string; className: string }
+> = {
+  UNCLASSIFIED: {
+    label: 'Chưa phân loại',
+    className: 'bg-gray-100 text-gray-700 border-gray-200',
+  },
+  PUBLIC: {
+    label: 'Công khai',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  INTERNAL: {
+    label: 'Nội bộ',
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  CONFIDENTIAL: {
+    label: 'Bảo mật',
+    className: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  RESTRICTED: {
+    label: 'Tối mật',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
+}
+
+const FLAG_CONFIG: Record<ContentFlag, { label: string; className: string }> = {
+  SAFE: {
+    label: 'An toàn',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  SENSITIVE: {
+    label: 'Nhạy cảm',
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  FLAGGED: {
+    label: 'Cần xem xét',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
+}
 
 interface FileGridProps {
   files: FileItem[]
@@ -187,6 +229,30 @@ function FileCard({
             <p className="text-xs text-muted-foreground/70">
               {formatDate(file.createdAt)}
             </p>
+            {file.classification && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-[9px] h-4 px-1 w-fit',
+                    CLASSIFICATION_CONFIG[file.classification].className,
+                  )}
+                >
+                  {CLASSIFICATION_CONFIG[file.classification].label}
+                </Badge>
+                {file.contentFlag && file.contentFlag !== 'SAFE' && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-[9px] h-4 px-1 w-fit',
+                      FLAG_CONFIG[file.contentFlag].className,
+                    )}
+                  >
+                    {FLAG_CONFIG[file.contentFlag].label}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </ContextMenuTrigger>
@@ -286,7 +352,7 @@ export function FileGrid({
     <div
       ref={gridRef}
       className={cn(
-        'grid gap-3',
+        'grid gap-3 mt-1',
         isDetailBarOpen
           ? 'grid-cols-2 sm:grid-cols-3'
           : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5',

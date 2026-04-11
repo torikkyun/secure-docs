@@ -21,6 +21,7 @@ import {
   PanelRightClose,
   LayoutGrid,
   List,
+  Users,
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
@@ -47,6 +48,7 @@ import { DetailBar } from './-components/detail-bar'
 import {
   FileFilters,
   FileTypeFilter,
+  FileClassification,
   PersonFilter,
 } from './-components/file-filters'
 import { useRouterState } from '@tanstack/react-router'
@@ -61,6 +63,8 @@ interface DetailBarContextValue {
   setViewMode: (mode: 'list' | 'grid') => void
   fileType: FileTypeFilter | undefined
   setFileType: (type: FileTypeFilter | undefined) => void
+  classification: FileClassification | undefined
+  setClassification: (c: FileClassification | undefined) => void
   selectedPerson: PersonFilter | null
   setSelectedPerson: (person: PersonFilter | null) => void
   knownPeople: Map<string, PersonFilter>
@@ -76,6 +80,8 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   setViewMode: () => {},
   fileType: undefined,
   setFileType: () => {},
+  classification: undefined,
+  setClassification: () => {},
   selectedPerson: null,
   setSelectedPerson: () => {},
   knownPeople: new Map(),
@@ -94,6 +100,10 @@ const navigation = [
   { name: 'Cài đặt cá nhân', href: '/settings', icon: Settings },
 ]
 
+const managerNavigation = [
+  { name: 'Quản lý nhóm', href: '/groups', icon: Users },
+]
+
 function PageToolbar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const {
@@ -103,6 +113,8 @@ function PageToolbar() {
     setViewMode,
     fileType,
     setFileType,
+    classification,
+    setClassification,
     selectedPerson,
     setSelectedPerson,
     knownPeople,
@@ -170,9 +182,11 @@ function PageToolbar() {
         <div className="pb-2">
           <FileFilters
             fileType={fileType}
+            classification={classification}
             selectedPerson={selectedPerson}
             availablePeople={Array.from(knownPeople.values())}
             onFileTypeChange={setFileType}
+            onClassificationChange={setClassification}
             onPersonChange={setSelectedPerson}
           />
         </div>
@@ -205,6 +219,9 @@ function AppLayout() {
   const [fileType, setFileType] = useState<FileTypeFilter | undefined>(
     undefined,
   )
+  const [classification, setClassification] = useState<
+    FileClassification | undefined
+  >(undefined)
   const [selectedPerson, setSelectedPerson] = useState<PersonFilter | null>(
     null,
   )
@@ -262,6 +279,37 @@ function AppLayout() {
               </Link>
             )
           })}
+          {(user?.role?.name === 'admin' || user?.role?.name === 'manager') && (
+            <>
+              <div className="pt-4 pb-1 px-3">
+                <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                  Quản lý
+                </p>
+              </div>
+              {managerNavigation.map((item) => {
+                const isActive =
+                  currentPath === item.href ||
+                  currentPath.startsWith(item.href + '/')
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all outline-none',
+                      isActive
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                  >
+                    <item.icon
+                      className={cn('h-4 w-4', isActive ? 'text-primary' : '')}
+                    />
+                    {item.name}
+                  </Link>
+                )
+              })}
+            </>
+          )}
         </nav>
       </div>
     </div>
@@ -278,6 +326,8 @@ function AppLayout() {
         setViewMode,
         fileType,
         setFileType,
+        classification,
+        setClassification,
         selectedPerson,
         setSelectedPerson,
         knownPeople,

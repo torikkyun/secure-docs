@@ -19,6 +19,9 @@ import {
   DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import type { FileClassification } from '@/api/file/types'
+
+export type { FileClassification }
 
 export type FileTypeFilter = 'pdf' | 'word' | 'excel' | 'image'
 
@@ -32,9 +35,11 @@ export interface PersonFilter {
 
 interface FileFiltersProps {
   fileType?: FileTypeFilter
+  classification?: FileClassification
   selectedPerson?: PersonFilter | null
   availablePeople: PersonFilter[]
   onFileTypeChange: (type: FileTypeFilter | undefined) => void
+  onClassificationChange: (c: FileClassification | undefined) => void
   onPersonChange: (person: PersonFilter | null) => void
 }
 
@@ -58,6 +63,18 @@ const FILE_TYPE_OPTIONS: {
     icon: Image,
     colorClass: '!text-violet-500',
   },
+]
+
+const CLASSIFICATION_OPTIONS: {
+  id: FileClassification
+  label: string
+  className: string
+}[] = [
+  { id: 'UNCLASSIFIED', label: 'Chưa phân loại', className: '!text-gray-600' },
+  { id: 'PUBLIC', label: 'Công khai', className: '!text-green-600' },
+  { id: 'INTERNAL', label: 'Nội bộ', className: '!text-amber-600' },
+  { id: 'CONFIDENTIAL', label: 'Bảo mật', className: '!text-orange-600' },
+  { id: 'RESTRICTED', label: 'Tối mật', className: '!text-red-600' },
 ]
 
 interface ChipProps {
@@ -126,12 +143,14 @@ function FilterChip({
 
 export function FileFilters({
   fileType,
+  classification,
   selectedPerson,
   availablePeople,
   onFileTypeChange,
+  onClassificationChange,
   onPersonChange,
 }: FileFiltersProps) {
-  const hasFilter = !!fileType || !!selectedPerson
+  const hasFilter = !!fileType || !!classification || !!selectedPerson
   const [peopleSearch, setPeopleSearch] = useState('')
   const filteredPeople = peopleSearch
     ? availablePeople.filter(
@@ -186,6 +205,53 @@ export function FileFilters({
                 )}
               </div>
               <span className="font-medium text-sm">{option.label}</span>
+            </DropdownMenuItem>
+          )
+        })}
+      </FilterChip>
+
+      {/* Classification filter */}
+      <FilterChip
+        contentClassName="w-48"
+        label={
+          classification ? (
+            <span
+              className={cn(
+                'font-medium',
+                CLASSIFICATION_OPTIONS.find((o) => o.id === classification)
+                  ?.className,
+              )}
+            >
+              {
+                CLASSIFICATION_OPTIONS.find((o) => o.id === classification)
+                  ?.label
+              }
+            </span>
+          ) : (
+            'Phân loại'
+          )
+        }
+        isActive={!!classification}
+        onClear={() => onClassificationChange(undefined)}
+      >
+        {CLASSIFICATION_OPTIONS.map((option) => {
+          const isSelected = classification === option.id
+          return (
+            <DropdownMenuItem
+              key={option.id}
+              onClick={() =>
+                onClassificationChange(isSelected ? undefined : option.id)
+              }
+              className="gap-2.5 rounded-md p-2 cursor-pointer"
+            >
+              <div className="flex h-4 w-6 shrink-0 items-center justify-center">
+                {isSelected && (
+                  <Check className="h-4 w-4 text-primary" strokeWidth={3} />
+                )}
+              </div>
+              <span className={cn('font-medium text-sm', option.className)}>
+                {option.label}
+              </span>
             </DropdownMenuItem>
           )
         })}
@@ -330,6 +396,7 @@ export function FileFilters({
         <button
           onClick={() => {
             onFileTypeChange(undefined)
+            onClassificationChange(undefined)
             onPersonChange(null)
           }}
           className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
