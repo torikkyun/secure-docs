@@ -5,6 +5,8 @@ export const updateProfileSchema = z.object({
   avatar: z.string().optional(),
 })
 
+export const uploadAvatarSchema = z.instanceof(FormData)
+
 export const queryUserSchema = z.object({
   page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),

@@ -121,7 +121,7 @@ const columns: ColumnDef<FileItem>[] = [
   },
   {
     id: 'actions',
-    meta: { className: 'w-px' },
+    size: 52,
     enableHiding: false,
     cell: ({ row, table }) => {
       const file = row.original
@@ -252,10 +252,7 @@ export function SharedFileList({
   })
 
   return (
-    <div
-      ref={tableRef}
-      className={cn('rounded-md h-full', isDetailBarOpen ? 'pr-3' : 'pr-2')}
-    >
+    <div ref={tableRef} className={cn('rounded-md h-full pr-3.5')}>
       <table className="w-full caption-bottom text-sm">
         <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
           {table.getHeaderGroups().map((headerGroup) => (

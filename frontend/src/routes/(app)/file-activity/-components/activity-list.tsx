@@ -159,102 +159,117 @@ function ActivityItem({
   }
 
   return (
-    <div className="flex gap-3 group">
+    <div className="flex gap-4 group">
       {/* Timeline column */}
       <div className="flex flex-col items-center shrink-0">
         <div
           className={cn(
-            'w-9 h-9 rounded-lg flex items-center justify-center',
+            'w-10 h-10 rounded-full flex items-center justify-center ring-4 ring-background z-10',
             config.bgClass,
           )}
         >
           <ActionIcon className={cn('h-4 w-4', config.colorClass)} />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-border/60 mt-2" />}
+        {!isLast && <div className="w-px flex-1 bg-border mt-2 mb-2" />}
       </div>
 
       {/* Content */}
-      <div className={cn('flex-1 min-w-0', !isLast && 'pb-5')}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={cn('text-sm font-semibold', config.colorClass)}>
-                {config.label}
-              </span>
-              {activity.blockchainTxHash && (
-                <Badge
-                  variant="outline"
-                  className="h-5 text-[10px] font-normal py-0 px-1.5 border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-500"
+      <div className={cn('flex-1 min-w-0', !isLast && 'pb-6')}>
+        <div className="bg-card border border-border/50 hover:border-border hover:shadow-sm rounded-xl p-4 transition-all duration-200">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={cn('text-sm font-semibold', config.colorClass)}
                 >
-                  <Link2 className="h-2.5 w-2.5 mr-0.5" />
-                  On-chain
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
-              <FileIcon
-                className={cn('h-3.5 w-3.5 shrink-0', fileColorClass)}
-              />
-              <p className="text-sm text-foreground/80 truncate">
-                {activity.file?.filename || 'Tệp không xác định'}
-                {shareDetails && (
-                  <span className="text-muted-foreground">
-                    {' '}
-                    · {shareDetails}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-0.5 shrink-0">
-            <span className="text-xs text-muted-foreground">
-              {formatTime(activity.createdAt)}
-            </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  buttonVariants({ variant: 'ghost', size: 'icon' }),
-                  'h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity',
-                )}
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-                <span className="sr-only">Mở menu</span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                {activity.blockchainTxHash ? (
-                  <DropdownMenuItem
-                    onClick={() =>
-                      window.open(
-                        `https://sepolia.etherscan.io/tx/${activity.blockchainTxHash}`,
-                        '_blank',
-                      )
-                    }
+                  {config.label}
+                </span>
+                {activity.blockchainTxHash && (
+                  <Badge
+                    variant="outline"
+                    className="h-5 text-[10px] font-medium py-0 px-2 rounded-full border-amber-300 text-amber-600 bg-amber-50 dark:border-amber-700/50 dark:text-amber-500 dark:bg-amber-950/20"
                   >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Xem trên Etherscan
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem disabled>
-                    Không có log on-chain
-                  </DropdownMenuItem>
+                    <Link2 className="h-2.5 w-2.5 mr-1" />
+                    On-chain
+                  </Badge>
                 )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+              </div>
 
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <Avatar className="h-4 w-4 shrink-0">
-            <AvatarImage src={user.avatar || undefined} alt={user.name} />
-            <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
-          </Avatar>
-          <span className="text-xs text-muted-foreground">{user.name}</span>
-          {activity.ipAddress && (
-            <span className="text-xs text-muted-foreground/50 hidden sm:inline">
-              · {activity.ipAddress}
-            </span>
-          )}
+              <div className="flex items-center gap-2.5 bg-muted/40 w-fit pr-4 rounded-lg p-1.5 border border-border/50">
+                <div className="h-7 w-7 flex items-center justify-center bg-background rounded-md shadow-sm border border-border/50 shrink-0">
+                  <FileIcon className={cn('h-4 w-4', fileColorClass)} />
+                </div>
+                <p className="text-sm font-medium truncate">
+                  {activity.file?.filename || 'Tệp không xác định'}
+                  {shareDetails && (
+                    <span className="text-muted-foreground font-normal">
+                      {' '}
+                      · {shareDetails}
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 mt-1">
+                <Avatar className="h-5 w-5 shrink-0 ring-1 ring-border shadow-sm">
+                  <AvatarImage
+                    src={getAvatarUrl(user?.avatar)}
+                    alt={user?.name ?? ''}
+                  />
+                  <AvatarFallback className="text-[9px] font-medium">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground/80">
+                    {user?.name}
+                  </span>
+                  {activity.ipAddress && (
+                    <span className="hidden sm:inline-block before:content-['·'] before:mx-1.5 opacity-70">
+                      IP: {activity.ipAddress}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end justify-between self-stretch shrink-0">
+              <span className="text-xs font-semibold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md border border-border/50">
+                {formatTime(activity.createdAt)}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={cn(
+                    buttonVariants({ variant: 'ghost', size: 'icon' }),
+                    'h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity rounded-md',
+                  )}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Mở menu</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {activity.blockchainTxHash ? (
+                    <DropdownMenuItem
+                      onClick={() =>
+                        window.open(
+                          `https://sepolia.etherscan.io/tx/${activity.blockchainTxHash}`,
+                          '_blank',
+                        )
+                      }
+                      className="cursor-pointer"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4 text-muted-foreground" />
+                      Xem trên Etherscan
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem disabled>
+                      Không có log on-chain
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -262,6 +277,7 @@ function ActivityItem({
 }
 
 import React from 'react'
+import { getAvatarUrl } from '@/lib/avatar-utils'
 
 export function ActivityList({ activities }: ActivityListProps) {
   const groups = groupByDate(activities)

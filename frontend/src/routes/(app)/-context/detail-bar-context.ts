@@ -6,6 +6,7 @@ import type {
 } from '@/routes/(app)/-components/file-filters'
 import type { FileItem } from '@/api/file/types'
 import type { AdminUser } from '@/api/admin/types'
+import type { FileActivityAction } from '@/api/file-activity/schemas'
 
 export interface DetailBarContextValue {
   isOpen: boolean
@@ -24,6 +25,8 @@ export interface DetailBarContextValue {
   setSelectedPerson: (person: PersonFilter | null) => void
   knownPeople: Map<string, PersonFilter>
   setKnownPeople: Dispatch<SetStateAction<Map<string, PersonFilter>>>
+  activityAction: FileActivityAction | undefined
+  setActivityAction: (action: FileActivityAction | undefined) => void
 }
 
 export const DetailBarContext = createContext<DetailBarContextValue>({
@@ -43,6 +46,8 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   setSelectedPerson: () => {},
   knownPeople: new Map(),
   setKnownPeople: () => {},
+  activityAction: undefined,
+  setActivityAction: () => {},
 })
 
 export function useDetailBar() {

@@ -121,7 +121,6 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
         })
         return next
       })
-
       ;(async () => {
         try {
           const { getDocument, GlobalWorkerOptions } =
@@ -429,7 +428,7 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
                                   </Badge>
                                   {classState.reason && (
                                     <span
-                                      className="text-[10px] text-muted-foreground truncate max-w-40"
+                                      className="text-[10px] text-muted-foreground truncate max-w-81"
                                       title={classState.reason}
                                     >
                                       {classState.reason}

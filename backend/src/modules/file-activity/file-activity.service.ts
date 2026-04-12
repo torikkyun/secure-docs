@@ -116,13 +116,14 @@ export class FileActivityService {
   })
   async getUserFileActivities(
     userId: string,
-    { page = 1, limit = 20 }: QueryFileActivityDto,
+    { page = 1, limit = 20, action }: QueryFileActivityDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
+    const where = { userId, ...(action ? { action } : {}) };
 
     const [activities, total, actionGroups] = await Promise.all([
       this.prisma.fileActivity.findMany({
-        where: { userId },
+        where,
         include: {
           user: {
             select: {
@@ -144,7 +145,7 @@ export class FileActivityService {
         take,
         skip,
       }),
-      this.prisma.fileActivity.count({ where: { userId } }),
+      this.prisma.fileActivity.count({ where }),
       this.prisma.fileActivity.groupBy({
         by: ["action"],
         where: { userId },

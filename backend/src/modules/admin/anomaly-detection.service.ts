@@ -68,14 +68,22 @@ export class AnomalyDetectionService {
 
       if (historicalActivities.length < 5) continue; // not enough data
 
-      // Group into daily buckets
-      const dailyCounts = new Map<string, number>();
+      // Group into hourly buckets, including zero-activity hours for accurate baseline
+      const hourlyMap = new Map<string, number>();
       for (const activity of historicalActivities) {
-        const day = activity.createdAt.toISOString().slice(0, 10);
-        dailyCounts.set(day, (dailyCounts.get(day) ?? 0) + 1);
+        const bucket = activity.createdAt.toISOString().slice(0, 13); // "2026-04-10T14"
+        hourlyMap.set(bucket, (hourlyMap.get(bucket) ?? 0) + 1);
+      }
+      const totalHours = Math.round(
+        (oneHourAgo.getTime() - thirtyDaysAgo.getTime()) / (60 * 60 * 1000),
+      );
+      const counts: number[] = [];
+      for (let i = 0; i < totalHours; i++) {
+        const slot = new Date(thirtyDaysAgo.getTime() + i * 60 * 60 * 1000);
+        const bucket = slot.toISOString().slice(0, 13);
+        counts.push(hourlyMap.get(bucket) ?? 0);
       }
 
-      const counts = Array.from(dailyCounts.values());
       const mean = counts.reduce((sum, c) => sum + c, 0) / counts.length;
       const variance =
         counts.reduce((sum, c) => sum + Math.pow(c - mean, 2), 0) /
@@ -84,16 +92,16 @@ export class AnomalyDetectionService {
 
       if (stdDev === 0) continue;
 
-      // Current 1-hour count (scale to daily equivalent for fair comparison)
       const currentCount = await this.prisma.fileActivity.count({
         where: { userId, action, createdAt: { gte: oneHourAgo } },
       });
 
-      // Scale hourly to daily (multiply by 24)
-      const dailyEquivalent = currentCount * 24;
-      const zScore = (dailyEquivalent - mean) / stdDev;
+      // Require minimum absolute count to prevent false positives for low-activity users
+      if (currentCount < 3) continue;
 
-      if (Math.abs(zScore) > 3.5) {
+      const zScore = (currentCount - mean) / stdDev;
+
+      if (zScore > 3.5) {
         await this.createAlertIfNotDuplicate(
           userId,
           AlertLevel.ALERT,
@@ -107,11 +115,12 @@ export class AnomalyDetectionService {
           },
           `Hành vi bất thường nghiêm trọng (Z=${zScore.toFixed(2)}): ${currentCount} lần ${action} trong 1 giờ`,
         );
-      } else if (Math.abs(zScore) > 2.5) {
+      } else if (zScore > 2.5) {
         await this.createAlertIfNotDuplicate(
           userId,
           AlertLevel.WARNING,
           AlertType.STATISTICAL,
+
           {
             action,
             currentCount,
@@ -164,7 +173,7 @@ export class AnomalyDetectionService {
   // Rule 2: Access before 07:00 or after 22:00 → WARNING
   private async checkAfterHoursAccess(now: Date, oneHourAgo: Date) {
     const hour = now.getHours();
-    if (hour >= 7 && hour < 22) return; // within business hours
+    if (hour >= 7 && hour < 19) return; // within business hours (07:00–19:00)
 
     const activities = await this.prisma.fileActivity.findMany({
       where: {

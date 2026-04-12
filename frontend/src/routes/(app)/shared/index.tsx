@@ -26,6 +26,7 @@ function SharedPage() {
     setSelectedFile: setDetailBarFile,
     viewMode,
     fileType,
+    classification,
     selectedPerson,
     setKnownPeople,
   } = useDetailBar()
@@ -50,6 +51,7 @@ function SharedPage() {
       sortBy,
       sortOrder,
       fileType,
+      classification,
       selectedPerson?.id,
       selectedPerson?.role,
     ],
@@ -62,6 +64,7 @@ function SharedPage() {
           page: pageParam,
           limit: 20,
           fileType,
+          classification,
           ownerId:
             selectedPerson?.role === 'owner' ? selectedPerson.id : undefined,
           sharedWithId:

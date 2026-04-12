@@ -50,10 +50,13 @@ import {
   FileTypeFilter,
   FileClassification,
   PersonFilter,
+  ActivityFilters,
 } from './-components/file-filters'
 import { DetailBarContext, useDetailBar } from './-context/detail-bar-context'
 import type { FileItem } from '@/api/file/types'
 import type { AdminUser } from '@/api/admin/types'
+import type { FileActivityAction } from '@/api/file-activity/schemas'
+import { getAvatarUrl } from '@/lib/avatar-utils'
 
 const navigation = [
   // { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
@@ -90,6 +93,8 @@ function PageToolbar() {
     selectedPerson,
     setSelectedPerson,
     knownPeople,
+    activityAction,
+    setActivityAction,
   } = useDetailBar()
   const currentNav = allNavigation.find(
     (item) =>
@@ -104,7 +109,10 @@ function PageToolbar() {
   const isActivityPage =
     currentPath === '/file-activity' ||
     currentPath.startsWith('/file-activity/')
-  const showViewToggle = isFilesPage || isSharedPage || isActivityPage
+  const isSettingsPage =
+    currentPath === '/settings' || currentPath.startsWith('/settings/')
+  const showViewToggle = isFilesPage || isSharedPage
+  const showDetailBarToggle = !isActivityPage && !isSettingsPage
 
   return (
     <div className="sticky bg-background">
@@ -140,7 +148,10 @@ function PageToolbar() {
             size="icon"
             onClick={toggle}
             aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
-            className={cn(isOpen ? 'bg-muted mr-5' : 'mr-5')}
+            className={cn(
+              isOpen ? 'bg-muted mr-5' : 'mr-5',
+              !showDetailBarToggle && 'hidden',
+            )}
           >
             {isOpen ? (
               <PanelRightClose className="h-5 w-5" />
@@ -162,6 +173,12 @@ function PageToolbar() {
             onPersonChange={setSelectedPerson}
           />
         </div>
+      )}
+      {isActivityPage && (
+        <ActivityFilters
+          activityAction={activityAction}
+          onActivityActionChange={setActivityAction}
+        />
       )}
     </div>
   )
@@ -208,6 +225,10 @@ function AppLayout() {
   const [knownPeople, setKnownPeople] = useState<Map<string, PersonFilter>>(
     new Map(),
   )
+
+  const [activityAction, setActivityAction] = useState<
+    FileActivityAction | undefined
+  >(undefined)
 
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
@@ -336,6 +357,8 @@ function AppLayout() {
         setSelectedPerson,
         knownPeople,
         setKnownPeople,
+        activityAction,
+        setActivityAction,
       }}
     >
       <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
@@ -372,7 +395,10 @@ function AppLayout() {
                     )}
                   >
                     <Avatar className="h-6 w-6 border">
-                      <AvatarImage src={user.avatar} alt={user.email} />
+                      <AvatarImage
+                        src={getAvatarUrl(user.avatar)}
+                        alt={user.email}
+                      />
                       <AvatarFallback>
                         {user.email.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -434,7 +460,7 @@ function AppLayout() {
           <div className="flex flex-1 overflow-hidden min-h-0">
             <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
               <PageToolbar />
-              <div className="flex-1 overflow-y-auto pl-1 pb-2">
+              <div className="flex-1 overflow-y-auto pb-2">
                 <Outlet />
               </div>
             </main>

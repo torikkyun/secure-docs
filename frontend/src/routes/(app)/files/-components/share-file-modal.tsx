@@ -225,6 +225,10 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
       toast.info('Người dùng này đã được chọn')
       return
     }
+    if (file?.sharedWith?.some((u) => u.id === user.id)) {
+      toast.info('Tài liệu đã được chia sẻ với người dùng này')
+      return
+    }
     setSelectedUsers((prev) => [...prev, user])
     setSearchQuery('')
     setSearchResults([])
@@ -324,18 +328,21 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                           const isSelected = selectedUsers.some(
                             (u) => u.id === user.id,
                           )
+                          const isAlreadyShared = file?.sharedWith?.some(
+                            (u) => u.id === user.id,
+                          )
+                          const isDisabled =
+                            isOwner || isSelected || isAlreadyShared
                           return (
                             <div
                               key={user.id}
                               className={cn(
                                 'flex items-center gap-3 p-2 cursor-pointer hover:bg-muted transition-colors',
-                                (isOwner || isSelected) &&
+                                isDisabled &&
                                   'opacity-50 cursor-not-allowed bg-muted/50',
                               )}
                               onClick={() =>
-                                !isOwner &&
-                                !isSelected &&
-                                handleSelectUser(user)
+                                !isDisabled && handleSelectUser(user)
                               }
                             >
                               <Avatar className="h-8 w-8">
@@ -358,6 +365,11 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                               {isOwner && (
                                 <span className="text-xs text-muted-foreground">
                                   Chủ sở hữu
+                                </span>
+                              )}
+                              {isAlreadyShared && !isOwner && (
+                                <span className="text-xs text-muted-foreground">
+                                  Đã chia sẻ
                                 </span>
                               )}
                               {isSelected && (

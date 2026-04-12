@@ -11,6 +11,7 @@ import {
   updateProfileSchema,
   queryUserSchema,
   getUserByIdSchema,
+  uploadAvatarSchema,
 } from './schemas'
 import { useAppSession } from '@/utils/session'
 import { redirect } from '@tanstack/react-router'
@@ -43,6 +44,24 @@ export const updateProfileFn = createServerFn({ method: 'POST' })
         ...headers,
       },
       body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.message)
+    }
+
+    return res.json()
+  })
+
+export const uploadAvatarFn = createServerFn({ method: 'POST' })
+  .inputValidator(uploadAvatarSchema)
+  .handler(async ({ data }): Promise<{ id: string; avatar: string }> => {
+    const headers = await getHeaders()
+    const res = await fetch(`${API_URL}/users/avatar`, {
+      method: 'POST',
+      headers,
+      body: data,
     })
 
     if (!res.ok) {

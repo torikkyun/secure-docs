@@ -8,6 +8,7 @@ import { formatDate, formatFileSize, getFileIcon } from '@/lib/file-utils'
 import { cn } from '@/lib/utils'
 import { DetailBarUser } from './detail-bar-user'
 import type { FileClassification, ContentFlag } from '@/api/file/types'
+import { getAvatarUrl } from '@/lib/avatar-utils'
 
 const CLASSIFICATION_CONFIG: Record<
   FileClassification,
@@ -150,7 +151,7 @@ function DetailBarFile() {
         <div className="flex items-center gap-2.5">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={selectedFile.owner.avatar}
+              src={getAvatarUrl(selectedFile.owner.avatar)}
               alt={selectedFile.owner.name}
             />
           </Avatar>
@@ -184,7 +185,10 @@ function DetailBarFile() {
                   return (
                     <div key={person.id} className="flex items-center gap-2.5">
                       <Avatar className="h-7 w-7">
-                        <AvatarImage src={person.avatar} alt={person.name} />
+                        <AvatarImage
+                          src={getAvatarUrl(person.avatar)}
+                          alt={person.name}
+                        />
                         <AvatarFallback className="text-xs">
                           {initials}
                         </AvatarFallback>

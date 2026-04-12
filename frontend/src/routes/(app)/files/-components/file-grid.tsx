@@ -29,6 +29,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { FileItem } from '@/api/file/types'
 import { useDetailBar } from '@/routes/(app)/-context/detail-bar-context'
+import { getAvatarUrl } from '@/lib/avatar-utils'
 
 interface FileGridProps {
   files: FileItem[]
@@ -171,7 +172,10 @@ function FileCard({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Avatar className="h-4 w-4 shrink-0">
-                  <AvatarImage src={person?.avatar} alt={person?.name ?? ''} />
+                  <AvatarImage
+                    src={getAvatarUrl(person?.avatar)}
+                    alt={person?.name ?? ''}
+                  />
                   <AvatarFallback className="text-[8px]">
                     {initials}
                   </AvatarFallback>
@@ -286,7 +290,7 @@ export function FileGrid({
     <div
       ref={gridRef}
       className={cn(
-        'grid gap-3 mt-1',
+        'grid gap-3 mt-1 mx-0.5',
         isDetailBarOpen
           ? 'grid-cols-2 sm:grid-cols-3'
           : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5',

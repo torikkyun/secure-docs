@@ -45,6 +45,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { FileItem } from '@/api/file/types'
 import { useDetailBar } from '@/routes/(app)/-context/detail-bar-context'
+import { getAvatarUrl } from '@/lib/avatar-utils'
 
 interface FileListProps {
   files: FileItem[]
@@ -111,7 +112,10 @@ const columns: ColumnDef<FileItem>[] = [
       return (
         <div className="flex items-center gap-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={person?.avatar} alt={person?.name ?? ''} />
+            <AvatarImage
+              src={getAvatarUrl(person?.avatar)}
+              alt={person?.name ?? ''}
+            />
             <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
           </Avatar>
           <span className="text-sm text-muted-foreground">{displayName}</span>
@@ -165,7 +169,7 @@ const columns: ColumnDef<FileItem>[] = [
   },
   {
     id: 'actions',
-    meta: { className: 'w-px' },
+    size: 52,
     enableHiding: false,
     cell: ({ row, table }) => {
       const file = row.original
@@ -346,7 +350,7 @@ export function FileList({
   })
 
   return (
-    <div ref={tableRef} className={cn('rounded-md h-full')}>
+    <div ref={tableRef} className={cn('rounded-md h-full pr-3.5')}>
       <table className="w-full caption-bottom text-sm">
         <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
           {table.getHeaderGroups().map((headerGroup) => (
@@ -361,6 +365,11 @@ export function FileList({
                         : 'w-1/2'
                       : (header.column.columnDef.meta as { className?: string })
                           ?.className
+                  }
+                  style={
+                    header.column.id === 'actions'
+                      ? { width: `${header.getSize()}px` }
+                      : undefined
                   }
                 >
                   {header.isPlaceholder
@@ -402,6 +411,11 @@ export function FileList({
                                 className?: string
                               }
                             )?.className
+                      }
+                      style={
+                        cell.column.id === 'actions'
+                          ? { width: `${cell.column.getSize()}px` }
+                          : undefined
                       }
                     >
                       {flexRender(

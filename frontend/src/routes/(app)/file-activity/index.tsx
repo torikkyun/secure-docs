@@ -12,7 +12,6 @@ import {
 import { getUserFileActivitiesFn } from '@/api/file-activity/functions'
 import { FileActivity } from '@/api/file-activity/types'
 import { ActivityList } from './-components/activity-list'
-import { ActivityGrid } from './-components/activity-grid'
 import { useDetailBar } from '../-context/detail-bar-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -60,21 +59,23 @@ function ActivityStats({ stats }: { stats: Record<string, number> }) {
       {statConfig.map(({ action, label, icon: Icon, colorClass, bgClass }) => (
         <div
           key={action}
-          className="flex items-center gap-3 rounded-xl border bg-card p-3"
+          className="flex items-center justify-between gap-2.5 rounded-xl border bg-card/50 p-3.5 shadow-sm hover:bg-muted/50 transition-colors"
         >
+          <div className="space-y-0.5">
+            <p className="text-[13px] font-medium text-muted-foreground">
+              {label}
+            </p>
+            <p className="text-xl font-bold tracking-tight">
+              {counts[action] ?? 0}
+            </p>
+          </div>
           <div
             className={cn(
-              'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+              'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
               bgClass,
             )}
           >
-            <Icon className={cn('h-4 w-4', colorClass)} />
-          </div>
-          <div>
-            <p className="text-xl font-bold leading-none">
-              {counts[action] ?? 0}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+            <Icon className={cn('h-4.5 w-4.5', colorClass)} />
           </div>
         </div>
       ))}
@@ -84,21 +85,36 @@ function ActivityStats({ stats }: { stats: Record<string, number> }) {
 
 function ActivitySkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {[1, 2].map((g) => (
         <div key={g}>
           <div className="flex items-center gap-3 mb-4">
             <Skeleton className="h-3 w-20" />
             <div className="flex-1 h-px bg-border" />
           </div>
-          <div className="space-y-5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-3">
-                <Skeleton className="w-9 h-9 rounded-lg shrink-0" />
-                <div className="flex-1 space-y-2 pt-1">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-52" />
-                  <Skeleton className="h-3 w-28" />
+          <div className="space-y-0">
+            {[1, 2, 3].map((i, index) => (
+              <div key={i} className="flex gap-4 group">
+                <div className="flex flex-col items-center shrink-0">
+                  <Skeleton className="w-10 h-10 rounded-full ring-4 ring-background z-10" />
+                  {index < 2 && (
+                    <div className="w-px flex-1 bg-border mt-2 mb-2" />
+                  )}
+                </div>
+                <div className={cn('flex-1 min-w-0', index < 2 && 'pb-6')}>
+                  <div className="bg-card border border-border/50 rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-4 w-full">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-9 w-64 max-w-full rounded-lg" />
+                        <div className="flex items-center gap-2 mt-1">
+                          <Skeleton className="h-5 w-5 rounded-full" />
+                          <Skeleton className="h-3 w-32" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-6 w-12 rounded-md shrink-0" />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -110,7 +126,7 @@ function ActivitySkeleton() {
 }
 
 export function FileActivityPage() {
-  const { viewMode } = useDetailBar()
+  const { activityAction } = useDetailBar()
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -120,10 +136,10 @@ export function FileActivityPage() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ['file-activities'],
+    queryKey: ['file-activities', activityAction],
     queryFn: ({ pageParam }) =>
       getUserFileActivitiesFn({
-        data: { page: pageParam as number, limit: 20 },
+        data: { page: pageParam as number, limit: 20, action: activityAction },
       }),
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -155,10 +171,10 @@ export function FileActivityPage() {
 
   if (isLoading) {
     return (
-      <div>
+      <div className="mt-1">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-15 rounded-xl" />
+            <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
         <ActivitySkeleton />
@@ -168,12 +184,12 @@ export function FileActivityPage() {
 
   if (activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="bg-muted/30 p-6 rounded-full mb-4">
-          <Activity className="h-16 w-16 text-muted-foreground/50" />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="bg-muted/30 p-5 rounded-full mb-4">
+          <Activity className="h-12 w-12 text-muted-foreground/50" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Chưa có hoạt động nào</h3>
-        <p className="text-muted-foreground max-w-sm">
+        <h3 className="text-lg font-semibold mb-2">Chưa có hoạt động nào</h3>
+        <p className="text-[13px] text-muted-foreground max-w-sm">
           Khi có bất kỳ thay đổi nào với tệp của bạn, chúng sẽ hiển thị ở đây.
         </p>
       </div>
@@ -181,14 +197,10 @@ export function FileActivityPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col mt-1">
       <ActivityStats stats={stats} />
 
-      {viewMode === 'list' ? (
-        <ActivityList activities={activities} />
-      ) : (
-        <ActivityGrid activities={activities} />
-      )}
+      <ActivityList activities={activities} />
 
       <div ref={sentinelRef} className="h-1" />
       {isFetchingNextPage && (

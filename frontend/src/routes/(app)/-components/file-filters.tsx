@@ -68,13 +68,13 @@ const FILE_TYPE_OPTIONS: {
 const CLASSIFICATION_OPTIONS: {
   id: FileClassification
   label: string
-  className: string
+  dotClass: string
 }[] = [
-  { id: 'UNCLASSIFIED', label: 'Chưa phân loại', className: '!text-gray-600' },
-  { id: 'PUBLIC', label: 'Công khai', className: '!text-green-600' },
-  { id: 'INTERNAL', label: 'Nội bộ', className: '!text-amber-600' },
-  { id: 'CONFIDENTIAL', label: 'Bảo mật', className: '!text-orange-600' },
-  { id: 'RESTRICTED', label: 'Tối mật', className: '!text-red-600' },
+  { id: 'UNCLASSIFIED', label: 'Chưa phân loại', dotClass: 'bg-slate-400' },
+  { id: 'PUBLIC', label: 'Công khai', dotClass: 'bg-green-500' },
+  { id: 'INTERNAL', label: 'Nội bộ', dotClass: 'bg-amber-500' },
+  { id: 'CONFIDENTIAL', label: 'Bảo mật', dotClass: 'bg-orange-500' },
+  { id: 'RESTRICTED', label: 'Tối mật', dotClass: 'bg-red-500' },
 ]
 
 interface ChipProps {
@@ -180,7 +180,7 @@ export function FileFilters({
               </span>
             </div>
           ) : (
-            'Loại'
+            'Loại tài liệu'
           )
         }
         isActive={!!fileType}
@@ -215,20 +215,23 @@ export function FileFilters({
         contentClassName="w-48"
         label={
           classification ? (
-            <span
-              className={cn(
-                'font-medium',
-                CLASSIFICATION_OPTIONS.find((o) => o.id === classification)
-                  ?.className,
-              )}
-            >
-              {
-                CLASSIFICATION_OPTIONS.find((o) => o.id === classification)
-                  ?.label
-              }
-            </span>
+            <div className="flex items-center gap-1.5">
+              <div
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  CLASSIFICATION_OPTIONS.find((o) => o.id === classification)
+                    ?.dotClass,
+                )}
+              />
+              <span>
+                {
+                  CLASSIFICATION_OPTIONS.find((o) => o.id === classification)
+                    ?.label
+                }
+              </span>
+            </div>
           ) : (
-            'Phân loại'
+            'Mức độ bảo mật'
           )
         }
         isActive={!!classification}
@@ -245,13 +248,15 @@ export function FileFilters({
               className="gap-2.5 rounded-md p-2 cursor-pointer"
             >
               <div className="flex h-4 w-6 shrink-0 items-center justify-center">
-                {isSelected && (
+                {isSelected ? (
                   <Check className="h-4 w-4 text-primary" strokeWidth={3} />
+                ) : (
+                  <div
+                    className={cn('h-2 w-2 rounded-full', option.dotClass)}
+                  />
                 )}
               </div>
-              <span className={cn('font-medium text-sm', option.className)}>
-                {option.label}
-              </span>
+              <span className="font-medium text-sm">{option.label}</span>
             </DropdownMenuItem>
           )
         })}
@@ -267,7 +272,7 @@ export function FileFilters({
           selectedPerson ? (
             <div className="flex items-center gap-1.5">
               <Avatar className="h-5 w-5 border">
-                <AvatarImage src={selectedPerson.avatar} />
+                <AvatarImage src={getAvatarUrl(selectedPerson.avatar)} />
                 <AvatarFallback className="text-[9px]">
                   {selectedPerson.name
                     ? selectedPerson.name.slice(0, 2).toUpperCase()
@@ -329,7 +334,10 @@ export function FileFilters({
                   >
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center">
                       <Avatar className="h-6 w-6 border">
-                        <AvatarImage src={person.avatar} alt={person.name} />
+                        <AvatarImage
+                          src={getAvatarUrl(person.avatar)}
+                          alt={person.name}
+                        />
                         <AvatarFallback className="text-[10px]">
                           {initials}
                         </AvatarFallback>
@@ -399,6 +407,112 @@ export function FileFilters({
             onClassificationChange(undefined)
             onPersonChange(null)
           }}
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+        >
+          Xóa tất cả
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── Activity Filters ────────────────────────────────────────────────────────
+
+import type { FileActivityAction } from '@/api/file-activity/schemas'
+import { Upload, Download, Share2, Trash2, ShieldOff, Eye } from 'lucide-react'
+import { getAvatarUrl } from '@/lib/avatar-utils'
+
+const ACTIVITY_ACTION_OPTIONS: {
+  id: FileActivityAction
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  colorClass: string
+}[] = [
+  {
+    id: 'UPLOAD',
+    label: 'Tải lên',
+    icon: Upload,
+    colorClass: 'text-emerald-600',
+  },
+  {
+    id: 'DOWNLOAD',
+    label: 'Tải xuống',
+    icon: Download,
+    colorClass: 'text-blue-600',
+  },
+  {
+    id: 'SHARE',
+    label: 'Chia sẻ',
+    icon: Share2,
+    colorClass: 'text-violet-600',
+  },
+  { id: 'DELETE', label: 'Xóa tệp', icon: Trash2, colorClass: 'text-red-600' },
+  {
+    id: 'REVOKE_SHARE',
+    label: 'Thu hồi quyền',
+    icon: ShieldOff,
+    colorClass: 'text-orange-600',
+  },
+  { id: 'VIEW', label: 'Xem tài liệu', icon: Eye, colorClass: 'text-sky-600' },
+]
+
+interface ActivityFiltersProps {
+  activityAction?: FileActivityAction
+  onActivityActionChange: (action: FileActivityAction | undefined) => void
+}
+
+export function ActivityFilters({
+  activityAction,
+  onActivityActionChange,
+}: ActivityFiltersProps) {
+  const activeOpt = ACTIVITY_ACTION_OPTIONS.find((o) => o.id === activityAction)
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap pb-2">
+      <FilterChip
+        contentClassName="w-44"
+        label={
+          activeOpt ? (
+            <div className="flex items-center gap-1.5">
+              <activeOpt.icon
+                className={cn('h-3.5 w-3.5 shrink-0', activeOpt.colorClass)}
+              />
+              <span>{activeOpt.label}</span>
+            </div>
+          ) : (
+            'Loại hoạt động'
+          )
+        }
+        isActive={!!activityAction}
+        onClear={() => onActivityActionChange(undefined)}
+      >
+        {ACTIVITY_ACTION_OPTIONS.map((option) => {
+          const Icon = option.icon
+          const isSelected = activityAction === option.id
+          return (
+            <DropdownMenuItem
+              key={option.id}
+              onClick={() =>
+                onActivityActionChange(isSelected ? undefined : option.id)
+              }
+              className="gap-2.5 rounded-md p-2 cursor-pointer"
+            >
+              <div className="flex h-4 w-6 shrink-0 items-center justify-center">
+                {isSelected ? (
+                  <Check className="h-4 w-4 text-primary" strokeWidth={3} />
+                ) : (
+                  <Icon className={cn('h-4 w-4', option.colorClass)} />
+                )}
+              </div>
+              <span className="font-medium text-sm">{option.label}</span>
+            </DropdownMenuItem>
+          )
+        })}
+      </FilterChip>
+
+      {activityAction && (
+        <button
+          onClick={() => onActivityActionChange(undefined)}
           className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
         >
           Xóa tất cả

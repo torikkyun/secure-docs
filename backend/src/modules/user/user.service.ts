@@ -76,6 +76,19 @@ export class UserService {
     return updatedUser;
   }
 
+  async updateAvatar(userId: string, filePath: string) {
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: filePath },
+      select: { id: true, avatar: true },
+    });
+
+    await this.cacheVersion.bump(`users:profile:${userId}:version`);
+    await this.cacheVersion.bump("users:version");
+
+    return updatedUser;
+  }
+
   @VersionedCache({
     prefix: "users",
     versionKey: "users:version",

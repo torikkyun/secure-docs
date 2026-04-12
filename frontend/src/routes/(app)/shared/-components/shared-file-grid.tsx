@@ -205,7 +205,7 @@ export function SharedFileGrid({
     <div
       ref={gridRef}
       className={cn(
-        'grid gap-3 mt-1',
+        'grid gap-3 mt-1 mx-0.5',
         isDetailBarOpen
           ? 'grid-cols-2 sm:grid-cols-3'
           : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5',
