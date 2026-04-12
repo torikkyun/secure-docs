@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/context-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { FileItem } from '@/api/file/types'
-import { useDetailBar } from '@/routes/(app)/route'
+import { useDetailBar } from '@/routes/(app)/-context/detail-bar-context'
 
 interface SharedFileGridProps {
   files: FileItem[]

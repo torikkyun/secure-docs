@@ -13,7 +13,7 @@ import { getUserFileActivitiesFn } from '@/api/file-activity/functions'
 import { FileActivity } from '@/api/file-activity/types'
 import { ActivityList } from './-components/activity-list'
 import { ActivityGrid } from './-components/activity-grid'
-import { useDetailBar } from '../route'
+import { useDetailBar } from '../-context/detail-bar-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 

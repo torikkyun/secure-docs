@@ -11,7 +11,7 @@ import { RevokeShareModal } from './-components/revoke-share-modal'
 import { DeleteFileModal } from './-components/delete-file-modal'
 import { createFileRoute } from '@tanstack/react-router'
 import { getFilesFn } from '@/api/file/functions'
-import { useDetailBar } from '../route'
+import { useDetailBar } from '../-context/detail-bar-context'
 
 export const Route = createFileRoute('/(app)/files/')({
   component: FilesPage,

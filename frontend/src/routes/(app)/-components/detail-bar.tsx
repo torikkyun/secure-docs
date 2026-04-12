@@ -1,11 +1,56 @@
-import { useDetailBar } from '../route'
-import { FileText, Calendar, HardDrive } from 'lucide-react'
+import { useDetailBar } from '../-context/detail-bar-context'
+import { useRouterState } from '@tanstack/react-router'
+import { FileText, Calendar, HardDrive, Shield, Flag } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { formatDate, formatFileSize, getFileIcon } from '@/lib/file-utils'
 import { cn } from '@/lib/utils'
+import { DetailBarUser } from './detail-bar-user'
+import type { FileClassification, ContentFlag } from '@/api/file/types'
 
-export function DetailBar() {
+const CLASSIFICATION_CONFIG: Record<
+  FileClassification,
+  { label: string; className: string }
+> = {
+  UNCLASSIFIED: {
+    label: 'Chưa phân loại',
+    className: 'bg-gray-100 text-gray-700 border-gray-200',
+  },
+  PUBLIC: {
+    label: 'Công khai',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  INTERNAL: {
+    label: 'Nội bộ',
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  CONFIDENTIAL: {
+    label: 'Bảo mật',
+    className: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  RESTRICTED: {
+    label: 'Tối mật',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
+}
+
+const FLAG_CONFIG: Record<ContentFlag, { label: string; className: string }> = {
+  SAFE: {
+    label: 'An toàn',
+    className: 'bg-green-100 text-green-700 border-green-200',
+  },
+  SENSITIVE: {
+    label: 'Nhạy cảm',
+    className: 'bg-amber-100 text-amber-700 border-amber-200',
+  },
+  FLAGGED: {
+    label: 'Cần xem xét',
+    className: 'bg-red-100 text-red-700 border-red-200',
+  },
+}
+
+function DetailBarFile() {
   const { selectedFile } = useDetailBar()
 
   if (!selectedFile) {
@@ -57,6 +102,41 @@ export function DetailBar() {
               <p className="text-sm">{formatDate(selectedFile.createdAt)}</p>
             </div>
           </div>
+          {selectedFile.classification && (
+            <div className="flex items-start gap-2.5">
+              <Shield className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-muted-foreground">Phân loại</p>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-[10px] h-5 px-1.5 w-fit',
+                    CLASSIFICATION_CONFIG[selectedFile.classification]
+                      .className,
+                  )}
+                >
+                  {CLASSIFICATION_CONFIG[selectedFile.classification].label}
+                </Badge>
+              </div>
+            </div>
+          )}
+          {selectedFile.contentFlag && selectedFile.contentFlag !== 'SAFE' && (
+            <div className="flex items-start gap-2.5">
+              <Flag className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <p className="text-xs text-muted-foreground">Nội dung</p>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-[10px] h-5 px-1.5 w-fit',
+                    FLAG_CONFIG[selectedFile.contentFlag].className,
+                  )}
+                >
+                  {FLAG_CONFIG[selectedFile.contentFlag].label}
+                </Badge>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -123,4 +203,16 @@ export function DetailBar() {
         )}
     </div>
   )
+}
+
+export function DetailBar() {
+  const currentPath = useRouterState({ select: (s) => s.location.pathname })
+  const isUsersPage =
+    currentPath === '/users' || currentPath.startsWith('/users/')
+
+  if (isUsersPage) {
+    return <DetailBarUser />
+  }
+
+  return <DetailBarFile />
 }

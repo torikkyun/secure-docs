@@ -11,17 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as authRouteRouteImport } from './routes/(auth)/route'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
-import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as appIndexRouteImport } from './routes/(app)/index'
 import { Route as authRegisterIndexRouteImport } from './routes/(auth)/register/index'
 import { Route as authLoginIndexRouteImport } from './routes/(auth)/login/index'
+import { Route as appUsersIndexRouteImport } from './routes/(app)/users/index'
 import { Route as appSharedIndexRouteImport } from './routes/(app)/shared/index'
 import { Route as appSettingsIndexRouteImport } from './routes/(app)/settings/index'
+import { Route as appGroupsIndexRouteImport } from './routes/(app)/groups/index'
 import { Route as appFilesIndexRouteImport } from './routes/(app)/files/index'
 import { Route as appFileActivityIndexRouteImport } from './routes/(app)/file-activity/index'
-import { Route as adminUsersIndexRouteImport } from './routes/(admin)/users/index'
-import { Route as adminGroupsIndexRouteImport } from './routes/(admin)/groups/index'
-import { Route as adminAlertsIndexRouteImport } from './routes/(admin)/alerts/index'
+import { Route as appAlertsIndexRouteImport } from './routes/(app)/alerts/index'
 
 const authRouteRoute = authRouteRouteImport.update({
   id: '/(auth)',
@@ -29,10 +28,6 @@ const authRouteRoute = authRouteRouteImport.update({
 } as any)
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const adminRouteRoute = adminRouteRouteImport.update({
-  id: '/(admin)',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appIndexRoute = appIndexRouteImport.update({
@@ -50,6 +45,11 @@ const authLoginIndexRoute = authLoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => authRouteRoute,
 } as any)
+const appUsersIndexRoute = appUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appSharedIndexRoute = appSharedIndexRouteImport.update({
   id: '/shared/',
   path: '/shared/',
@@ -58,6 +58,11 @@ const appSharedIndexRoute = appSharedIndexRouteImport.update({
 const appSettingsIndexRoute = appSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appGroupsIndexRoute = appGroupsIndexRouteImport.update({
+  id: '/groups/',
+  path: '/groups/',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appFilesIndexRoute = appFilesIndexRouteImport.update({
@@ -70,59 +75,48 @@ const appFileActivityIndexRoute = appFileActivityIndexRouteImport.update({
   path: '/file-activity/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const adminUsersIndexRoute = adminUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => adminRouteRoute,
-} as any)
-const adminGroupsIndexRoute = adminGroupsIndexRouteImport.update({
-  id: '/groups/',
-  path: '/groups/',
-  getParentRoute: () => adminRouteRoute,
-} as any)
-const adminAlertsIndexRoute = adminAlertsIndexRouteImport.update({
+const appAlertsIndexRoute = appAlertsIndexRouteImport.update({
   id: '/alerts/',
   path: '/alerts/',
-  getParentRoute: () => adminRouteRoute,
+  getParentRoute: () => appRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof appIndexRoute
-  '/alerts/': typeof adminAlertsIndexRoute
-  '/groups/': typeof adminGroupsIndexRoute
-  '/users/': typeof adminUsersIndexRoute
+  '/alerts/': typeof appAlertsIndexRoute
   '/file-activity/': typeof appFileActivityIndexRoute
   '/files/': typeof appFilesIndexRoute
+  '/groups/': typeof appGroupsIndexRoute
   '/settings/': typeof appSettingsIndexRoute
   '/shared/': typeof appSharedIndexRoute
+  '/users/': typeof appUsersIndexRoute
   '/login/': typeof authLoginIndexRoute
   '/register/': typeof authRegisterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof appIndexRoute
-  '/alerts': typeof adminAlertsIndexRoute
-  '/groups': typeof adminGroupsIndexRoute
-  '/users': typeof adminUsersIndexRoute
+  '/alerts': typeof appAlertsIndexRoute
   '/file-activity': typeof appFileActivityIndexRoute
   '/files': typeof appFilesIndexRoute
+  '/groups': typeof appGroupsIndexRoute
   '/settings': typeof appSettingsIndexRoute
   '/shared': typeof appSharedIndexRoute
+  '/users': typeof appUsersIndexRoute
   '/login': typeof authLoginIndexRoute
   '/register': typeof authRegisterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/(admin)': typeof adminRouteRouteWithChildren
   '/(app)': typeof appRouteRouteWithChildren
   '/(auth)': typeof authRouteRouteWithChildren
   '/(app)/': typeof appIndexRoute
-  '/(admin)/alerts/': typeof adminAlertsIndexRoute
-  '/(admin)/groups/': typeof adminGroupsIndexRoute
-  '/(admin)/users/': typeof adminUsersIndexRoute
+  '/(app)/alerts/': typeof appAlertsIndexRoute
   '/(app)/file-activity/': typeof appFileActivityIndexRoute
   '/(app)/files/': typeof appFilesIndexRoute
+  '/(app)/groups/': typeof appGroupsIndexRoute
   '/(app)/settings/': typeof appSettingsIndexRoute
   '/(app)/shared/': typeof appSharedIndexRoute
+  '/(app)/users/': typeof appUsersIndexRoute
   '/(auth)/login/': typeof authLoginIndexRoute
   '/(auth)/register/': typeof authRegisterIndexRoute
 }
@@ -131,45 +125,43 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/alerts/'
-    | '/groups/'
-    | '/users/'
     | '/file-activity/'
     | '/files/'
+    | '/groups/'
     | '/settings/'
     | '/shared/'
+    | '/users/'
     | '/login/'
     | '/register/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/alerts'
-    | '/groups'
-    | '/users'
     | '/file-activity'
     | '/files'
+    | '/groups'
     | '/settings'
     | '/shared'
+    | '/users'
     | '/login'
     | '/register'
   id:
     | '__root__'
-    | '/(admin)'
     | '/(app)'
     | '/(auth)'
     | '/(app)/'
-    | '/(admin)/alerts/'
-    | '/(admin)/groups/'
-    | '/(admin)/users/'
+    | '/(app)/alerts/'
     | '/(app)/file-activity/'
     | '/(app)/files/'
+    | '/(app)/groups/'
     | '/(app)/settings/'
     | '/(app)/shared/'
+    | '/(app)/users/'
     | '/(auth)/login/'
     | '/(auth)/register/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  adminRouteRoute: typeof adminRouteRouteWithChildren
   appRouteRoute: typeof appRouteRouteWithChildren
   authRouteRoute: typeof authRouteRouteWithChildren
 }
@@ -188,13 +180,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof appRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(admin)': {
-      id: '/(admin)'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof adminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/': {
@@ -218,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLoginIndexRouteImport
       parentRoute: typeof authRouteRoute
     }
+    '/(app)/users/': {
+      id: '/(app)/users/'
+      path: '/users'
+      fullPath: '/users/'
+      preLoaderRoute: typeof appUsersIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/shared/': {
       id: '/(app)/shared/'
       path: '/shared'
@@ -230,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings/'
       preLoaderRoute: typeof appSettingsIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/groups/': {
+      id: '/(app)/groups/'
+      path: '/groups'
+      fullPath: '/groups/'
+      preLoaderRoute: typeof appGroupsIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/files/': {
@@ -246,60 +245,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appFileActivityIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(admin)/users/': {
-      id: '/(admin)/users/'
-      path: '/users'
-      fullPath: '/users/'
-      preLoaderRoute: typeof adminUsersIndexRouteImport
-      parentRoute: typeof adminRouteRoute
-    }
-    '/(admin)/groups/': {
-      id: '/(admin)/groups/'
-      path: '/groups'
-      fullPath: '/groups/'
-      preLoaderRoute: typeof adminGroupsIndexRouteImport
-      parentRoute: typeof adminRouteRoute
-    }
-    '/(admin)/alerts/': {
-      id: '/(admin)/alerts/'
+    '/(app)/alerts/': {
+      id: '/(app)/alerts/'
       path: '/alerts'
       fullPath: '/alerts/'
-      preLoaderRoute: typeof adminAlertsIndexRouteImport
-      parentRoute: typeof adminRouteRoute
+      preLoaderRoute: typeof appAlertsIndexRouteImport
+      parentRoute: typeof appRouteRoute
     }
   }
 }
 
-interface adminRouteRouteChildren {
-  adminAlertsIndexRoute: typeof adminAlertsIndexRoute
-  adminGroupsIndexRoute: typeof adminGroupsIndexRoute
-  adminUsersIndexRoute: typeof adminUsersIndexRoute
-}
-
-const adminRouteRouteChildren: adminRouteRouteChildren = {
-  adminAlertsIndexRoute: adminAlertsIndexRoute,
-  adminGroupsIndexRoute: adminGroupsIndexRoute,
-  adminUsersIndexRoute: adminUsersIndexRoute,
-}
-
-const adminRouteRouteWithChildren = adminRouteRoute._addFileChildren(
-  adminRouteRouteChildren,
-)
-
 interface appRouteRouteChildren {
   appIndexRoute: typeof appIndexRoute
+  appAlertsIndexRoute: typeof appAlertsIndexRoute
   appFileActivityIndexRoute: typeof appFileActivityIndexRoute
   appFilesIndexRoute: typeof appFilesIndexRoute
+  appGroupsIndexRoute: typeof appGroupsIndexRoute
   appSettingsIndexRoute: typeof appSettingsIndexRoute
   appSharedIndexRoute: typeof appSharedIndexRoute
+  appUsersIndexRoute: typeof appUsersIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
   appIndexRoute: appIndexRoute,
+  appAlertsIndexRoute: appAlertsIndexRoute,
   appFileActivityIndexRoute: appFileActivityIndexRoute,
   appFilesIndexRoute: appFilesIndexRoute,
+  appGroupsIndexRoute: appGroupsIndexRoute,
   appSettingsIndexRoute: appSettingsIndexRoute,
   appSharedIndexRoute: appSharedIndexRoute,
+  appUsersIndexRoute: appUsersIndexRoute,
 }
 
 const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
@@ -321,7 +296,6 @@ const authRouteRouteWithChildren = authRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  adminRouteRoute: adminRouteRouteWithChildren,
   appRouteRoute: appRouteRouteWithChildren,
   authRouteRoute: authRouteRouteWithChildren,
 }

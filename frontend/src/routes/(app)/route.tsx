@@ -5,6 +5,7 @@ import {
   Outlet,
   redirect,
   useRouter,
+  useRouterState,
 } from '@tanstack/react-router'
 import {
   FileText,
@@ -22,8 +23,11 @@ import {
   LayoutGrid,
   List,
   Users,
+  UsersRound,
+  AlertTriangle,
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -35,13 +39,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
-import {
-  createContext,
-  useContext,
-  useState,
-  Dispatch,
-  SetStateAction,
-} from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getUnresolvedAlertCountFn } from '@/api/admin/functions'
 import { cn } from '@/lib/utils'
 import { UploadFileForm } from './-components/upload-file-form'
 import { DetailBar } from './-components/detail-bar'
@@ -51,46 +51,9 @@ import {
   FileClassification,
   PersonFilter,
 } from './-components/file-filters'
-import { useRouterState } from '@tanstack/react-router'
-import { FileItem } from '@/api/file/types'
-
-interface DetailBarContextValue {
-  isOpen: boolean
-  toggle: () => void
-  selectedFile: FileItem | null
-  setSelectedFile: (file: FileItem | null) => void
-  viewMode: 'list' | 'grid'
-  setViewMode: (mode: 'list' | 'grid') => void
-  fileType: FileTypeFilter | undefined
-  setFileType: (type: FileTypeFilter | undefined) => void
-  classification: FileClassification | undefined
-  setClassification: (c: FileClassification | undefined) => void
-  selectedPerson: PersonFilter | null
-  setSelectedPerson: (person: PersonFilter | null) => void
-  knownPeople: Map<string, PersonFilter>
-  setKnownPeople: Dispatch<SetStateAction<Map<string, PersonFilter>>>
-}
-
-export const DetailBarContext = createContext<DetailBarContextValue>({
-  isOpen: false,
-  toggle: () => {},
-  selectedFile: null,
-  setSelectedFile: () => {},
-  viewMode: 'list',
-  setViewMode: () => {},
-  fileType: undefined,
-  setFileType: () => {},
-  classification: undefined,
-  setClassification: () => {},
-  selectedPerson: null,
-  setSelectedPerson: () => {},
-  knownPeople: new Map(),
-  setKnownPeople: () => {},
-})
-
-export function useDetailBar() {
-  return useContext(DetailBarContext)
-}
+import { DetailBarContext, useDetailBar } from './-context/detail-bar-context'
+import type { FileItem } from '@/api/file/types'
+import type { AdminUser } from '@/api/admin/types'
 
 const navigation = [
   // { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
@@ -100,9 +63,18 @@ const navigation = [
   { name: 'Cài đặt cá nhân', href: '/settings', icon: Settings },
 ]
 
-const managerNavigation = [
-  { name: 'Quản lý nhóm', href: '/groups', icon: Users },
+const adminNavigation = [
+  { name: 'Quản lý người dùng', href: '/users', icon: Users, adminOnly: true },
+  { name: 'Quản lý nhóm', href: '/groups', icon: UsersRound, adminOnly: false },
+  {
+    name: 'Cảnh báo bất thường',
+    href: '/alerts',
+    icon: AlertTriangle,
+    adminOnly: true,
+  },
 ]
+
+const allNavigation = [...navigation, ...adminNavigation]
 
 function PageToolbar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
@@ -119,7 +91,7 @@ function PageToolbar() {
     setSelectedPerson,
     knownPeople,
   } = useDetailBar()
-  const currentNav = navigation.find(
+  const currentNav = allNavigation.find(
     (item) =>
       currentPath === item.href || currentPath.startsWith(item.href + '/'),
   )
@@ -140,7 +112,7 @@ function PageToolbar() {
         <h1 className="text-2xl font-semibold tracking-tight py-4">
           {currentNav.name}
         </h1>
-        <div className="flex items-center gap-1">
+        <div className={cn('flex items-center gap-1')}>
           {showViewToggle && (
             <>
               <Button
@@ -168,7 +140,7 @@ function PageToolbar() {
             size="icon"
             onClick={toggle}
             aria-label={isOpen ? 'Đóng bảng chi tiết' : 'Mở bảng chi tiết'}
-            className={cn(isOpen ? 'bg-muted mr-5' : 'mr-3')}
+            className={cn(isOpen ? 'bg-muted mr-5' : 'mr-5')}
           >
             {isOpen ? (
               <PanelRightClose className="h-5 w-5" />
@@ -211,10 +183,18 @@ function AppLayout() {
   const data = Route.useLoaderData()
   const user = data?.user
   const routerInstance = useRouter()
+
+  const { data: alertCount } = useQuery({
+    queryKey: ['admin', 'alerts', 'unresolved-count'],
+    queryFn: getUnresolvedAlertCountFn,
+    refetchInterval: 60_000,
+    enabled: user?.role?.name === 'admin',
+  })
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
-  const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isDetailBarOpen, setIsDetailBarOpen] = useState(false)
+  const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [fileType, setFileType] = useState<FileTypeFilter | undefined>(
     undefined,
@@ -286,28 +266,44 @@ function AppLayout() {
                   Quản lý
                 </p>
               </div>
-              {managerNavigation.map((item) => {
-                const isActive =
-                  currentPath === item.href ||
-                  currentPath.startsWith(item.href + '/')
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all outline-none',
-                      isActive
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                    )}
-                  >
-                    <item.icon
-                      className={cn('h-4 w-4', isActive ? 'text-primary' : '')}
-                    />
-                    {item.name}
-                  </Link>
+              {adminNavigation
+                .filter(
+                  (item) => !item.adminOnly || user?.role?.name === 'admin',
                 )
-              })}
+                .map((item) => {
+                  const isActive =
+                    currentPath === item.href ||
+                    currentPath.startsWith(item.href + '/')
+                  const isAlerts = item.href === '/alerts'
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all outline-none',
+                        isActive
+                          ? 'bg-primary/10 text-primary font-medium'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )}
+                    >
+                      <item.icon
+                        className={cn(
+                          'h-4 w-4',
+                          isActive ? 'text-primary' : '',
+                        )}
+                      />
+                      <span className="flex-1">{item.name}</span>
+                      {isAlerts && alertCount && alertCount.count > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="h-5 min-w-5 text-xs px-1"
+                        >
+                          {alertCount.count}
+                        </Badge>
+                      )}
+                    </Link>
+                  )
+                })}
             </>
           )}
         </nav>
@@ -321,7 +317,15 @@ function AppLayout() {
         isOpen: isDetailBarOpen,
         toggle: () => setIsDetailBarOpen((v) => !v),
         selectedFile,
-        setSelectedFile,
+        setSelectedFile: (file) => {
+          setSelectedFile(file)
+          if (file) setSelectedUser(null)
+        },
+        selectedUser,
+        setSelectedUser: (user) => {
+          setSelectedUser(user)
+          if (user) setSelectedFile(null)
+        },
         viewMode,
         setViewMode,
         fileType,
@@ -430,7 +434,7 @@ function AppLayout() {
           <div className="flex flex-1 overflow-hidden min-h-0">
             <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
               <PageToolbar />
-              <div className="flex-1 overflow-y-auto px-1 pb-2">
+              <div className="flex-1 overflow-y-auto pl-1 pb-2">
                 <Outlet />
               </div>
             </main>

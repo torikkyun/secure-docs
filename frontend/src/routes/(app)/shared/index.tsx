@@ -8,7 +8,7 @@ import { DownloadFileModal } from '../files/-components/download-file-modal'
 import { ViewFileModal } from '../files/-components/view-file-modal'
 import { SharedFileList } from './-components/shared-file-list'
 import { SharedFileGrid } from './-components/shared-file-grid'
-import { useDetailBar } from '../route'
+import { useDetailBar } from '../-context/detail-bar-context'
 
 export const Route = createFileRoute('/(app)/shared/')({
   component: SharedPage,

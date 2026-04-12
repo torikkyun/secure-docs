@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 
-export const Route = createFileRoute('/(admin)/alerts/')({
+export const Route = createFileRoute('/(app)/alerts/')({
   component: AdminAlertsPage,
 })
 
