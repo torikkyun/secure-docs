@@ -52,10 +52,10 @@ export function KeySyncWarning() {
     <>
       <Alert
         variant="destructive"
-        className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 pl-0"
       >
-        <div className="flex gap-2">
-          <AlertTriangle className="h-5 w-5" />
+        <div className="flex gap-5 items-center">
+          <AlertTriangle className="h-8 w-8" />
           <div className="space-y-1">
             <AlertTitle>Cảnh báo: Khóa không đồng bộ</AlertTitle>
             <AlertDescription>
@@ -64,11 +64,7 @@ export function KeySyncWarning() {
             </AlertDescription>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive-foreground/20 text-white w-full md:w-auto shrink-0"
-          onClick={() => setShowModal(true)}
-        >
+        <Button variant="destructive" onClick={() => setShowModal(true)}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Khôi phục ngay
         </Button>

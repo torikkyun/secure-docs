@@ -5,7 +5,12 @@ import type {
   PersonFilter,
 } from '@/routes/(app)/-components/file-filters'
 import type { FileItem } from '@/api/file/types'
-import type { AdminUser } from '@/api/admin/types'
+import type {
+  AdminUser,
+  AnomalyAlert,
+  AlertLevel,
+  AlertType,
+} from '@/api/admin/types'
 import type { FileActivityAction } from '@/api/file-activity/schemas'
 
 export interface DetailBarContextValue {
@@ -15,6 +20,8 @@ export interface DetailBarContextValue {
   setSelectedFile: (file: FileItem | null) => void
   selectedUser: AdminUser | null
   setSelectedUser: (user: AdminUser | null) => void
+  selectedAlert: AnomalyAlert | null
+  setSelectedAlert: (alert: AnomalyAlert | null) => void
   viewMode: 'list' | 'grid'
   setViewMode: (mode: 'list' | 'grid') => void
   fileType: FileTypeFilter | undefined
@@ -27,6 +34,12 @@ export interface DetailBarContextValue {
   setKnownPeople: Dispatch<SetStateAction<Map<string, PersonFilter>>>
   activityAction: FileActivityAction | undefined
   setActivityAction: (action: FileActivityAction | undefined) => void
+  alertLevel: 'all' | AlertLevel
+  setAlertLevel: (level: 'all' | AlertLevel) => void
+  alertType: 'all' | AlertType
+  setAlertType: (type: 'all' | AlertType) => void
+  alertUnresolvedOnly: boolean
+  setAlertUnresolvedOnly: (v: boolean) => void
 }
 
 export const DetailBarContext = createContext<DetailBarContextValue>({
@@ -36,6 +49,8 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   setSelectedFile: () => {},
   selectedUser: null,
   setSelectedUser: () => {},
+  selectedAlert: null,
+  setSelectedAlert: () => {},
   viewMode: 'list',
   setViewMode: () => {},
   fileType: undefined,
@@ -48,6 +63,12 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   setKnownPeople: () => {},
   activityAction: undefined,
   setActivityAction: () => {},
+  alertLevel: 'all',
+  setAlertLevel: () => {},
+  alertType: 'all',
+  setAlertType: () => {},
+  alertUnresolvedOnly: false,
+  setAlertUnresolvedOnly: () => {},
 })
 
 export function useDetailBar() {

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCurrentUserFn } from '@/api/user/functions'
 import { uploadAvatarFn } from '@/api/user/functions'
-import { KeySyncWarning } from '@/routes/(app)/settings/-components/key-sync-warning'
 import { UpdateProfileForm } from '@/routes/(app)/settings/-components/update-profile-form'
 import { GeminiApiKeyForm } from '@/routes/(app)/settings/-components/gemini-api-key-form'
 import { RecoverKeysModal } from '@/routes/(app)/settings/-components/recover-keys-modal'
@@ -99,9 +98,6 @@ function Settings() {
 
   return (
     <div className="max-w-5xl space-y-1">
-      {/* Key sync warning */}
-      <KeySyncWarning />
-
       {/* ── Account Overview ─────────────────────── */}
       <div className="flex flex-row items-start gap-5 lg:gap-8 py-6">
         <SectionHeader

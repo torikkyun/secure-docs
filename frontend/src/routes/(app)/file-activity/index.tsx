@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import {
@@ -8,19 +8,33 @@ import {
   Share2,
   Trash2,
   ShieldOff,
+  Upload,
+  X,
 } from 'lucide-react'
+import { DateRange } from 'react-day-picker'
+import { format } from 'date-fns'
+
 import { getUserFileActivitiesFn } from '@/api/file-activity/functions'
 import { FileActivity } from '@/api/file-activity/types'
 import { ActivityList } from './-components/activity-list'
 import { useDetailBar } from '../-context/detail-bar-context'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { Calendar } from '@/components/ui/calendar'
+import { Button } from '@/components/ui/button'
+import { vi } from 'date-fns/locale/vi'
 
 export const Route = createFileRoute('/(app)/file-activity/')({
   component: FileActivityPage,
 })
 
 const statConfig = [
+  {
+    action: 'UPLOAD',
+    label: 'Tải lên',
+    icon: Upload,
+    colorClass: 'text-green-600',
+    bgClass: 'bg-green-50 dark:bg-green-950/50',
+  },
   {
     action: 'DOWNLOAD',
     label: 'Tải xuống',
@@ -55,7 +69,7 @@ function ActivityStats({ stats }: { stats: Record<string, number> }) {
   const counts = stats
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 flex-1">
       {statConfig.map(({ action, label, icon: Icon, colorClass, bgClass }) => (
         <div
           key={action}
@@ -83,51 +97,14 @@ function ActivityStats({ stats }: { stats: Record<string, number> }) {
   )
 }
 
-function ActivitySkeleton() {
-  return (
-    <div className="space-y-6">
-      {[1, 2].map((g) => (
-        <div key={g}>
-          <div className="flex items-center gap-3 mb-4">
-            <Skeleton className="h-3 w-20" />
-            <div className="flex-1 h-px bg-border" />
-          </div>
-          <div className="space-y-0">
-            {[1, 2, 3].map((i, index) => (
-              <div key={i} className="flex gap-4 group">
-                <div className="flex flex-col items-center shrink-0">
-                  <Skeleton className="w-10 h-10 rounded-full ring-4 ring-background z-10" />
-                  {index < 2 && (
-                    <div className="w-px flex-1 bg-border mt-2 mb-2" />
-                  )}
-                </div>
-                <div className={cn('flex-1 min-w-0', index < 2 && 'pb-6')}>
-                  <div className="bg-card border border-border/50 rounded-xl p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-4 w-full">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-9 w-64 max-w-full rounded-lg" />
-                        <div className="flex items-center gap-2 mt-1">
-                          <Skeleton className="h-5 w-5 rounded-full" />
-                          <Skeleton className="h-3 w-32" />
-                        </div>
-                      </div>
-                      <Skeleton className="h-6 w-12 rounded-md shrink-0" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export function FileActivityPage() {
   const { activityAction } = useDetailBar()
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  const [date, setDate] = useState<DateRange | undefined>()
+
+  const startDateStr = date?.from ? format(date.from, 'yyyy-MM-dd') : undefined
+  const endDateStr = date?.to ? format(date.to, 'yyyy-MM-dd') : undefined
 
   const {
     data: activitiesData,
@@ -136,10 +113,16 @@ export function FileActivityPage() {
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery({
-    queryKey: ['file-activities', activityAction],
+    queryKey: ['file-activities', activityAction, startDateStr, endDateStr],
     queryFn: ({ pageParam }) =>
       getUserFileActivitiesFn({
-        data: { page: pageParam as number, limit: 20, action: activityAction },
+        data: {
+          page: pageParam as number,
+          limit: 20,
+          action: activityAction,
+          startDate: startDateStr,
+          endDate: endDateStr,
+        },
       }),
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
@@ -169,45 +152,74 @@ export function FileActivityPage() {
     return () => observer.disconnect()
   }, [onSentinel])
 
-  if (isLoading) {
-    return (
-      <div className="mt-1">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-20 rounded-xl" />
-          ))}
+  const calendarSidebar = (
+    <div className="w-full xl:w-[320px] shrink-0 order-first xl:order-last mr-1">
+      <div className="sticky top-6 border border-border/50 bg-card rounded-xl p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-4 min-h-8 ml-6 mr-4">
+          <h3 className="font-semibold text-sm">Lọc theo ngày</h3>
+          {date && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDate(undefined)}
+              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Xóa lọc
+            </Button>
+          )}
         </div>
-        <ActivitySkeleton />
+        <Calendar
+          mode="range"
+          defaultMonth={date?.from}
+          selected={date}
+          onSelect={setDate}
+          numberOfMonths={1}
+          locale={vi}
+          className="p-0 flex justify-center w-full [--cell-size:--spacing(9)]"
+        />
       </div>
-    )
-  }
-
-  if (activities.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="bg-muted/30 p-5 rounded-full mb-4">
-          <Activity className="h-12 w-12 text-muted-foreground/50" />
-        </div>
-        <h3 className="text-lg font-semibold mb-2">Chưa có hoạt động nào</h3>
-        <p className="text-[13px] text-muted-foreground max-w-sm">
-          Khi có bất kỳ thay đổi nào với tệp của bạn, chúng sẽ hiển thị ở đây.
-        </p>
-      </div>
-    )
-  }
+    </div>
+  )
 
   return (
     <div className="flex flex-col mt-1">
-      <ActivityStats stats={stats} />
+      <div className="mb-6 px-0.5">
+        <ActivityStats stats={stats} />
+      </div>
 
-      <ActivityList activities={activities} />
+      <div className="flex flex-col xl:flex-row gap-6">
+        <div className="flex-1 min-w-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20 w-full min-h-95">
+              <div className="text-muted-foreground">Đang tải hoạt động...</div>
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center border border-border/50 bg-card/50 rounded-xl w-full min-h-95">
+              <div className="bg-muted/50 p-5 rounded-full mb-4">
+                <Activity className="h-12 w-12 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                Chưa có hoạt động nào
+              </h3>
+              <p className="text-[13px] text-muted-foreground max-w-sm">
+                Không tìm thấy dữ liệu cho khoảng thời gian này.
+              </p>
+            </div>
+          ) : (
+            <ActivityList activities={activities} />
+          )}
 
-      <div ref={sentinelRef} className="h-1" />
-      {isFetchingNextPage && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <div ref={sentinelRef} className="h-1" />
+          {isFetchingNextPage && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
         </div>
-      )}
+
+        {calendarSidebar}
+      </div>
     </div>
   )
 }

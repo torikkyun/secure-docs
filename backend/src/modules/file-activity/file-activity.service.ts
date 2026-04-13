@@ -116,10 +116,20 @@ export class FileActivityService {
   })
   async getUserFileActivities(
     userId: string,
-    { page = 1, limit = 20, action }: QueryFileActivityDto,
+    { page = 1, limit = 20, action, startDate, endDate }: QueryFileActivityDto,
   ) {
     const { take, skip } = getOffsetPagination(page, limit);
-    const where = { userId, ...(action ? { action } : {}) };
+    const where: any = { userId, ...(action ? { action } : {}) };
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
 
     const [activities, total, actionGroups] = await Promise.all([
       this.prisma.fileActivity.findMany({
@@ -186,7 +196,7 @@ export class FileActivityService {
   })
   async getFileActivities(
     fileId: string,
-    { page = 1, limit = 50 }: QueryFileActivityDto,
+    { page = 1, limit = 50, action, startDate, endDate }: QueryFileActivityDto,
     userId: string,
   ) {
     const hasAccess = await this.verifyFileAccess(fileId, userId);
@@ -197,10 +207,21 @@ export class FileActivityService {
     }
 
     const { take, skip } = getOffsetPagination(page, limit);
+    const where: any = { fileId, ...(action ? { action } : {}) };
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
 
     const [activities, total] = await Promise.all([
       this.prisma.fileActivity.findMany({
-        where: { fileId },
+        where,
         include: {
           user: {
             select: {
@@ -222,7 +243,7 @@ export class FileActivityService {
         take,
         skip,
       }),
-      this.prisma.fileActivity.count({ where: { fileId } }),
+      this.prisma.fileActivity.count({ where }),
     ]);
 
     const enrichedActivities = await Promise.all(

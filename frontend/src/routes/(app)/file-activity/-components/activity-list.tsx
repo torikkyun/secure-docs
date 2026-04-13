@@ -189,7 +189,7 @@ function ActivityItem({
                     variant="outline"
                     className="h-5 text-[10px] font-medium py-0 px-2 rounded-full border-amber-300 text-amber-600 bg-amber-50 dark:border-amber-700/50 dark:text-amber-500 dark:bg-amber-950/20"
                   >
-                    <Link2 className="h-2.5 w-2.5 mr-1" />
+                    {/* <Link2 className="h-2.5 w-2.5 mr-1" /> */}
                     On-chain
                   </Badge>
                 )}
@@ -258,7 +258,7 @@ function ActivityItem({
                       }
                       className="cursor-pointer"
                     >
-                      <ExternalLink className="mr-2 h-4 w-4 text-muted-foreground" />
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
                       Xem trên Etherscan
                     </DropdownMenuItem>
                   ) : (

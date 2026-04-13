@@ -13,6 +13,8 @@ export const getUserFileActivitiesFn = createServerFn({ method: 'GET' })
     if (data.page) params.append('page', data.page.toString())
     if (data.limit) params.append('limit', data.limit.toString())
     if (data.action) params.append('action', data.action)
+    if (data.startDate) params.append('startDate', data.startDate)
+    if (data.endDate) params.append('endDate', data.endDate)
 
     const url = `${API_URL}/file-activity/user${
       params.toString() ? `?${params.toString()}` : ''
@@ -39,6 +41,8 @@ export const getFileActivitiesFn = createServerFn({ method: 'GET' })
 
     if (data.page) params.append('page', data.page.toString())
     if (data.limit) params.append('limit', data.limit.toString())
+    if (data.startDate) params.append('startDate', data.startDate)
+    if (data.endDate) params.append('endDate', data.endDate)
 
     const url = `${API_URL}/file-activity/file/${data.fileId}${
       params.toString() ? `?${params.toString()}` : ''

@@ -7,8 +7,12 @@ import {
   FileSpreadsheet,
   Image,
   Search,
+  AlertTriangle,
+  AlertOctagon,
+  ShieldAlert,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { AlertLevel, AlertType } from '@/api/admin/types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,7 +81,7 @@ const CLASSIFICATION_OPTIONS: {
   { id: 'RESTRICTED', label: 'Tối mật', dotClass: 'bg-red-500' },
 ]
 
-interface ChipProps {
+export interface ChipProps {
   label: React.ReactNode
   isActive: boolean
   onClear: () => void
@@ -86,7 +90,7 @@ interface ChipProps {
   onOpenChange?: (open: boolean) => void
 }
 
-function FilterChip({
+export function FilterChip({
   label,
   isActive,
   onClear,
@@ -513,6 +517,147 @@ export function ActivityFilters({
       {activityAction && (
         <button
           onClick={() => onActivityActionChange(undefined)}
+          className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+        >
+          Xóa tất cả
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── Alert Filters ─────────────────────────────────────────────────────────────
+
+const ALERT_LEVEL_OPTIONS: {
+  id: AlertLevel
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+}[] = [
+  { id: 'WARNING', label: 'Cảnh báo', icon: AlertTriangle },
+  { id: 'ALERT', label: 'Nghiêm trọng', icon: AlertOctagon },
+  { id: 'CRITICAL', label: 'Cực kỳ nghiêm trọng', icon: ShieldAlert },
+]
+
+const ALERT_TYPE_OPTIONS: { id: AlertType; label: string }[] = [
+  { id: 'STATISTICAL', label: 'Thống kê (Z-Score)' },
+  { id: 'POLICY', label: 'Vi phạm quy tắc' },
+]
+
+interface AlertFiltersProps {
+  level: 'all' | AlertLevel
+  type: 'all' | AlertType
+  unresolvedOnly: boolean
+  onLevelChange: (level: 'all' | AlertLevel) => void
+  onTypeChange: (type: 'all' | AlertType) => void
+  onUnresolvedOnlyChange: (v: boolean) => void
+}
+
+export function AlertFilters({
+  level,
+  type,
+  unresolvedOnly,
+  onLevelChange,
+  onTypeChange,
+  onUnresolvedOnlyChange,
+}: AlertFiltersProps) {
+  const activeLevel = ALERT_LEVEL_OPTIONS.find((o) => o.id === level)
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap pb-2">
+      <FilterChip
+        contentClassName="w-52"
+        label={
+          activeLevel ? (
+            <div className="flex items-center gap-1.5">
+              <activeLevel.icon className="h-3.5 w-3.5 shrink-0" />
+              <span>{activeLevel.label}</span>
+            </div>
+          ) : (
+            'Mức độ'
+          )
+        }
+        isActive={level !== 'all'}
+        onClear={() => onLevelChange('all')}
+      >
+        {ALERT_LEVEL_OPTIONS.map((option) => {
+          const Icon = option.icon
+          const isSelected = level === option.id
+          return (
+            <DropdownMenuItem
+              key={option.id}
+              onClick={() => onLevelChange(isSelected ? 'all' : option.id)}
+              className="gap-2.5 rounded-md p-2 cursor-pointer"
+            >
+              <div className="flex h-4 w-6 shrink-0 items-center justify-center">
+                {isSelected ? (
+                  <Check className="h-4 w-4 text-primary" strokeWidth={3} />
+                ) : (
+                  <Icon className="h-4 w-4" />
+                )}
+              </div>
+              <span className="font-medium text-sm">{option.label}</span>
+            </DropdownMenuItem>
+          )
+        })}
+      </FilterChip>
+
+      <FilterChip
+        contentClassName="w-56"
+        label={
+          type !== 'all' ? (
+            <span>{ALERT_TYPE_OPTIONS.find((o) => o.id === type)!.label}</span>
+          ) : (
+            'Loại cảnh báo'
+          )
+        }
+        isActive={type !== 'all'}
+        onClear={() => onTypeChange('all')}
+      >
+        {ALERT_TYPE_OPTIONS.map((option) => {
+          const isSelected = type === option.id
+          return (
+            <DropdownMenuItem
+              key={option.id}
+              onClick={() => onTypeChange(isSelected ? 'all' : option.id)}
+              className="gap-2.5 rounded-md p-2 cursor-pointer"
+            >
+              <div className="flex h-4 w-6 shrink-0 items-center justify-center">
+                {isSelected && (
+                  <Check className="h-4 w-4 text-primary" strokeWidth={3} />
+                )}
+              </div>
+              <span className="font-medium text-sm">{option.label}</span>
+            </DropdownMenuItem>
+          )
+        })}
+      </FilterChip>
+
+      <FilterChip
+        contentClassName="w-48"
+        label={unresolvedOnly ? 'Chưa xử lý' : 'Trạng thái xử lý'}
+        isActive={unresolvedOnly}
+        onClear={() => onUnresolvedOnlyChange(false)}
+      >
+        <DropdownMenuItem
+          onClick={() => onUnresolvedOnlyChange(!unresolvedOnly)}
+          className="gap-2.5 rounded-md p-2 cursor-pointer"
+        >
+          <div className="flex h-4 w-6 shrink-0 items-center justify-center">
+            {unresolvedOnly && (
+              <Check className="h-4 w-4 text-primary" strokeWidth={3} />
+            )}
+          </div>
+          <span className="font-medium text-sm">Chỉ xem chưa xử lý</span>
+        </DropdownMenuItem>
+      </FilterChip>
+
+      {(level !== 'all' || type !== 'all' || unresolvedOnly) && (
+        <button
+          onClick={() => {
+            onLevelChange('all')
+            onTypeChange('all')
+            onUnresolvedOnlyChange(false)
+          }}
           className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
         >
           Xóa tất cả

@@ -48,9 +48,9 @@ import {
 import { MoreHorizontal, Search, Shield, Ban, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useDetailBar } from '../-context/detail-bar-context'
+import { useDetailBar } from '../../-context/detail-bar-context'
 
-export const Route = createFileRoute('/(app)/users/')({
+export const Route = createFileRoute('/(app)/(admin)/users/')({
   component: AdminUsersPage,
 })
 

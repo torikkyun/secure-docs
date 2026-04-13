@@ -56,7 +56,7 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/(app)/groups/')({
+export const Route = createFileRoute('/(app)/(admin)/groups/')({
   component: AdminGroupsPage,
 })
 

@@ -1,14 +1,28 @@
 import { useDetailBar } from '../-context/detail-bar-context'
 import { useRouterState } from '@tanstack/react-router'
-import { FileText, Calendar, HardDrive, Shield, Flag } from 'lucide-react'
+import {
+  FileText,
+  Calendar,
+  HardDrive,
+  Shield,
+  Flag,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+} from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { formatDate, formatFileSize, getFileIcon } from '@/lib/file-utils'
 import { cn } from '@/lib/utils'
 import { DetailBarUser } from './detail-bar-user'
 import type { FileClassification, ContentFlag } from '@/api/file/types'
+import type { AlertLevel, AlertType } from '@/api/admin/types'
+import { resolveAlertFn } from '@/api/admin/functions'
 import { getAvatarUrl } from '@/lib/avatar-utils'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 const CLASSIFICATION_CONFIG: Record<
   FileClassification,
@@ -209,13 +223,263 @@ function DetailBarFile() {
   )
 }
 
+// ─── Config shared with alert detail (duplicated locally to avoid coupling) ─
+
+const ALERT_LEVEL_CONFIG: Record<
+  AlertLevel,
+  { label: string; variant: string; icon: typeof AlertTriangle }
+> = {
+  WARNING: {
+    label: 'Cảnh báo',
+    variant:
+      'bg-yellow-50 text-yellow-800 border-yellow-300 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800',
+    icon: AlertTriangle,
+  },
+  ALERT: {
+    label: 'Nghiêm trọng',
+    variant:
+      'bg-orange-50 text-orange-800 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800',
+    icon: AlertTriangle,
+  },
+  CRITICAL: {
+    label: 'Cực kỳ nghiêm trọng',
+    variant:
+      'bg-red-50 text-red-800 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800',
+    icon: AlertTriangle,
+  },
+}
+
+const ALERT_TYPE_CONFIG: Record<
+  AlertType,
+  { label: string; dotClass: string }
+> = {
+  STATISTICAL: { label: 'Thống kê (Z-Score)', dotClass: 'bg-blue-400' },
+  POLICY: { label: 'Vi phạm quy tắc', dotClass: 'bg-purple-400' },
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  DOWNLOAD: 'Tải xuống',
+  VIEW: 'Xem tài liệu',
+  SHARE: 'Chia sẻ',
+  UPLOAD: 'Tải lên',
+  DELETE: 'Xóa',
+  RENAME: 'Đổi tên',
+  REVOKE: 'Thu hồi quyền truy cập',
+}
+
+const METADATA_LABEL: Record<string, string> = {
+  action: 'Hành động bất thường',
+  currentCount: 'Số lần thực hiện (trong 1 giờ)',
+  zScore: 'Mức độ bất thường (Z-score)',
+  mean: 'Mức trung bình mỗi giờ (30 ngày qua)',
+  stdDev: 'Độ lệch chuẩn',
+  downloadCount: 'Số file đã tải xuống',
+  windowMinutes: 'Trong khoảng thời gian (phút)',
+  accessHour: 'Giờ truy cập hệ thống',
+  fileId: 'Mã định danh tài liệu',
+  recipientId: 'Mã định danh người nhận',
+}
+
+function formatMetadataValue(key: string, value: unknown): string {
+  if (key === 'action' && typeof value === 'string') {
+    return ACTION_LABEL[value] ?? value
+  }
+  if (key === 'accessHour' && typeof value === 'number') {
+    return `${value}:00 — ngoài giờ làm việc (07:00–19:00)`
+  }
+  if (key === 'windowMinutes' && typeof value === 'number') {
+    return `${value} phút`
+  }
+  if (key === 'zScore' && typeof value === 'number') {
+    const severity =
+      value > 3.5 ? 'rất cao' : value > 2.5 ? 'cao' : 'trung bình'
+    return `${value} (${severity})`
+  }
+  if (typeof value === 'number') return String(value)
+  if (typeof value === 'boolean') return value ? 'Có' : 'Không'
+  if (typeof value === 'string') return value
+  return JSON.stringify(value)
+}
+
+function DetailBarAlert() {
+  const { selectedAlert, setSelectedAlert } = useDetailBar()
+  const queryClient = useQueryClient()
+
+  const resolveMutation = useMutation({
+    mutationFn: (alertId: string) =>
+      resolveAlertFn({ data: { alertId, isResolved: true } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'alerts'] })
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'unresolved-alert-count'],
+      })
+      toast.success('Đã đánh dấu đã xử lý')
+      // Update the selected alert in-place so the sidebar reflects resolved state
+      if (selectedAlert) {
+        setSelectedAlert({ ...selectedAlert, isResolved: true })
+      }
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  if (!selectedAlert) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 text-center gap-3">
+        <AlertTriangle className="h-12 w-12 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground">
+          Chọn một cảnh báo để xem thông tin chi tiết
+        </p>
+      </div>
+    )
+  }
+
+  const levelCfg = ALERT_LEVEL_CONFIG[selectedAlert.level]
+  const typeCfg = ALERT_TYPE_CONFIG[selectedAlert.type]
+  const fullDate = formatDate(selectedAlert.createdAt)
+  const metadataEntries = Object.entries(selectedAlert.metadata).filter(
+    ([, v]) => v !== null && v !== undefined,
+  )
+
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      {/* User */}
+      <div className="flex flex-col items-center py-5 gap-3 bg-muted/30 rounded-lg">
+        <Avatar className="h-12 w-12 border shadow-sm">
+          <AvatarImage src={getAvatarUrl(selectedAlert.user.avatar)} />
+          <AvatarFallback className="text-sm font-semibold">
+            {selectedAlert.user.name.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="text-center px-2">
+          <p className="text-sm font-semibold">{selectedAlert.user.name}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {selectedAlert.user.email}
+          </p>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Badges */}
+      <div className="flex flex-wrap gap-1.5">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md border whitespace-nowrap',
+            levelCfg.variant,
+          )}
+        >
+          <levelCfg.icon className="h-3 w-3 shrink-0" />
+          {levelCfg.label}
+        </span>
+        <Badge
+          variant="secondary"
+          className="text-xs gap-1.5 font-medium px-2 py-0.5"
+        >
+          <span
+            className={cn(
+              'h-1.5 w-1.5 rounded-full shrink-0',
+              typeCfg.dotClass,
+            )}
+          />
+          {typeCfg.label}
+        </Badge>
+        {selectedAlert.isResolved ? (
+          <Badge
+            variant="outline"
+            className="text-xs gap-1 font-medium bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800"
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            Đã xử lý
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Chưa xử lý
+          </Badge>
+        )}
+      </div>
+
+      {/* Time */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Clock className="h-3.5 w-3.5 shrink-0" />
+        <span>{fullDate}</span>
+      </div>
+
+      <Separator />
+
+      {/* Description */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Mô tả
+        </h3>
+        <p className="text-sm text-foreground/90 leading-relaxed">
+          {selectedAlert.description}
+        </p>
+      </div>
+
+      {/* Metadata */}
+      {metadataEntries.length > 0 && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Thông tin chi tiết
+            </h3>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="divide-y divide-border/60">
+                {metadataEntries.map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex items-baseline justify-between gap-3 px-3 py-2"
+                  >
+                    <span className="text-xs text-muted-foreground shrink-0 font-medium">
+                      {METADATA_LABEL[key] ?? key}
+                    </span>
+                    <span className="text-xs font-semibold text-foreground text-right">
+                      {formatMetadataValue(key, value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Resolve action */}
+      {!selectedAlert.isResolved && (
+        <>
+          <Separator />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs font-medium w-full"
+            onClick={() => resolveMutation.mutate(selectedAlert.id)}
+            disabled={resolveMutation.isPending}
+          >
+            Đánh dấu đã xử lý
+          </Button>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function DetailBar() {
   const currentPath = useRouterState({ select: (s) => s.location.pathname })
   const isUsersPage =
     currentPath === '/users' || currentPath.startsWith('/users/')
+  const isAlertsPage =
+    currentPath === '/alerts' || currentPath.startsWith('/alerts/')
 
   if (isUsersPage) {
     return <DetailBarUser />
+  }
+
+  if (isAlertsPage) {
+    return <DetailBarAlert />
   }
 
   return <DetailBarFile />

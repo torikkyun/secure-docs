@@ -51,12 +51,14 @@ import {
   FileClassification,
   PersonFilter,
   ActivityFilters,
+  AlertFilters,
 } from './-components/file-filters'
 import { DetailBarContext, useDetailBar } from './-context/detail-bar-context'
 import type { FileItem } from '@/api/file/types'
-import type { AdminUser } from '@/api/admin/types'
+import type { AdminUser, AnomalyAlert, AlertLevel, AlertType } from '@/api/admin/types'
 import type { FileActivityAction } from '@/api/file-activity/schemas'
 import { getAvatarUrl } from '@/lib/avatar-utils'
+import { KeySyncWarning } from './settings/-components/key-sync-warning'
 
 const navigation = [
   // { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
@@ -95,6 +97,12 @@ function PageToolbar() {
     knownPeople,
     activityAction,
     setActivityAction,
+    alertLevel,
+    setAlertLevel,
+    alertType,
+    setAlertType,
+    alertUnresolvedOnly,
+    setAlertUnresolvedOnly,
   } = useDetailBar()
   const currentNav = allNavigation.find(
     (item) =>
@@ -111,8 +119,11 @@ function PageToolbar() {
     currentPath.startsWith('/file-activity/')
   const isSettingsPage =
     currentPath === '/settings' || currentPath.startsWith('/settings/')
+  const isAlertsPage =
+    currentPath === '/alerts' || currentPath.startsWith('/alerts/')
   const showViewToggle = isFilesPage || isSharedPage
-  const showDetailBarToggle = !isActivityPage && !isSettingsPage
+  const showDetailBarToggle =
+    !isActivityPage && !isSettingsPage
 
   return (
     <div className="sticky bg-background">
@@ -180,6 +191,16 @@ function PageToolbar() {
           onActivityActionChange={setActivityAction}
         />
       )}
+      {isAlertsPage && (
+        <AlertFilters
+          level={alertLevel}
+          type={alertType}
+          unresolvedOnly={alertUnresolvedOnly}
+          onLevelChange={setAlertLevel}
+          onTypeChange={setAlertType}
+          onUnresolvedOnlyChange={setAlertUnresolvedOnly}
+        />
+      )}
     </div>
   )
 }
@@ -212,6 +233,7 @@ function AppLayout() {
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
+  const [selectedAlert, setSelectedAlert] = useState<AnomalyAlert | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [fileType, setFileType] = useState<FileTypeFilter | undefined>(
     undefined,
@@ -229,6 +251,9 @@ function AppLayout() {
   const [activityAction, setActivityAction] = useState<
     FileActivityAction | undefined
   >(undefined)
+  const [alertLevel, setAlertLevel] = useState<'all' | AlertLevel>('all')
+  const [alertType, setAlertType] = useState<'all' | AlertType>('all')
+  const [alertUnresolvedOnly, setAlertUnresolvedOnly] = useState(false)
 
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
@@ -345,7 +370,12 @@ function AppLayout() {
         selectedUser,
         setSelectedUser: (user) => {
           setSelectedUser(user)
-          if (user) setSelectedFile(null)
+          if (user) { setSelectedFile(null); setSelectedAlert(null) }
+        },
+        selectedAlert,
+        setSelectedAlert: (alert) => {
+          setSelectedAlert(alert)
+          if (alert) { setSelectedFile(null); setSelectedUser(null) }
         },
         viewMode,
         setViewMode,
@@ -359,6 +389,12 @@ function AppLayout() {
         setKnownPeople,
         activityAction,
         setActivityAction,
+        alertLevel,
+        setAlertLevel,
+        alertType,
+        setAlertType,
+        alertUnresolvedOnly,
+        setAlertUnresolvedOnly,
       }}
     >
       <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
@@ -457,6 +493,9 @@ function AppLayout() {
               )}
             </div>
           </header>
+          <div className="px-4 lg:px-6 shrink-0 mt-5">
+            <KeySyncWarning />
+          </div>
           <div className="flex flex-1 overflow-hidden min-h-0">
             <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
               <PageToolbar />
