@@ -1,5 +1,6 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, Req } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
@@ -21,8 +22,8 @@ export class AuthController {
 
   @Post("login")
   @Public()
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  login(@Body() loginDto: LoginDto, @Req() req: Request) {
+    return this.authService.login(loginDto, req);
   }
 
   @Post("verify-passcode")

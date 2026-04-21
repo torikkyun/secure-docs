@@ -28,13 +28,14 @@ model User {
   isBanned  Boolean  @default(false) @map("is_banned")
   isDeleted Boolean  @default(false) @map("is_deleted")
 
-  ownedFiles       File[]         @relation("FileOwner")
-  sentShares       Share[]        @relation("ShareSender")
-  receivedShares   Share[]        @relation("ShareRecipient")
-  fileActivities   FileActivity[] @relation("FileActivityUser")
-  createdGroups    Group[]        @relation("GroupCreator")
+  ownedFiles       File[]          @relation("FileOwner")
+  sentShares       Share[]         @relation("ShareSender")
+  receivedShares   Share[]         @relation("ShareRecipient")
+  fileActivities   FileActivity[]  @relation("FileActivityUser")
+  createdGroups    Group[]         @relation("GroupCreator")
   groupMemberships GroupMember[]
   anomalyAlerts    AnomalyAlert[]
+  loginActivities  LoginActivity[]
 
   @@map("users")
 }
@@ -156,6 +157,18 @@ model AnomalyAlert {
   createdAt   DateTime   @default(now()) @map("created_at")
 
   @@map("anomaly_alerts")
+}
+
+model LoginActivity {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  ipAddress    String   @map("ip_address")
+  userAgent    String   @map("user_agent")
+  isSuspicious Boolean  @default(false) @map("is_suspicious")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("login_activities")
 }
 
 model FileActivity {

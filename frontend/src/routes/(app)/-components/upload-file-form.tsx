@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
-import { Upload, X, Loader2, Sparkles } from 'lucide-react'
+import { Upload, X, Loader2, Sparkles, Plus } from 'lucide-react'
 import { getFileIcon, formatFileSize } from '@/lib/file-utils'
 import { toast } from 'sonner'
 import {
@@ -26,7 +26,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select'
 import { uploadFilesFn } from '@/api/file/functions'
 import {
   getGeminiApiKey,
@@ -38,6 +43,8 @@ import type { FileClassification, ContentFlag } from '@/api/file/types'
 interface FileClassificationState {
   classification: FileClassification
   contentFlag: ContentFlag
+  aiClassification?: FileClassification
+  aiContentFlag?: ContentFlag
   reason: string
   isPending: boolean
   error?: string
@@ -98,29 +105,47 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
   >(new Map())
   const classifiedKeysRef = useRef<Set<string>>(new Set())
 
-  // Auto-classify PDF files when selectedFiles changes
+  // Initialize classification state and auto-classify PDFs when selectedFiles changes
   useEffect(() => {
     const apiKey = getGeminiApiKey()
-    if (!apiKey) return
+    const pdfToClassify: { file: File; index: number; fileKey: string }[] = []
 
     selectedFiles.forEach((file, index) => {
-      if (file.type !== 'application/pdf') return
-
-      // Stable key per file to avoid re-classifying same file at same index
       const fileKey = `${index}:${file.name}:${file.size}`
-      if (classifiedKeysRef.current.has(fileKey)) return
-      classifiedKeysRef.current.add(fileKey)
+      if (
+        file.type === 'application/pdf' &&
+        apiKey &&
+        !classifiedKeysRef.current.has(fileKey)
+      ) {
+        pdfToClassify.push({ file, index, fileKey })
+      }
+    })
 
-      setClassificationMap((prev) => {
-        const next = new Map(prev)
-        next.set(index, {
-          classification: 'UNCLASSIFIED',
-          contentFlag: 'SAFE',
-          reason: '',
-          isPending: true,
-        })
-        return next
+    // Initialize state for all files; mark PDFs pending in one batch
+    setClassificationMap((prev) => {
+      const next = new Map(prev)
+      selectedFiles.forEach((_, index) => {
+        if (!next.has(index)) {
+          const needsClassify = pdfToClassify.some((p) => p.index === index)
+          next.set(index, {
+            classification: 'UNCLASSIFIED',
+            contentFlag: 'SAFE',
+            reason: '',
+            isPending: needsClassify,
+          })
+        } else if (pdfToClassify.some((p) => p.index === index)) {
+          next.set(index, { ...next.get(index)!, isPending: true })
+        }
       })
+      return next
+    })
+
+    pdfToClassify.forEach(({ fileKey }) => {
+      classifiedKeysRef.current.add(fileKey)
+    })
+
+    // Run async AI classification for PDFs
+    pdfToClassify.forEach(({ file, index, fileKey }) => {
       ;(async () => {
         try {
           const { getDocument, GlobalWorkerOptions } =
@@ -146,9 +171,12 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
           if (!hasText) {
             setClassificationMap((prev) => {
               const next = new Map(prev)
+              const existing = next.get(index)
               next.set(index, {
-                classification: 'UNCLASSIFIED',
-                contentFlag: 'SAFE',
+                ...(existing ?? {
+                  classification: 'UNCLASSIFIED',
+                  contentFlag: 'SAFE',
+                }),
                 reason: 'Không thể trích xuất văn bản từ PDF',
                 isPending: false,
               })
@@ -165,6 +193,8 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
             next.set(index, {
               classification: result.classification,
               contentFlag: result.contentFlag,
+              aiClassification: result.classification,
+              aiContentFlag: result.contentFlag,
               reason: result.reason,
               isPending: false,
             })
@@ -187,6 +217,27 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
       })()
     })
   }, [selectedFiles])
+
+  const updateUserClassification = (
+    index: number,
+    classification: FileClassification,
+  ) => {
+    setClassificationMap((prev) => {
+      const next = new Map(prev)
+      const existing = next.get(index)
+      if (existing) next.set(index, { ...existing, classification })
+      return next
+    })
+  }
+
+  const updateUserContentFlag = (index: number, contentFlag: ContentFlag) => {
+    setClassificationMap((prev) => {
+      const next = new Map(prev)
+      const existing = next.get(index)
+      if (existing) next.set(index, { ...existing, contentFlag })
+      return next
+    })
+  }
 
   const uploadMutation = useMutation({
     mutationFn: async (passcode: string) => {
@@ -398,50 +449,117 @@ export function UploadFileForm({ onClose }: UploadFileFormProps) {
                             </Button>
                           </div>
 
-                          {/* AI classification result (PDF only) */}
-                          {isPdf && hasGeminiKey && (
-                            <div className="flex items-center gap-1.5 pl-1">
-                              {classState?.isPending ? (
-                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  AI đang phân loại...
-                                </span>
-                              ) : classState && !classState.error ? (
-                                <span className="flex items-center gap-1.5 flex-wrap">
-                                  <Sparkles className="h-3 w-3 text-muted-foreground shrink-0" />
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[10px] h-5 px-1.5 ${CLASSIFICATION_CONFIG[classState.classification].className}`}
-                                    title={classState.reason}
-                                  >
+                          {/* Classification controls */}
+                          <div className="flex items-center gap-2 pl-1 flex-wrap">
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                Phân loại:
+                              </span>
+                              <Select
+                                value={
+                                  classState?.classification ?? 'UNCLASSIFIED'
+                                }
+                                onValueChange={(v) =>
+                                  updateUserClassification(
+                                    index,
+                                    v as FileClassification,
+                                  )
+                                }
+                                disabled={classState?.isPending}
+                              >
+                                <SelectTrigger className="h-6 text-[11px] px-2 py-0 w-auto min-w-28">
+                                  <span>
                                     {
                                       CLASSIFICATION_CONFIG[
-                                        classState.classification
+                                        classState?.classification ??
+                                          'UNCLASSIFIED'
                                       ].label
                                     }
-                                  </Badge>
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[10px] h-5 px-1.5 ${FLAG_CONFIG[classState.contentFlag].className}`}
-                                  >
-                                    {FLAG_CONFIG[classState.contentFlag].label}
-                                  </Badge>
-                                  {classState.reason && (
-                                    <span
-                                      className="text-[10px] text-muted-foreground truncate max-w-81"
-                                      title={classState.reason}
-                                    >
-                                      {classState.reason}
-                                    </span>
+                                  </span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.entries(CLASSIFICATION_CONFIG).map(
+                                    ([key, { label }]) => (
+                                      <SelectItem
+                                        key={key}
+                                        value={key}
+                                        className="text-[11px]"
+                                      >
+                                        {label}
+                                      </SelectItem>
+                                    ),
                                   )}
-                                </span>
-                              ) : classState?.error ? (
-                                <span className="text-[11px] text-muted-foreground">
-                                  Không thể phân loại AI
-                                </span>
-                              ) : null}
+                                </SelectContent>
+                              </Select>
                             </div>
-                          )}
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                Cờ:
+                              </span>
+                              <Select
+                                value={classState?.contentFlag ?? 'SAFE'}
+                                onValueChange={(v) =>
+                                  updateUserContentFlag(index, v as ContentFlag)
+                                }
+                                disabled={classState?.isPending}
+                              >
+                                <SelectTrigger className="h-6 text-[11px] px-2 py-0 w-auto min-w-24">
+                                  <span>
+                                    {
+                                      FLAG_CONFIG[
+                                        classState?.contentFlag ?? 'SAFE'
+                                      ].label
+                                    }
+                                  </span>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.entries(FLAG_CONFIG).map(
+                                    ([key, { label }]) => (
+                                      <SelectItem
+                                        key={key}
+                                        value={key}
+                                        className="text-[11px]"
+                                      >
+                                        {label}
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {isPdf && hasGeminiKey && (
+                              <>
+                                {classState?.isPending ? (
+                                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    AI đang phân loại...
+                                  </span>
+                                ) : classState?.aiClassification ? (
+                                  <span
+                                    className="flex items-center gap-1 text-[10px] text-muted-foreground"
+                                    title={classState.reason}
+                                  >
+                                    <Sparkles className="h-3 w-3 shrink-0" />
+                                    Gợi ý:{' '}
+                                    {
+                                      CLASSIFICATION_CONFIG[
+                                        classState.aiClassification
+                                      ].label
+                                    }{' '}
+                                    /{' '}
+                                    {
+                                      FLAG_CONFIG[classState.aiContentFlag!]
+                                        .label
+                                    }
+                                  </span>
+                                ) : classState?.error ? (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Không thể phân loại AI
+                                  </span>
+                                ) : null}
+                              </>
+                            )}
+                          </div>
                         </div>
                       )
                     })}

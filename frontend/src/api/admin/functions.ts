@@ -8,6 +8,7 @@ import {
   UserDetailResult,
   AdminUser,
   AnomalyAlert,
+  LoginActivitiesResult,
 } from './types'
 import {
   queryAdminUsersSchema,
@@ -16,6 +17,7 @@ import {
   queryAlertsSchema,
   resolveAlertSchema,
   getAdminUserDetailSchema,
+  queryLoginActivitiesSchema,
 } from './schemas'
 
 export const getAdminUsersFn = createServerFn({ method: 'GET' })
@@ -26,6 +28,10 @@ export const getAdminUsersFn = createServerFn({ method: 'GET' })
     if (data.page) params.set('page', String(data.page))
     if (data.limit) params.set('limit', String(data.limit))
     if (data.search) params.set('search', data.search)
+    if (data.role) params.set('role', data.role)
+    if (data.status) params.set('status', data.status)
+    if (data.sortBy) params.set('sortBy', data.sortBy)
+    if (data.sortOrder) params.set('sortOrder', data.sortOrder)
     const res = await fetch(`${API_URL}/admin/users?${params.toString()}`, {
       headers,
     })
@@ -127,6 +133,26 @@ export const resolveAlertFn = createServerFn({ method: 'POST' })
       headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify({ isResolved: data.isResolved }),
     })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.message)
+    }
+    return res.json()
+  })
+
+export const getLoginActivitiesFn = createServerFn({ method: 'GET' })
+  .inputValidator(queryLoginActivitiesSchema)
+  .handler(async ({ data }): Promise<LoginActivitiesResult> => {
+    const headers = await getHeaders()
+    const params = new URLSearchParams()
+    if (data.page) params.set('page', String(data.page))
+    if (data.limit) params.set('limit', String(data.limit))
+    if (data.userId) params.set('userId', data.userId)
+    if (data.suspiciousOnly) params.set('suspiciousOnly', 'true')
+    const res = await fetch(
+      `${API_URL}/admin/login-activities?${params.toString()}`,
+      { headers },
+    )
     if (!res.ok) {
       const error = await res.json()
       throw new Error(error.message)

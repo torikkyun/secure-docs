@@ -5,11 +5,13 @@ import {
   OnModuleInit,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { Request } from "express";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { VerifyPasscodeDto } from "./dto/verify-passcode.dto";
 import { PrismaService } from "@/database/prisma.service";
 import { comparePassword, hashPassword } from "@/common/utils/hash.util";
+import { extractIpAndUserAgent } from "@/common/utils/request.util";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -83,7 +85,7 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async login({ email, password }: LoginDto) {
+  async login({ email, password }: LoginDto, req: Request) {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { role: true },
@@ -96,6 +98,27 @@ export class AuthService implements OnModuleInit {
     if (!isPasswordValid) {
       throw new ConflictException("Email hoặc mật khẩu không đúng");
     }
+
+    const { ipAddress, userAgent } = extractIpAndUserAgent(req);
+
+    // Detect suspicious login: new IP or new device for this user
+    const [knownIp, knownDevice] = await Promise.all([
+      this.prisma.loginActivity.findFirst({
+        where: { userId: user.id, ipAddress },
+      }),
+      this.prisma.loginActivity.findFirst({
+        where: { userId: user.id, userAgent },
+      }),
+    ]);
+    const isSuspicious = !knownIp || !knownDevice;
+
+    this.prisma.loginActivity
+      .create({
+        data: { userId: user.id, ipAddress, userAgent, isSuspicious },
+      })
+      .catch((err) =>
+        this.logger.error("Failed to record login activity", err),
+      );
 
     const accessToken = this.generateAccessToken(user.id);
 

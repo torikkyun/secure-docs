@@ -12,6 +12,7 @@ import { AdminService } from "./admin.service";
 import { QueryAlertDto } from "./dto/query-alert.dto";
 import { UpdateUserRoleDto } from "./dto/update-user-role.dto";
 import { ResolveAlertDto } from "./dto/resolve-alert.dto";
+import { QueryLoginActivityDto } from "./dto/query-login-activity.dto";
 import { Roles } from "@/common/decorators/roles.decorator";
 
 @Controller("api/admin")
@@ -26,11 +27,19 @@ export class AdminController {
     @Query("page") page?: number,
     @Query("limit") limit?: number,
     @Query("search") search?: string,
+    @Query("role") role?: string,
+    @Query("status") status?: "active" | "banned",
+    @Query("sortBy") sortBy?: "name" | "createdAt" | "ownedFiles",
+    @Query("sortOrder") sortOrder?: "asc" | "desc",
   ) {
     return this.adminService.getUsers({
       page: Number(page) || 1,
       limit: Number(limit) || 20,
       search,
+      role,
+      status,
+      sortBy,
+      sortOrder,
     });
   }
 
@@ -71,5 +80,10 @@ export class AdminController {
     @Body() dto: ResolveAlertDto,
   ) {
     return this.adminService.resolveAlert(alertId, dto);
+  }
+
+  @Get("login-activities")
+  getLoginActivities(@Query() dto: QueryLoginActivityDto) {
+    return this.adminService.getLoginActivities(dto);
   }
 }

@@ -7,6 +7,7 @@ import { PrismaService } from "@/database/prisma.service";
 import { QueryAlertDto } from "./dto/query-alert.dto";
 import { UpdateUserRoleDto } from "./dto/update-user-role.dto";
 import { ResolveAlertDto } from "./dto/resolve-alert.dto";
+import { QueryLoginActivityDto } from "./dto/query-login-activity.dto";
 import { getOffsetPagination } from "@/common/utils/pagination.util";
 import { Prisma } from "@/prisma/client";
 
@@ -18,10 +19,18 @@ export class AdminService {
     page = 1,
     limit = 20,
     search,
+    role,
+    status,
+    sortBy = "createdAt",
+    sortOrder = "desc",
   }: {
     page?: number;
     limit?: number;
     search?: string;
+    role?: string;
+    status?: "active" | "banned";
+    sortBy?: "name" | "createdAt" | "ownedFiles";
+    sortOrder?: "asc" | "desc";
   }) {
     const { take, skip } = getOffsetPagination(page, limit);
 
@@ -45,6 +54,12 @@ export class AdminService {
             ],
           }
         : {}),
+      ...(role ? { role: { name: role } } : {}),
+      ...(status === "active"
+        ? { isBanned: false }
+        : status === "banned"
+          ? { isBanned: true }
+          : {}),
     };
 
     const [users, total] = await Promise.all([
@@ -63,7 +78,10 @@ export class AdminService {
             select: { ownedFiles: true, sentShares: true },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy:
+          sortBy === "ownedFiles"
+            ? { ownedFiles: { _count: sortOrder } }
+            : { [sortBy]: sortOrder },
         skip,
         take,
       }),
@@ -225,5 +243,42 @@ export class AdminService {
     ]);
 
     return { user, activities, alerts };
+  }
+
+  async getLoginActivities({
+    page = 1,
+    limit = 50,
+    userId,
+    suspiciousOnly,
+  }: QueryLoginActivityDto) {
+    const { take, skip } = getOffsetPagination(page, limit);
+
+    const where: Prisma.LoginActivityWhereInput = {
+      ...(userId ? { userId } : {}),
+      ...(suspiciousOnly ? { isSuspicious: true } : {}),
+    };
+
+    const [activities, total] = await Promise.all([
+      this.prisma.loginActivity.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+      this.prisma.loginActivity.count({ where }),
+    ]);
+
+    return {
+      activities,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

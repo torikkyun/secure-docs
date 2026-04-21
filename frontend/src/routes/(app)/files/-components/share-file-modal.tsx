@@ -296,7 +296,6 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                   Cá nhân
                 </TabsTrigger>
                 <TabsTrigger value="group" className="flex-1 gap-1.5">
-                  <Users className="h-3.5 w-3.5" />
                   Theo nhóm
                 </TabsTrigger>
               </TabsList>
@@ -435,7 +434,18 @@ export function ShareFileModal({ file, isOpen, onClose }: ShareFileModalProps) {
                       onValueChange={(v) => setSelectedGroupId(v ?? '')}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn nhóm để chia sẻ..." />
+                        <SelectValue placeholder="Chọn nhóm để chia sẻ...">
+                          {selectedGroupId
+                            ? (() => {
+                                const g = groupsData?.groups.find(
+                                  (g) => g.id === selectedGroupId,
+                                )
+                                return g
+                                  ? `${g.name} (${g._count?.members ?? 0} thành viên)`
+                                  : null
+                              })()
+                            : null}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {groupsData?.groups.map((g) => (

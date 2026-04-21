@@ -50,12 +50,18 @@ import {
   FileTypeFilter,
   FileClassification,
   PersonFilter,
-  ActivityFilters,
-  AlertFilters,
-} from './-components/file-filters'
+} from './-components/filters/file-filters'
+import { ActivityFilters } from './-components/filters/activity-filters'
+import { AlertFilters } from './-components/filters/alert-filters'
+import { UserFilters } from './-components/filters/user-filters'
 import { DetailBarContext, useDetailBar } from './-context/detail-bar-context'
 import type { FileItem } from '@/api/file/types'
-import type { AdminUser, AnomalyAlert, AlertLevel, AlertType } from '@/api/admin/types'
+import type {
+  AdminUser,
+  AnomalyAlert,
+  AlertLevel,
+  AlertType,
+} from '@/api/admin/types'
 import type { FileActivityAction } from '@/api/file-activity/schemas'
 import { getAvatarUrl } from '@/lib/avatar-utils'
 import { KeySyncWarning } from './settings/-components/key-sync-warning'
@@ -103,6 +109,10 @@ function PageToolbar() {
     setAlertType,
     alertUnresolvedOnly,
     setAlertUnresolvedOnly,
+    userRole,
+    setUserRole,
+    userStatus,
+    setUserStatus,
   } = useDetailBar()
   const currentNav = allNavigation.find(
     (item) =>
@@ -121,9 +131,10 @@ function PageToolbar() {
     currentPath === '/settings' || currentPath.startsWith('/settings/')
   const isAlertsPage =
     currentPath === '/alerts' || currentPath.startsWith('/alerts/')
+  const isUsersPage =
+    currentPath === '/users' || currentPath.startsWith('/users/')
   const showViewToggle = isFilesPage || isSharedPage
-  const showDetailBarToggle =
-    !isActivityPage && !isSettingsPage
+  const showDetailBarToggle = !isActivityPage && !isSettingsPage
 
   return (
     <div className="sticky bg-background">
@@ -201,6 +212,14 @@ function PageToolbar() {
           onUnresolvedOnlyChange={setAlertUnresolvedOnly}
         />
       )}
+      {isUsersPage && (
+        <UserFilters
+          userRole={userRole}
+          userStatus={userStatus}
+          onRoleChange={setUserRole}
+          onStatusChange={setUserStatus}
+        />
+      )}
     </div>
   )
 }
@@ -254,6 +273,14 @@ function AppLayout() {
   const [alertLevel, setAlertLevel] = useState<'all' | AlertLevel>('all')
   const [alertType, setAlertType] = useState<'all' | AlertType>('all')
   const [alertUnresolvedOnly, setAlertUnresolvedOnly] = useState(false)
+  const [userRole, setUserRole] = useState<'admin' | 'manager' | 'user' | ''>(
+    '',
+  )
+  const [userStatus, setUserStatus] = useState<'active' | 'banned' | ''>('')
+  const [userSortBy, setUserSortBy] = useState<
+    'name' | 'createdAt' | 'ownedFiles'
+  >('createdAt')
+  const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('desc')
 
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
@@ -370,12 +397,18 @@ function AppLayout() {
         selectedUser,
         setSelectedUser: (user) => {
           setSelectedUser(user)
-          if (user) { setSelectedFile(null); setSelectedAlert(null) }
+          if (user) {
+            setSelectedFile(null)
+            setSelectedAlert(null)
+          }
         },
         selectedAlert,
         setSelectedAlert: (alert) => {
           setSelectedAlert(alert)
-          if (alert) { setSelectedFile(null); setSelectedUser(null) }
+          if (alert) {
+            setSelectedFile(null)
+            setSelectedUser(null)
+          }
         },
         viewMode,
         setViewMode,
@@ -395,6 +428,14 @@ function AppLayout() {
         setAlertType,
         alertUnresolvedOnly,
         setAlertUnresolvedOnly,
+        userRole,
+        setUserRole,
+        userStatus,
+        setUserStatus,
+        userSortBy,
+        setUserSortBy,
+        userSortOrder,
+        setUserSortOrder,
       }}
     >
       <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">

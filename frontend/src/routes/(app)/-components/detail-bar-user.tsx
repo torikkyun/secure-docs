@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/file-utils'
+import { getAvatarUrl } from '@/lib/avatar-utils'
 
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
@@ -40,7 +41,10 @@ export function DetailBarUser() {
       {/* Avatar & name */}
       <div className="flex flex-col items-center py-6 gap-3 bg-muted/30 rounded-lg">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={selectedUser.avatar} alt={selectedUser.name} />
+          <AvatarImage
+            src={getAvatarUrl(selectedUser.avatar)}
+            alt={selectedUser.name}
+          />
           <AvatarFallback className="text-lg">{initials}</AvatarFallback>
         </Avatar>
         <div className="text-center">

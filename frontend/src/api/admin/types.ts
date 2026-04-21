@@ -66,3 +66,21 @@ export type UserDetailResult = {
   }[]
   alerts: AnomalyAlert[]
 }
+
+export type LoginActivity = {
+  id: string
+  userId: string
+  user: { id: string; name: string; email: string; avatar: string }
+  ipAddress: string
+  userAgent: string
+  isSuspicious: boolean
+  createdAt: string
+}
+
+export type LoginActivitiesResult = {
+  activities: LoginActivity[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}

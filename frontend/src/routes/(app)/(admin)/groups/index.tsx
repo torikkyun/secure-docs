@@ -12,9 +12,8 @@ import {
 } from '@/api/group/functions'
 import { getUsersFn } from '@/api/user/functions'
 import { GroupItem } from '@/api/group/types'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Dialog,
@@ -24,13 +23,6 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,18 +35,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  MoreHorizontal,
-  Plus,
-  Search,
-  Users,
-  Pencil,
-  Trash2,
-  UserPlus,
-  UserMinus,
-} from 'lucide-react'
+import { Plus, Search, Users, UserPlus, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import { GroupList } from './-components/group-list'
 
 export const Route = createFileRoute('/(app)/(admin)/groups/')({
   component: AdminGroupsPage,
@@ -64,6 +47,10 @@ function AdminGroupsPage() {
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'members'>(
+    'createdAt',
+  )
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editGroup, setEditGroup] = useState<GroupItem | null>(null)
   const [deleteGroup, setDeleteGroupTarget] = useState<GroupItem | null>(null)
@@ -73,6 +60,16 @@ function AdminGroupsPage() {
   const [newGroupDesc, setNewGroupDesc] = useState('')
   const [editName, setEditName] = useState('')
   const [editDesc, setEditDesc] = useState('')
+
+  const handleSort = (field: 'name' | 'createdAt' | 'members') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortOrder('asc')
+    }
+    setPage(1)
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'groups', page, search],
@@ -167,125 +164,71 @@ function AdminGroupsPage() {
   const memberIds = new Set(groupDetail?.members?.map((m) => m.id) ?? [])
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Quản lý nhóm
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Tạo và quản lý các nhóm người dùng trong hệ thống
-          </p>
-        </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+    <div className="flex flex-col gap-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-4">
+        {/* <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Tìm nhóm..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(1)
+            }}
+          />
+        </div> */}
+        <Button
+          onClick={() => setCreateDialogOpen(true)}
+          className="gap-2 shrink-0"
+        >
           <Plus className="h-4 w-4" />
           Tạo nhóm mới
         </Button>
       </div>
 
-      <div className="relative w-full max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Tìm nhóm..."
-          className="pl-9"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value)
-            setPage(1)
-          }}
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {isLoading && (
-          <p className="text-muted-foreground col-span-full text-center py-10">
-            Đang tải...
-          </p>
-        )}
-        {!isLoading &&
-          data?.groups.map((group) => (
-            <div
-              key={group.id}
-              className="border rounded-lg p-4 space-y-3 hover:border-primary/50 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{group.name}</p>
-                    <Badge variant="outline" className="text-xs mt-0.5">
-                      {group._count?.members ?? 0} thành viên
-                    </Badge>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    className={cn(
-                      buttonVariants({ variant: 'ghost', size: 'icon' }),
-                      'h-8 w-8',
-                    )}
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => setMembersGroupId(group.id)}
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Quản lý thành viên
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setEditGroup(group)
-                        setEditName(group.name)
-                        setEditDesc(group.description ?? '')
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Chỉnh sửa
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => setDeleteGroupTarget(group)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Xóa nhóm
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              {group.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {group.description}
-                </p>
-              )}
-              <div className="flex items-center gap-2">
-                <Avatar className="h-5 w-5">
-                  <AvatarImage src={group.createdBy.avatar} />
-                  <AvatarFallback>
-                    {group.createdBy.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-muted-foreground">
-                  {group.createdBy.name}
-                </span>
-              </div>
+      {/* Main Content */}
+      <div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-muted-foreground">Đang tải nhóm...</div>
+          </div>
+        ) : (data?.groups ?? []).length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="bg-muted/30 p-6 rounded-full mb-4">
+              <Users className="h-16 w-16 text-muted-foreground/50" />
             </div>
-          ))}
-        {!isLoading && data?.groups.length === 0 && (
-          <p className="col-span-full text-center py-10 text-muted-foreground">
-            Chưa có nhóm nào
-          </p>
+            <h3 className="text-xl font-semibold mb-2">Chưa có nhóm nào</h3>
+            <p className="text-muted-foreground mb-6 max-w-sm">
+              Tạo nhóm đầu tiên để quản lý người dùng theo phòng ban hoặc bộ
+              phận.
+            </p>
+            <Button onClick={() => setCreateDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Tạo nhóm mới
+            </Button>
+          </div>
+        ) : (
+          <GroupList
+            groups={data?.groups ?? []}
+            onEdit={(group) => {
+              setEditGroup(group)
+              setEditName(group.name)
+              setEditDesc(group.description ?? '')
+            }}
+            onDelete={(group) => setDeleteGroupTarget(group)}
+            onManageMembers={(group) => setMembersGroupId(group.id)}
+            onSort={handleSort}
+          />
         )}
       </div>
 
+      {/* Pagination */}
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pr-2">
           <p className="text-sm text-muted-foreground">
-            Trang {data.page} / {data.totalPages}
+            Trang {data.page} / {data.totalPages} — {data.total} nhóm
           </p>
           <div className="flex gap-2">
             <Button

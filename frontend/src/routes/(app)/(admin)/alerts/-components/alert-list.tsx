@@ -1,30 +1,13 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
-import type { AlertLevel, AlertType, AnomalyAlert } from '@/api/admin/types'
-import { buttonVariants } from '@/components/ui/button'
-import { useDetailBar } from '@/routes/(app)/-context/detail-bar-context'
+import { useMemo, useState, useRef, useEffect } from 'react'
+import type { LoginActivity } from '@/api/admin/types'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu'
-import {
-  CheckCircle2,
-  AlertTriangle,
-  AlertOctagon,
   ShieldAlert,
-  MoreHorizontal,
-  Info,
+  ShieldCheck,
+  Monitor,
+  Smartphone,
+  Copy,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -44,93 +27,77 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 
-// ─── Config ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export const LEVEL_CONFIG: Record<
-  AlertLevel,
-  {
-    label: string
-    variant: string
-    icon: typeof AlertTriangle
-    rowClass: string
-    dotClass: string
-  }
-> = {
-  WARNING: {
-    label: 'Cảnh báo',
-    variant:
-      'bg-yellow-50 text-yellow-800 border-yellow-300 dark:bg-yellow-950/40 dark:text-yellow-400 dark:border-yellow-800',
-    icon: AlertTriangle,
-    rowClass: 'border-l-yellow-400',
-    dotClass: 'bg-yellow-400',
-  },
-  ALERT: {
-    label: 'Nghiêm trọng',
-    variant:
-      'bg-orange-50 text-orange-800 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800',
-    icon: AlertOctagon,
-    rowClass: 'border-l-orange-500',
-    dotClass: 'bg-orange-500',
-  },
-  CRITICAL: {
-    label: 'Cực kỳ nghiêm trọng',
-    variant:
-      'bg-red-50 text-red-800 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800',
-    icon: ShieldAlert,
-    rowClass: 'border-l-red-500',
-    dotClass: 'bg-red-500',
-  },
+function parseDevice(userAgent: string): { name: string; isMobile: boolean } {
+  if (!userAgent) return { name: 'Không xác định', isMobile: false }
+  const ua = userAgent.toLowerCase()
+  const isMobile = /mobile|android|iphone|ipad|tablet/i.test(ua)
+
+  let browser = 'Trình duyệt khác'
+  if (ua.includes('edg/')) browser = 'Microsoft Edge'
+  else if (ua.includes('opr/') || ua.includes('opera')) browser = 'Opera'
+  else if (ua.includes('chrome')) browser = 'Chrome'
+  else if (ua.includes('safari')) browser = 'Safari'
+  else if (ua.includes('firefox')) browser = 'Firefox'
+  else if (ua.includes('trident') || ua.includes('msie'))
+    browser = 'Internet Explorer'
+
+  let os = ''
+  if (ua.includes('windows')) os = 'Windows'
+  else if (ua.includes('mac os')) os = 'macOS'
+  else if (ua.includes('iphone')) os = 'iPhone'
+  else if (ua.includes('ipad')) os = 'iPad'
+  else if (ua.includes('android')) os = 'Android'
+  else if (ua.includes('linux')) os = 'Linux'
+
+  return { name: os ? `${browser} / ${os}` : browser, isMobile }
 }
 
-export const TYPE_CONFIG: Record<
-  AlertType,
-  { label: string; dotClass: string }
-> = {
-  STATISTICAL: { label: 'Thống kê (Z-Score)', dotClass: 'bg-blue-400' },
-  POLICY: { label: 'Vi phạm quy tắc', dotClass: 'bg-purple-400' },
-}
+// ─── Columns ──────────────────────────────────────────────────────────────────
 
-function LevelBadge({ level }: { level: AlertLevel }) {
-  const cfg = LEVEL_CONFIG[level]
-  const Icon = cfg.icon
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md border whitespace-nowrap',
-        cfg.variant,
-      )}
-    >
-      <Icon className="h-3 w-3 shrink-0" />
-      {cfg.label}
-    </span>
-  )
-}
-
-interface AlertListMeta {
-  onResolve: (id: string) => void
-  onOpenDetail: (alert: AnomalyAlert) => void
-  isResolvePending: boolean
-}
-
-function buildColumns(): ColumnDef<AnomalyAlert>[] {
+function buildColumns(): ColumnDef<LoginActivity>[] {
   return [
     {
-      id: 'level',
-      header: 'Mức độ',
-      size: 160,
-      cell: ({ row }) => <LevelBadge level={row.original.level} />,
+      id: 'status',
+      header: 'Trạng thái',
+      size: 150,
+      cell: ({ row }) =>
+        row.original.isSuspicious ? (
+          <Badge
+            variant="outline"
+            className="text-xs gap-1.5 font-medium bg-red-50 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 whitespace-nowrap"
+          >
+            <ShieldAlert className="h-3 w-3 shrink-0" />
+            IP / Thiết bị lạ
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="text-xs gap-1.5 font-medium bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 whitespace-nowrap"
+          >
+            <ShieldCheck className="h-3 w-3 shrink-0" />
+            Bình thường
+          </Badge>
+        ),
     },
     {
       id: 'user',
       header: 'Người dùng',
-      size: 180,
+      size: 220,
       cell: ({ row }) => {
         const u = row.original.user
         const initials = u.name.slice(0, 2).toUpperCase()
         return (
           <div className="flex items-center gap-2 min-w-0">
-            <Avatar className="h-6 w-6 shrink-0">
+            <Avatar className="h-7 w-7 shrink-0">
               <AvatarImage src={getAvatarUrl(u.avatar)} />
               <AvatarFallback className="text-[10px]">
                 {initials}
@@ -147,28 +114,38 @@ function buildColumns(): ColumnDef<AnomalyAlert>[] {
       },
     },
     {
-      id: 'type',
-      header: 'Loại',
-      size: 170,
+      id: 'ip',
+      header: 'Địa chỉ IP',
+      size: 150,
+      cell: ({ row }) => (
+        <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+          {row.original.ipAddress || '—'}
+        </code>
+      ),
+    },
+    {
+      id: 'device',
+      header: 'Thiết bị / Trình duyệt',
       cell: ({ row }) => {
-        const cfg = TYPE_CONFIG[row.original.type]
+        const { name, isMobile } = parseDevice(row.original.userAgent)
         return (
-          <Badge
-            variant="secondary"
-            className="text-xs gap-1.5 font-medium px-2 py-0.5 whitespace-nowrap"
-          >
-            <span
-              className={cn('h-1.5 w-1.5 rounded-full shrink-0', cfg.dotClass)}
-            />
-            {cfg.label}
-          </Badge>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {isMobile ? (
+              <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            ) : (
+              <Monitor className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            )}
+            <span className="text-xs truncate" title={row.original.userAgent}>
+              {name}
+            </span>
+          </div>
         )
       },
     },
     {
       id: 'createdAt',
-      header: 'Thời gian',
-      size: 120,
+      header: 'Thời gian đăng nhập',
+      size: 180,
       cell: ({ row }) => {
         const createdAt = new Date(row.original.createdAt)
         const timeAgo = formatDistanceToNow(createdAt, {
@@ -176,73 +153,16 @@ function buildColumns(): ColumnDef<AnomalyAlert>[] {
           locale: vi,
         })
         return (
-          <span
-            className="text-xs text-muted-foreground whitespace-nowrap"
-            title={formatDate(row.original.createdAt)}
-          >
-            {timeAgo}
-          </span>
-        )
-      },
-    },
-    {
-      id: 'status',
-      header: 'Trạng thái',
-      size: 120,
-      cell: ({ row }) =>
-        row.original.isResolved ? (
-          <Badge
-            variant="outline"
-            className="text-xs gap-1 font-medium bg-green-50 text-green-700 border-green-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 whitespace-nowrap"
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            Đã xử lý
-          </Badge>
-        ) : (
-          <Badge
-            variant="outline"
-            className="text-xs font-medium text-muted-foreground whitespace-nowrap"
-          >
-            Chưa xử lý
-          </Badge>
-        ),
-    },
-    {
-      id: 'actions',
-      size: 52,
-      enableHiding: false,
-      cell: ({ row, table }) => {
-        const alert = row.original
-        const { onResolve, onOpenDetail, isResolvePending } = table.options
-          .meta as AlertListMeta
-        return (
-          <div onClick={(e) => e.stopPropagation()}>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  buttonVariants({ variant: 'ghost' }),
-                  'h-8 w-8 p-0',
-                )}
-              >
-                <span className="sr-only">Mở menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => onOpenDetail(alert)}>
-                  <Info className="h-4 w-4" />
-                  Thông tin chi tiết
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onResolve(alert.id)}
-                  disabled={alert.isResolved || isResolvePending}
-                  className="text-green-600 focus:text-green-700"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Đánh dấu đã xử lý
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
+              {timeAgo}
+            </p>
+            <p
+              className="text-[10px] text-muted-foreground/60 whitespace-nowrap"
+              title={row.original.createdAt}
+            >
+              {formatDate(row.original.createdAt)}
+            </p>
           </div>
         )
       },
@@ -250,76 +170,40 @@ function buildColumns(): ColumnDef<AnomalyAlert>[] {
   ]
 }
 
-interface AlertListProps {
-  alerts: AnomalyAlert[]
-  isLoading: boolean
-  onResolve: (id: string) => void
-  isResolvePending: boolean
+// ─── Component ────────────────────────────────────────────────────────────────
+
+interface LoginActivityTableProps {
+  activities: LoginActivity[]
 }
 
-export function AlertList({
-  alerts,
-  isLoading,
-  onResolve,
-  isResolvePending,
-}: AlertListProps) {
-  const tableRef = useRef<HTMLDivElement>(null)
+export function LoginActivityTable({ activities }: LoginActivityTableProps) {
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
-  const {
-    isOpen: isDetailBarOpen,
-    toggle: toggleDetailBar,
-    setSelectedAlert,
-    selectedAlert,
-  } = useDetailBar()
+  const tableRef = useRef<HTMLDivElement>(null)
+  const columns = useMemo(() => buildColumns(), [])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
         setSelectedRowId(null)
-        setSelectedAlert(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [setSelectedAlert])
+  }, [])
 
-  const handleRowClick = (alert: AnomalyAlert) => {
-    if (isDetailBarOpen) {
-      setSelectedRowId(alert.id)
-      setSelectedAlert(alert)
-      return
-    }
-    const isAlreadySelected = selectedRowId === alert.id
-    setSelectedRowId(isAlreadySelected ? null : alert.id)
-    setSelectedAlert(isAlreadySelected ? null : alert)
-  }
-
-  const handleOpenDetail = (alert: AnomalyAlert) => {
-    setSelectedRowId(alert.id)
-    setSelectedAlert(alert)
-    if (!isDetailBarOpen) toggleDetailBar()
-  }
-
-  // columns is defined outside component — stable reference, no deps needed
-  const columns = useMemo(() => buildColumns(), [])
   const table = useReactTable({
-    data: alerts,
+    data: activities,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    meta: {
-      onResolve,
-      onOpenDetail: handleOpenDetail,
-      isResolvePending,
-    } as AlertListMeta,
   })
 
   return (
     <div ref={tableRef} className="rounded-md h-full pr-3.5">
       <table className="w-full caption-bottom text-sm">
         <TableHeader className="sticky top-0 z-10 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
+          {table.getHeaderGroups().map((hg) => (
+            <TableRow key={hg.id}>
+              {hg.headers.map((header) => (
                 <TableHead
                   key={header.id}
                   style={
@@ -340,26 +224,25 @@ export function AlertList({
           ))}
         </TableHeader>
         <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground"
-              >
-                Đang tải...
-              </TableCell>
-            </TableRow>
-          ) : table.getRowModel().rows.length ? (
+          {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => (
               <ContextMenu key={row.id}>
                 <ContextMenuTrigger
                   render={
                     <TableRow
+                      data-state={
+                        selectedRowId === row.id ? 'selected' : undefined
+                      }
                       className={cn(
                         'cursor-pointer',
-                        selectedAlert?.id === row.original.id && 'bg-muted/50',
+                        row.original.isSuspicious &&
+                          'border-l-2 border-l-red-400 bg-red-50/30 dark:bg-red-950/10',
                       )}
-                      onClick={() => handleRowClick(row.original)}
+                      onClick={() =>
+                        setSelectedRowId(
+                          selectedRowId === row.id ? null : row.id,
+                        )
+                      }
                     />
                   }
                 >
@@ -372,40 +255,33 @@ export function AlertList({
                     </TableCell>
                   ))}
                 </ContextMenuTrigger>
-                <ContextMenuContent className="w-48">
+                <ContextMenuContent className="w-52">
                   <ContextMenuItem
-                    onClick={() => handleOpenDetail(row.original)}
+                    onClick={() =>
+                      navigator.clipboard.writeText(row.original.ipAddress)
+                    }
                   >
-                    <Info className="h-4 w-4" />
-                    Thông tin chi tiết
+                    <Copy className="h-4 w-4" />
+                    Sao chép địa chỉ IP
                   </ContextMenuItem>
-                  <ContextMenuSeparator />
                   <ContextMenuItem
-                    onClick={() => onResolve(row.original.id)}
-                    disabled={row.original.isResolved || isResolvePending}
-                    className="text-green-600 focus:text-green-700"
+                    onClick={() =>
+                      navigator.clipboard.writeText(row.original.user.email)
+                    }
                   >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Đánh dấu đã xử lý
+                    <Copy className="h-4 w-4" />
+                    Sao chép email người dùng
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-48 text-center">
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
-                    <CheckCircle2 className="h-7 w-7 opacity-40" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Không có cảnh báo nào</p>
-                    <p className="text-xs text-muted-foreground/70">
-                      Hệ thống không phát hiện hoạt động bất thường phù hợp với
-                      bộ lọc hiện tại.
-                    </p>
-                  </div>
-                </div>
+              <TableCell
+                colSpan={columns.length}
+                className="h-24 text-center text-muted-foreground"
+              >
+                Không có dữ liệu đăng nhập.
               </TableCell>
             </TableRow>
           )}

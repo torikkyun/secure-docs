@@ -3,7 +3,7 @@ import type {
   FileTypeFilter,
   FileClassification,
   PersonFilter,
-} from '@/routes/(app)/-components/file-filters'
+} from '@/routes/(app)/-components/filters/file-filters'
 import type { FileItem } from '@/api/file/types'
 import type {
   AdminUser,
@@ -40,6 +40,14 @@ export interface DetailBarContextValue {
   setAlertType: (type: 'all' | AlertType) => void
   alertUnresolvedOnly: boolean
   setAlertUnresolvedOnly: (v: boolean) => void
+  userRole: 'admin' | 'manager' | 'user' | ''
+  setUserRole: (role: 'admin' | 'manager' | 'user' | '') => void
+  userStatus: 'active' | 'banned' | ''
+  setUserStatus: (status: 'active' | 'banned' | '') => void
+  userSortBy: 'name' | 'createdAt' | 'ownedFiles'
+  setUserSortBy: (sortBy: 'name' | 'createdAt' | 'ownedFiles') => void
+  userSortOrder: 'asc' | 'desc'
+  setUserSortOrder: (sortOrder: 'asc' | 'desc') => void
 }
 
 export const DetailBarContext = createContext<DetailBarContextValue>({
@@ -69,6 +77,14 @@ export const DetailBarContext = createContext<DetailBarContextValue>({
   setAlertType: () => {},
   alertUnresolvedOnly: false,
   setAlertUnresolvedOnly: () => {},
+  userRole: '',
+  setUserRole: () => {},
+  userStatus: '',
+  setUserStatus: () => {},
+  userSortBy: 'createdAt',
+  setUserSortBy: () => {},
+  userSortOrder: 'desc',
+  setUserSortOrder: () => {},
 })
 
 export function useDetailBar() {

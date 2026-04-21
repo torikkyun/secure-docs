@@ -4,6 +4,10 @@ export const queryAdminUsersSchema = z.object({
   page: z.number().int().min(1).optional(),
   limit: z.number().int().min(1).optional(),
   search: z.string().optional(),
+  role: z.enum(['admin', 'manager', 'user']).optional(),
+  status: z.enum(['active', 'banned']).optional(),
+  sortBy: z.enum(['name', 'createdAt', 'ownedFiles']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
 })
 
 export const updateUserRoleSchema = z.object({
@@ -32,4 +36,11 @@ export const resolveAlertSchema = z.object({
 
 export const getAdminUserDetailSchema = z.object({
   userId: z.string().min(1),
+})
+
+export const queryLoginActivitiesSchema = z.object({
+  page: z.number().int().min(1).optional(),
+  limit: z.number().int().min(1).optional(),
+  userId: z.string().optional(),
+  suspiciousOnly: z.boolean().optional(),
 })
