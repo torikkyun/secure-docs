@@ -126,9 +126,10 @@ export function RevokeShareModal({
             ) : (
               <div className="space-y-1 max-h-72 overflow-y-auto">
                 {sharedWith.map((person) => {
-                  const initials = (person.name || person.email)
-                    .substring(0, 2)
-                    .toUpperCase()
+                  const initials =
+                    (person.name || person.email)
+                      ?.substring(0, 2)
+                      .toUpperCase() ?? '?'
                   const isRevoking =
                     revokeMutation.isPending && pendingRecipientId === person.id
 

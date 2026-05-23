@@ -64,7 +64,7 @@ function FileCard({
   onDelete,
   onOpenDetail,
 }: FileCardProps) {
-  const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
+  const { Icon: FileIcon, colorClass } = getFileIcon(file?.mimeType)
   const person = file.isOwner ? file.owner : (file.sharedBy ?? file.owner)
   const displayName = file.isOwner ? 'Tôi' : person?.name || '—'
   const initials = person?.name
@@ -119,7 +119,7 @@ function FileCard({
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       onClick={() => onView(file)}
-                      disabled={file.mimeType !== 'application/pdf'}
+                      disabled={file?.mimeType !== 'application/pdf'}
                     >
                       <Eye className="h-4 w-4" />
                       Xem
@@ -202,7 +202,7 @@ function FileCard({
         <ContextMenuSeparator />
         <ContextMenuItem
           onClick={() => onView(file)}
-          disabled={file.mimeType !== 'application/pdf'}
+          disabled={file?.mimeType !== 'application/pdf'}
         >
           <Eye className="h-4 w-4" />
           Xem

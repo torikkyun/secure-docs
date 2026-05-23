@@ -79,7 +79,7 @@ const columns: ColumnDef<FileItem>[] = [
     },
     cell: ({ row }) => {
       const file = row.original
-      const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
+      const { Icon: FileIcon, colorClass } = getFileIcon(file?.mimeType)
 
       return (
         <div className="flex items-center gap-3 min-w-0">
@@ -435,7 +435,7 @@ export function FileList({
                   <ContextMenuSeparator />
                   <ContextMenuItem
                     onClick={() => onView(row.original)}
-                    disabled={row.original.mimeType !== 'application/pdf'}
+                    disabled={row.original?.mimeType !== 'application/pdf'}
                   >
                     <Eye className="h-4 w-4" />
                     Xem

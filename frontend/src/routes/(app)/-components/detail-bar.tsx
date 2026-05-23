@@ -193,9 +193,10 @@ function DetailBarFile() {
               </h3>
               <div className="space-y-2">
                 {selectedFile.sharedWith.map((person) => {
-                  const initials = (person.name || person.email)
-                    .substring(0, 2)
-                    .toUpperCase()
+                  const initials =
+                    (person.name || person.email)
+                      ?.substring(0, 2)
+                      .toUpperCase() ?? '?'
                   return (
                     <div key={person.id} className="flex items-center gap-2.5">
                       <Avatar className="h-7 w-7">

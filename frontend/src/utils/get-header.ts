@@ -1,38 +1,13 @@
 import { redirect } from '@tanstack/react-router'
-import { getRequestIP, getRequestHeader } from '@tanstack/react-start/server'
-import { useAppSession } from './session'
 
-export const getForwardHeaders = () => {
-  const forwardHeaders: Record<string, string> = {}
+export const getForwardHeaders = (): Record<string, string> => ({})
 
-  // getRequestIP({ xForwardedFor: true }) reads X-Forwarded-For set by the
-  // upstream proxy (Nginx). Fall back to X-Real-IP which some Nginx configs
-  // set via `proxy_set_header X-Real-IP $remote_addr`.
-  const ip =
-    getRequestIP({ xForwardedFor: true }) || getRequestHeader('x-real-ip')
-  if (ip) {
-    forwardHeaders['x-forwarded-for'] = ip
-  }
+export const getHeaders = async (): Promise<Record<string, string>> => {
+  const token = localStorage.getItem('access_token')
 
-  const userAgent = getRequestHeader('user-agent')
-  if (userAgent) {
-    forwardHeaders['user-agent'] = userAgent
-  }
-
-  return forwardHeaders
-}
-
-export const getHeaders = async () => {
-  const session = await useAppSession()
-  const accessToken = session.data.accessToken
-
-  if (!accessToken) {
-    await session.clear()
+  if (!token) {
     throw redirect({ to: '/login' })
   }
 
-  const forwardHeaders = getForwardHeaders()
-  forwardHeaders['Authorization'] = `Bearer ${accessToken}`
-
-  return forwardHeaders
+  return { Authorization: `Bearer ${token}` }
 }

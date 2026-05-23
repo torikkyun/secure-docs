@@ -46,7 +46,7 @@ function SharedFileCard({
   onView,
   onOpenDetail,
 }: SharedFileCardProps) {
-  const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
+  const { Icon: FileIcon, colorClass } = getFileIcon(file?.mimeType)
   const person = file.sharedBy
   const initials = person?.name
     ? person.name
@@ -98,7 +98,7 @@ function SharedFileCard({
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    {file.mimeType === 'application/pdf' && (
+                    {file?.mimeType === 'application/pdf' && (
                       <DropdownMenuItem onClick={() => onView(file)}>
                         <Eye className="h-4 w-4" />
                         Xem
@@ -142,7 +142,7 @@ function SharedFileCard({
           Thông tin chi tiết
         </ContextMenuItem>
         <ContextMenuSeparator />
-        {file.mimeType === 'application/pdf' && (
+        {file?.mimeType === 'application/pdf' && (
           <ContextMenuItem onClick={() => onView(file)}>
             <Eye className="h-4 w-4" />
             Xem

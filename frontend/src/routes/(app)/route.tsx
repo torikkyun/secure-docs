@@ -25,6 +25,10 @@ import {
   Users,
   UsersRound,
   AlertTriangle,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  ShieldAlert,
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,7 +43,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu'
-import { useState } from 'react'
+import { useState, useEffect, useRef, Suspense, lazy } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getUnresolvedAlertCountFn } from '@/api/admin/functions'
 import { cn } from '@/lib/utils'
@@ -65,6 +69,194 @@ import type {
 import type { FileActivityAction } from '@/api/file-activity/schemas'
 import { getAvatarUrl } from '@/lib/avatar-utils'
 import { KeySyncWarning } from './settings/-components/key-sync-warning'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+
+// ─── Local .sdoc file viewer (Tauri "Open with" integration) ──────────────────
+
+const LazyPdfViewer = lazy(() => import('./files/-components/pdf-viewer'))
+
+function getLocalDisplayName(filePath: string): string {
+  const basename = filePath.replace(/\\/g, '/').split('/').pop() ?? filePath
+  return basename.endsWith('.sdoc') ? basename.slice(0, -5) : basename
+}
+
+function getLocalMimeType(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase()
+  switch (ext) {
+    case 'pdf':
+      return 'application/pdf'
+    case 'png':
+      return 'image/png'
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg'
+    case 'gif':
+      return 'image/gif'
+    case 'webp':
+      return 'image/webp'
+    default:
+      return 'application/octet-stream'
+  }
+}
+
+function LocalFileViewerModal({
+  filePath,
+  onClose,
+}: {
+  filePath: string | null
+  onClose: () => void
+}) {
+  const isOpen = filePath !== null
+  const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null)
+  const [imgUrl, setImgUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [numPages, setNumPages] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageWidth, setPageWidth] = useState(800)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const displayName = filePath ? getLocalDisplayName(filePath) : ''
+
+  useEffect(() => {
+    if (!filePath) return
+    setIsLoading(true)
+    setError(null)
+    setPdfBuffer(null)
+    setImgUrl(null)
+    setNumPages(0)
+    setCurrentPage(1)
+
+    import('@tauri-apps/api/core').then(({ invoke }) => {
+      ;(
+        invoke as (
+          cmd: string,
+          args: Record<string, unknown>,
+        ) => Promise<number[]>
+      )('open_secure_file', { filePath })
+        .then((bytes) => {
+          const buffer = new Uint8Array(bytes)
+          const mimeType = getLocalMimeType(getLocalDisplayName(filePath))
+          if (mimeType === 'application/pdf') {
+            setPdfBuffer(buffer.buffer)
+          } else {
+            const blob = new Blob([buffer], { type: mimeType })
+            setImgUrl(URL.createObjectURL(blob))
+          }
+        })
+        .catch((err: unknown) => setError(String(err)))
+        .finally(() => setIsLoading(false))
+    })
+  }, [filePath])
+
+  useEffect(() => {
+    if (!pdfBuffer || !containerRef.current) return
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        setPageWidth(containerRef.current.clientWidth - 32)
+      }
+    })
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [pdfBuffer])
+
+  const handleClose = () => {
+    if (imgUrl) URL.revokeObjectURL(imgUrl)
+    setPdfBuffer(null)
+    setImgUrl(null)
+    setError(null)
+    setNumPages(0)
+    setCurrentPage(1)
+    onClose()
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="flex max-h-[90vh] w-full max-w-4xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle className="truncate">
+            {displayName || 'File bảo mật'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-auto">
+          {isLoading && (
+            <div className="flex flex-col items-center gap-3 py-24">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <p className="text-sm text-muted-foreground">Đang giải mã…</p>
+            </div>
+          )}
+          {error && !isLoading && (
+            <div className="flex flex-col items-center gap-3 px-8 py-20 text-center">
+              <ShieldAlert className="h-12 w-12 text-destructive/60" />
+              <p className="font-medium text-destructive">Không thể mở file</p>
+              <p className="max-w-sm text-sm text-muted-foreground">{error}</p>
+            </div>
+          )}
+          {pdfBuffer && !isLoading && (
+            <div ref={containerRef} className="flex flex-col items-center p-4">
+              <Suspense
+                fallback={
+                  <div className="flex items-center gap-2 py-12 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">Đang tải PDF…</span>
+                  </div>
+                }
+              >
+                <LazyPdfViewer
+                  data={pdfBuffer}
+                  currentPage={currentPage}
+                  pageWidth={pageWidth}
+                  onLoadSuccess={setNumPages}
+                />
+              </Suspense>
+            </div>
+          )}
+          {imgUrl && !isLoading && (
+            <div className="flex items-center justify-center p-4">
+              <img
+                src={imgUrl}
+                alt={displayName}
+                className="max-h-[70vh] max-w-full rounded object-contain"
+              />
+            </div>
+          )}
+        </div>
+
+        {pdfBuffer && numPages > 1 && (
+          <div className="flex items-center justify-center gap-3 border-t px-6 py-3">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentPage} / {numPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= numPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 
 const navigation = [
   // { name: 'Trang chủ', href: '/dashboard', icon: LayoutDashboard },
@@ -282,6 +474,25 @@ function AppLayout() {
   >('createdAt')
   const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('desc')
 
+  // Tauri: open a .sdoc file from Windows Explorer "Open with"
+  const [localFilePath, setLocalFilePath] = useState<string | null>(null)
+  useEffect(() => {
+    const isTauri =
+      typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+    if (!isTauri) return
+    let unlisten: (() => void) | undefined
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen<string>('open-secure-file', (event) => {
+        setLocalFilePath(event.payload)
+      }).then((fn) => {
+        unlisten = fn
+      })
+    })
+    return () => {
+      unlisten?.()
+    }
+  }, [])
+
   const handleLogout = () => {
     localStorage.removeItem('userPublicKey')
     localStorage.removeItem('encryptedPrivateKey')
@@ -385,192 +596,199 @@ function AppLayout() {
   )
 
   return (
-    <DetailBarContext.Provider
-      value={{
-        isOpen: isDetailBarOpen,
-        toggle: () => setIsDetailBarOpen((v) => !v),
-        selectedFile,
-        setSelectedFile: (file) => {
-          setSelectedFile(file)
-          if (file) setSelectedUser(null)
-        },
-        selectedUser,
-        setSelectedUser: (user) => {
-          setSelectedUser(user)
-          if (user) {
-            setSelectedFile(null)
-            setSelectedAlert(null)
-          }
-        },
-        selectedAlert,
-        setSelectedAlert: (alert) => {
-          setSelectedAlert(alert)
-          if (alert) {
-            setSelectedFile(null)
-            setSelectedUser(null)
-          }
-        },
-        viewMode,
-        setViewMode,
-        fileType,
-        setFileType,
-        classification,
-        setClassification,
-        selectedPerson,
-        setSelectedPerson,
-        knownPeople,
-        setKnownPeople,
-        activityAction,
-        setActivityAction,
-        alertLevel,
-        setAlertLevel,
-        alertType,
-        setAlertType,
-        alertUnresolvedOnly,
-        setAlertUnresolvedOnly,
-        userRole,
-        setUserRole,
-        userStatus,
-        setUserStatus,
-        userSortBy,
-        setUserSortBy,
-        userSortOrder,
-        setUserSortOrder,
-      }}
-    >
-      <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
-        {isUploadOpen && (
-          <UploadFileForm onClose={() => setIsUploadOpen(false)} />
-        )}
-        <div className="hidden border-r bg-background md:block dark:bg-zinc-950/50">
-          <SidebarContent />
-        </div>
-        <div className="flex flex-col overflow-hidden min-h-0 h-full">
-          <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-15 lg:px-6 shrink-0 z-10">
-            <Sheet>
-              <SheetTrigger
+    <>
+      <DetailBarContext.Provider
+        value={{
+          isOpen: isDetailBarOpen,
+          toggle: () => setIsDetailBarOpen((v) => !v),
+          selectedFile,
+          setSelectedFile: (file) => {
+            setSelectedFile(file)
+            if (file) setSelectedUser(null)
+          },
+          selectedUser,
+          setSelectedUser: (user) => {
+            setSelectedUser(user)
+            if (user) {
+              setSelectedFile(null)
+              setSelectedAlert(null)
+            }
+          },
+          selectedAlert,
+          setSelectedAlert: (alert) => {
+            setSelectedAlert(alert)
+            if (alert) {
+              setSelectedFile(null)
+              setSelectedUser(null)
+            }
+          },
+          viewMode,
+          setViewMode,
+          fileType,
+          setFileType,
+          classification,
+          setClassification,
+          selectedPerson,
+          setSelectedPerson,
+          knownPeople,
+          setKnownPeople,
+          activityAction,
+          setActivityAction,
+          alertLevel,
+          setAlertLevel,
+          alertType,
+          setAlertType,
+          alertUnresolvedOnly,
+          setAlertUnresolvedOnly,
+          userRole,
+          setUserRole,
+          userStatus,
+          setUserStatus,
+          userSortBy,
+          setUserSortBy,
+          userSortOrder,
+          setUserSortOrder,
+        }}
+      >
+        <div className="grid h-screen w-full md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] overflow-hidden">
+          {isUploadOpen && (
+            <UploadFileForm onClose={() => setIsUploadOpen(false)} />
+          )}
+          <div className="hidden border-r bg-background md:block dark:bg-zinc-950/50">
+            <SidebarContent />
+          </div>
+          <div className="flex flex-col overflow-hidden min-h-0 h-full">
+            <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-15 lg:px-6 shrink-0 z-10">
+              <Sheet>
+                <SheetTrigger
+                  className={cn(
+                    buttonVariants({ variant: 'outline', size: 'icon' }),
+                    'shrink-0 md:hidden',
+                  )}
+                >
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </SheetTrigger>
+                <SheetContent side="left" className="flex flex-col w-60 p-0">
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+              <div className="w-full flex-1" />
+              <div className="flex items-center gap-4">
+                {user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      className={cn(
+                        buttonVariants({ variant: 'ghost' }),
+                        'relative h-9 flex items-center gap-2 px-2 hover:bg-muted outline-none',
+                      )}
+                    >
+                      <Avatar className="h-6 w-6 border">
+                        <AvatarImage
+                          src={getAvatarUrl(user.avatar)}
+                          alt={user.email}
+                        />
+                        <AvatarFallback>
+                          {user.email?.substring(0, 2).toUpperCase() ?? '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden text-sm font-medium lg:inline-block max-w-37.5 truncate">
+                        {user.email}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="font-normal">
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm font-medium leading-none">
+                              {user.name || 'Người dùng'}
+                            </p>
+                            <p className="text-xs leading-none text-muted-foreground">
+                              {user.email}
+                            </p>
+                          </div>
+                        </DropdownMenuLabel>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            routerInstance.navigate({ to: '/settings' })
+                          }
+                        >
+                          <User className="h-4 w-4" />
+                          <span>Tài khoản</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            routerInstance.navigate({ to: '/settings' })
+                          }
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Cài đặt</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        variant="destructive"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Đăng xuất</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Link to="/login">
+                    <Button size="sm">Đăng nhập</Button>
+                  </Link>
+                )}
+              </div>
+            </header>
+            <div className="px-4 lg:px-6 shrink-0 mt-5">
+              <KeySyncWarning />
+            </div>
+            <div className="flex flex-1 overflow-hidden min-h-0">
+              <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
+                <PageToolbar />
+                <div className="flex-1 overflow-y-auto pb-2">
+                  <Outlet />
+                </div>
+              </main>
+              <aside
                 className={cn(
-                  buttonVariants({ variant: 'outline', size: 'icon' }),
-                  'shrink-0 md:hidden',
+                  'w-80 shrink-0 border-l bg-background overflow-y-auto',
+                  !isDetailBarOpen && 'hidden',
                 )}
               >
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-              </SheetTrigger>
-              <SheetContent side="left" className="flex flex-col w-60 p-0">
-                <SidebarContent />
-              </SheetContent>
-            </Sheet>
-            <div className="w-full flex-1" />
-            <div className="flex items-center gap-4">
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'relative h-9 flex items-center gap-2 px-2 hover:bg-muted outline-none',
-                    )}
-                  >
-                    <Avatar className="h-6 w-6 border">
-                      <AvatarImage
-                        src={getAvatarUrl(user.avatar)}
-                        alt={user.email}
-                      />
-                      <AvatarFallback>
-                        {user.email.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden text-sm font-medium lg:inline-block max-w-37.5 truncate">
-                      {user.email}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground hidden lg:block" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">
-                            {user.name || 'Người dùng'}
-                          </p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {user.email}
-                          </p>
-                        </div>
-                      </DropdownMenuLabel>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          routerInstance.navigate({ to: '/settings' })
-                        }
-                      >
-                        <User className="h-4 w-4" />
-                        <span>Tài khoản</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          routerInstance.navigate({ to: '/settings' })
-                        }
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Cài đặt</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      variant="destructive"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Đăng xuất</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Link to="/login">
-                  <Button size="sm">Đăng nhập</Button>
-                </Link>
-              )}
+                <DetailBar />
+              </aside>
             </div>
-          </header>
-          <div className="px-4 lg:px-6 shrink-0 mt-5">
-            <KeySyncWarning />
-          </div>
-          <div className="flex flex-1 overflow-hidden min-h-0">
-            <main className="flex flex-1 flex-col pl-4 lg:pl-6 overflow-hidden bg-background min-h-0">
-              <PageToolbar />
-              <div className="flex-1 overflow-y-auto pb-2">
-                <Outlet />
+            <footer className="mt-auto py-3 px-6 border-t bg-background flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground shrink-0">
+              <p>
+                &copy; {new Date().getFullYear()} SecureDocs. All rights
+                reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                <a href="#" className="hover:text-foreground transition-colors">
+                  Bảo mật
+                </a>
+                <a href="#" className="hover:text-foreground transition-colors">
+                  Điều khoản
+                </a>
+                <a href="#" className="hover:text-foreground transition-colors">
+                  Trợ giúp
+                </a>
               </div>
-            </main>
-            <aside
-              className={cn(
-                'w-80 shrink-0 border-l bg-background overflow-y-auto',
-                !isDetailBarOpen && 'hidden',
-              )}
-            >
-              <DetailBar />
-            </aside>
+            </footer>
           </div>
-          <footer className="mt-auto py-3 px-6 border-t bg-background flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground shrink-0">
-            <p>
-              &copy; {new Date().getFullYear()} SecureDocs. All rights reserved.
-            </p>
-            <div className="flex items-center gap-4">
-              <a href="#" className="hover:text-foreground transition-colors">
-                Bảo mật
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Điều khoản
-              </a>
-              <a href="#" className="hover:text-foreground transition-colors">
-                Trợ giúp
-              </a>
-            </div>
-          </footer>
         </div>
-      </div>
-    </DetailBarContext.Provider>
+      </DetailBarContext.Provider>
+      <LocalFileViewerModal
+        filePath={localFilePath}
+        onClose={() => setLocalFilePath(null)}
+      />
+    </>
   )
 }

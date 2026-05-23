@@ -2,12 +2,12 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Secure Docs",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.securedocs.app",
   "build": {
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:3005",
-    "beforeDevCommand": "pnpm dev:web",
-    "beforeBuildCommand": "pnpm build"
+    "frontendDist": "../.output/public",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build:spa"
   },
   "app": {
     "windows": [
@@ -33,6 +33,14 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["sdoc"],
+        "name": "SecureDocs File",
+        "description": "Encrypted SecureDocs file",
+        "role": "Viewer"
+      }
     ]
   }
 }

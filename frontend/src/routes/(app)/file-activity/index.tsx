@@ -129,8 +129,9 @@ export function FileActivityPage() {
     initialPageParam: 1,
   })
 
-  const activities: FileActivity[] =
-    activitiesData?.pages.flatMap((p) => p.data) ?? []
+  const activities: FileActivity[] = (activitiesData?.pages ?? [])
+    .flatMap((p) => p.data ?? [])
+    .filter((a): a is FileActivity => a != null)
 
   // Stats come from the first page (counts all records, not just loaded page)
   const stats = activitiesData?.pages[0]?.stats ?? {}

@@ -32,9 +32,9 @@ export function DetailBarUser() {
     )
   }
 
-  const initials = (selectedUser.name || selectedUser.email)
-    .substring(0, 2)
-    .toUpperCase()
+  const initials =
+    (selectedUser.name || selectedUser.email)?.substring(0, 2).toUpperCase() ??
+    '?'
 
   return (
     <div className="flex flex-col gap-4 p-4">

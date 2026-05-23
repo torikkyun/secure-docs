@@ -73,7 +73,6 @@ interface ViewFileModalProps {
 }
 
 export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null)
   const [numPages, setNumPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
@@ -85,7 +84,6 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
 
   useEffect(() => {
     if (!isOpen) {
-      setPdfUrl(null)
       setPdfBuffer(null)
       setNumPages(0)
       setCurrentPage(1)
@@ -96,15 +94,8 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
     }
   }, [isOpen])
 
-  // Revoke blob URL when it changes or component unmounts to avoid memory leaks
   useEffect(() => {
-    return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl)
-    }
-  }, [pdfUrl])
-
-  useEffect(() => {
-    if (!pdfUrl || !containerRef.current) return
+    if (!pdfBuffer || !containerRef.current) return
     const observer = new ResizeObserver(() => {
       if (containerRef.current) {
         setPageWidth(containerRef.current.clientWidth - 32)
@@ -112,7 +103,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
     })
     observer.observe(containerRef.current)
     return () => observer.disconnect()
-  }, [pdfUrl])
+  }, [pdfBuffer])
 
   const viewMutation = useMutation({
     mutationFn: async (passcode: string) => {
@@ -186,8 +177,6 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
       return decryptedBuffer.buffer as ArrayBuffer
     },
     onSuccess: (buffer) => {
-      const blob = new Blob([buffer], { type: 'application/pdf' })
-      setPdfUrl(URL.createObjectURL(blob))
       setPdfBuffer(buffer)
     },
     onError: (error: Error) => {
@@ -196,7 +185,6 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   })
 
   const handleClose = () => {
-    setPdfUrl(null)
     setPdfBuffer(null)
     setSummary(null)
     setIsSummarizing(false)
@@ -261,7 +249,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   const isPdf = file?.mimeType === 'application/pdf'
 
   // Full-screen PDF viewer rendered via portal using canvas (no browser download toolbar)
-  const pdfViewer = pdfUrl
+  const pdfViewer = pdfBuffer
     ? createPortal(
         <div className="fixed inset-0 z-50 flex flex-col bg-muted/95">
           {/* Toolbar */}
@@ -336,7 +324,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
                 }
               >
                 <PdfViewer
-                  url={pdfUrl!}
+                  data={pdfBuffer!}
                   currentPage={currentPage}
                   pageWidth={pageWidth}
                   onLoadSuccess={(n) => {
@@ -486,7 +474,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
     <>
       {pdfViewer}
       <PasscodeConfirmModal
-        isOpen={isOpen && !pdfUrl && !!isPdf}
+        isOpen={isOpen && !pdfBuffer && !!isPdf}
         onConfirm={(passcode) => viewMutation.mutate(passcode)}
         onCancel={handleClose}
         isPending={viewMutation.isPending}
@@ -494,7 +482,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
         description="Tài liệu được mã hóa đầu cuối. Nhập passcode để giải mã và xem ngay trên trình duyệt."
         confirmLabel="Giải mã & Xem"
       />
-      {isOpen && !pdfUrl && !isPdf && (
+      {isOpen && !pdfBuffer && !isPdf && (
         <Dialog open onOpenChange={(open) => !open && handleClose()}>
           <DialogContent showCloseButton={false} className="sm:max-w-sm">
             <DialogHeader>

@@ -8,6 +8,7 @@ import {
   deriveWrappingKeyFromSharedSecret,
   toBase64,
 } from '@/lib/crypto'
+import { invoke } from '@tauri-apps/api/core'
 import { PasscodeConfirmModal } from '@/components/passcode-confirm-modal'
 import { toast } from 'sonner'
 import { FileItem } from '@/api/file/types'
@@ -15,6 +16,10 @@ import {
   downloadFileStreamFn,
   getFileForDownloadFn,
 } from '@/api/file/functions'
+
+/** True when running inside the Tauri desktop shell (Tauri v2). */
+const isTauri = () =>
+  typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
 interface DownloadFileModalProps {
   file: FileItem | null
@@ -114,21 +119,43 @@ export function DownloadFileModal({
       )
 
       // 6. Save File
-      // @ts-ignore - Type incompatibility with ArrayBufferLike
-      const blob = new Blob([decryptedBuffer], { type: file.mimeType })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = file.filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const decryptedArray = new Uint8Array(
+        decryptedBuffer as unknown as ArrayBuffer,
+      )
+
+      if (isTauri()) {
+        // ── Tauri desktop: re-encrypt with folder-bound key and save as .sdoc ──
+        // The Rust backend verifies the file stays in the secure folder before
+        // it will ever decrypt it again, preventing accidental plaintext leaks.
+        const savedPath = await invoke<string>('save_secure_file', {
+          filename: file.filename,
+          decryptedBytes: Array.from(decryptedArray),
+        })
+        return { isTauri: true, savedPath }
+      } else {
+        // ── Web browser: plaintext download (original behaviour) ──
+        const blob = new Blob([decryptedArray], { type: file.mimeType })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = file.filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        return { isTauri: false }
+      }
     },
-    onSuccess: () => {
-      toast.success('Tải xuống thành công!', {
-        description: `File ${file?.filename} đã được giải mã và tải về.`,
-      })
+    onSuccess: ({ isTauri: ranInTauri }) => {
+      if (ranInTauri) {
+        toast.success('Lưu file thành công!', {
+          description: `${file?.filename} đã được mã hóa và lưu vào thư mục SecureDocs. Chỉ có thể mở file khi nó nằm trong thư mục đó.`,
+        })
+      } else {
+        toast.success('Tải xuống thành công!', {
+          description: `File ${file?.filename} đã được giải mã và tải về.`,
+        })
+      }
       handleClose()
     },
     onError: (error: Error) => {

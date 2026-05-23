@@ -84,7 +84,9 @@ export function FilesPage() {
     initialPageParam: 1,
   })
 
-  const files: FileItem[] = filesData?.pages.flatMap((p) => p.files) ?? []
+  const files: FileItem[] = (filesData?.pages ?? [])
+    .flatMap((p) => p.files ?? [])
+    .filter((f): f is FileItem => f != null)
 
   // Sync detail bar's selected file with the latest query data so that
   // sharedWith / revoke-share option reflects the current state immediately
@@ -101,7 +103,7 @@ export function FilesPage() {
     setKnownPeople((prev) => {
       const next = new Map(prev)
       filesData.pages.forEach((page) => {
-        page.files.forEach((file) => {
+        ;(page.files ?? []).forEach((file) => {
           const addPerson = (p: {
             id: string
             name: string

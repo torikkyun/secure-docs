@@ -1,10 +1,11 @@
 import { FileText, Image, File, FileSpreadsheet } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
-export function getFileIcon(mimeType: string): {
+export function getFileIcon(mimeType: string | undefined | null): {
   Icon: LucideIcon
   colorClass: string
 } {
+  if (!mimeType) return { Icon: File, colorClass: 'text-muted-foreground' }
   if (mimeType.startsWith('image/'))
     return { Icon: Image, colorClass: 'text-violet-500' }
   if (mimeType === 'application/pdf')

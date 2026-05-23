@@ -76,7 +76,9 @@ function SharedPage() {
     initialPageParam: 1,
   })
 
-  const files: FileItem[] = filesData?.pages.flatMap((p) => p.files) ?? []
+  const files: FileItem[] = (filesData?.pages ?? [])
+    .flatMap((p) => p.files ?? [])
+    .filter((f): f is FileItem => f != null)
 
   // Accumulate unique sharers seen across all loaded pages
   useEffect(() => {
@@ -84,7 +86,7 @@ function SharedPage() {
     setKnownPeople((prev) => {
       const next = new Map(prev)
       filesData.pages.forEach((page) => {
-        page.files.forEach((file) => {
+        ;(page.files ?? []).forEach((file) => {
           const person = file.sharedBy ?? file.owner
           if (person && !next.has(person.id)) {
             next.set(person.id, {

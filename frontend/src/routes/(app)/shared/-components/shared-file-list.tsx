@@ -64,7 +64,7 @@ const columns: ColumnDef<FileItem>[] = [
     ),
     cell: ({ row }) => {
       const file = row.original
-      const { Icon: FileIcon, colorClass } = getFileIcon(file.mimeType)
+      const { Icon: FileIcon, colorClass } = getFileIcon(file?.mimeType)
       return (
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 bg-muted rounded flex items-center justify-center shrink-0">
@@ -151,7 +151,7 @@ const columns: ColumnDef<FileItem>[] = [
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                {file.mimeType === 'application/pdf' && (
+                {file?.mimeType === 'application/pdf' && (
                   <DropdownMenuItem onClick={() => onView(file)}>
                     <Eye className="h-4 w-4" />
                     Xem

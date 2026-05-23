@@ -10,12 +10,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 type SlotState = { page: number; width: number }
 
 export default function PdfViewer({
-  url,
+  data,
   currentPage,
   pageWidth,
   onLoadSuccess,
 }: {
-  url: string
+  data: ArrayBuffer
   currentPage: number
   pageWidth: number
   onLoadSuccess: (numPages: number) => void
@@ -72,7 +72,7 @@ export default function PdfViewer({
 
   return (
     <Document
-      file={url}
+      file={data}
       onLoadSuccess={({ numPages }) => {
         onLoadSuccess(numPages)
         const init: SlotState = { page: 1, width: pageWidth }
