@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' http://localhost:3001 https://localhost:3001; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http: https:; font-src 'self' data:; connect-src 'self' http://localhost:3001 https://localhost:3001 ws://localhost:3005 wss://localhost:3005; frame-ancestors 'none';"
+      "csp": "default-src 'self' http://localhost:3001 https://localhost:3001 https://test.torikkyun.io.vn; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http: https:; font-src 'self' data:; connect-src 'self' http://localhost:3001 https://localhost:3001 ws://localhost:3005 wss://localhost:3005 https://test.torikkyun.io.vn; frame-ancestors 'none';"
     }
   },
   "bundle": {

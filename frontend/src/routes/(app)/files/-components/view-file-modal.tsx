@@ -74,6 +74,9 @@ interface ViewFileModalProps {
 
 export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null)
+  // Keep an independent Uint8Array copy so we can extract text even after
+  // pdfjs transfers (detaches) the ArrayBuffer stored in pdfBuffer state.
+  const pdfBytesRef = useRef<Uint8Array | null>(null)
   const [numPages, setNumPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageWidth, setPageWidth] = useState(800)
@@ -85,6 +88,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   useEffect(() => {
     if (!isOpen) {
       setPdfBuffer(null)
+      pdfBytesRef.current = null
       setNumPages(0)
       setCurrentPage(1)
       setSummary(null)
@@ -177,6 +181,9 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
       return decryptedBuffer.buffer as ArrayBuffer
     },
     onSuccess: (buffer) => {
+      // slice(0) creates a new independent ArrayBuffer so the copy is
+      // not affected when pdfjs transfers `buffer` to its Worker.
+      pdfBytesRef.current = new Uint8Array(buffer.slice(0))
       setPdfBuffer(buffer)
     },
     onError: (error: Error) => {
@@ -186,6 +193,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
 
   const handleClose = () => {
     setPdfBuffer(null)
+    pdfBytesRef.current = null
     setSummary(null)
     setIsSummarizing(false)
     setShowSummary(false)
@@ -194,7 +202,7 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
   }
 
   const handleSummarize = async () => {
-    if (!pdfBuffer) return
+    if (!pdfBytesRef.current) return
 
     if (!getGeminiApiKey()) {
       toast.error('Chưa cấu hình Gemini API key', {
@@ -214,7 +222,9 @@ export function ViewFileModal({ file, isOpen, onClose }: ViewFileModalProps) {
         import.meta.url,
       ).toString()
 
-      const pdf = await getDocument({ data: pdfBuffer.slice(0) }).promise
+      // Pass a Uint8Array — pdfjs copies TypedArrays instead of transferring
+      // them, so pdfBytesRef.current remains valid for subsequent calls.
+      const pdf = await getDocument({ data: pdfBytesRef.current }).promise
       const pageTexts: string[] = []
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i)
