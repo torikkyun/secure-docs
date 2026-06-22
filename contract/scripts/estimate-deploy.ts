@@ -1,9 +1,18 @@
 import { network } from "hardhat";
 import hre from "hardhat";
-import { formatEther, parseGwei } from "viem";
+import { formatEther, parseGwei, getContract } from "viem";
+
+// Already-deployed contract address on Sepolia
+const DEPLOYED_CONTRACT_ADDRESS =
+  "0xDE4DedE583bFd5D0691BFDB57FFcf3DF69a3aC79" as const;
 
 async function main() {
-  console.log("Estimating deployment cost for FileActivityLogger...\n");
+  console.log("FileActivityLogger — Cost Analysis");
+  console.log(`Network: Sepolia`);
+  console.log(`Contract: ${DEPLOYED_CONTRACT_ADDRESS}`);
+  console.log(
+    `Etherscan: https://sepolia.etherscan.io/address/${DEPLOYED_CONTRACT_ADDRESS}\n`,
+  );
 
   const { viem } = await network.connect();
   const publicClient = await viem.getPublicClient();
@@ -14,109 +23,125 @@ async function main() {
   // Get current network gas price
   const currentGasPrice = await publicClient.getGasPrice();
   const currentGasPriceGwei = Number(formatEther(currentGasPrice)) * 1e9;
+  console.log(`Current gas price: ${currentGasPriceGwei.toFixed(4)} gwei\n`);
 
-  console.log(`Current gas price: ${currentGasPriceGwei.toFixed(2)} gwei\n`);
-
-  // Assumptions for estimation
-  const assumedGasPriceGwei = 10; // Conservative estimate for Sepolia
+  // Use current gas price for all estimates
+  const gasPrice = currentGasPrice;
   const ethPriceUsd = 2800;
-  const gasPrice = parseGwei(assumedGasPriceGwei.toString());
 
-  // Estimate deployment cost
+  function costSummary(gas: bigint) {
+    const costWei = gas * gasPrice;
+    const costEth = formatEther(costWei);
+    const costUsd = Number(costEth) * ethPriceUsd;
+    return { gas, costEth, costUsd };
+  }
+
+  // ── 1. Deployment cost (estimated, not re-deployed) ──────────────────────
+  console.log("=".repeat(50));
+  console.log("📊 DEPLOYMENT COST (estimated)");
+  console.log("=".repeat(50));
+
   const artifact = await hre.artifacts.readArtifact("FileActivityLogger");
   const deployGas = await publicClient.estimateGas({
     account: deployer.account,
     data: artifact.bytecode as `0x${string}`,
   });
+  const deploy = costSummary(deployGas);
+  console.log(`Gas Required : ${deploy.gas.toLocaleString()}`);
+  console.log(`Cost (ETH)   : ${deploy.costEth} ETH`);
+  console.log(`Cost (USD)   : $${deploy.costUsd.toFixed(2)}`);
 
-  const deployCostWei = deployGas * gasPrice;
-  const deployCostEth = formatEther(deployCostWei);
-  const deployCostUsd = Number(deployCostEth) * ethPriceUsd;
+  // ── Load deployed contract ────────────────────────────────────────────────
+  const contractArtifact =
+    await hre.artifacts.readArtifact("FileActivityLogger");
+  const contract = getContract({
+    address: DEPLOYED_CONTRACT_ADDRESS,
+    abi: contractArtifact.abi,
+    client: { public: publicClient, wallet: deployer },
+  });
 
-  console.log("=".repeat(50));
-  console.log("📊 DEPLOYMENT COST ESTIMATION");
-  console.log("=".repeat(50));
-  console.log(`Contract: FileActivityLogger`);
-  console.log(
-    `Assumptions: Gas Price = ${assumedGasPriceGwei} gwei, ETH = $${ethPriceUsd}`,
-  );
-  console.log(`Gas Required: ${deployGas.toLocaleString()}`);
-  console.log(`Cost (ETH): ${deployCostEth} ETH`);
-  console.log(`Cost (USD): $${deployCostUsd.toFixed(2)}`);
-  console.log("=".repeat(50));
+  // Sample values for estimation
+  const fileId = "sample-file-001";
+  const senderEmail = "alice@example.com";
+  const recipientEmail = "bob@example.com";
+  const expiresAt = BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 3600); // 7 days
 
-  // Deploy contract for function estimation
-  console.log("\n📝 Deploying contract for function cost estimation...");
-  const fileActivityLogger = await viem.deployContract("FileActivityLogger");
-  const contractAddress = fileActivityLogger.address;
-  console.log(`✅ Contract deployed at: ${contractAddress}\n`);
-
-  // Test addresses
-  const sender = deployer.account.address;
-  const recipient1 = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
-  const recipient2 = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
-  const fileId = "test-file-001";
-
-  // Estimate logFileShare
-  try {
-    console.log("=".repeat(50));
-    console.log("📤 FUNCTION: logFileShare");
-    console.log("=".repeat(50));
-
-    const shareGas = await publicClient.estimateContractGas({
-      address: contractAddress,
-      abi: fileActivityLogger.abi,
-      functionName: "logFileShare",
-      args: [fileId, sender, [recipient1, recipient2]],
-      account: deployer.account,
-    });
-
-    const shareCostWei = shareGas * gasPrice;
-    const shareCostEth = formatEther(shareCostWei);
-    const shareCostUsd = Number(shareCostEth) * ethPriceUsd;
-
-    console.log(`Gas Required: ${shareGas.toLocaleString()}`);
-    console.log(`Cost (ETH): ${shareCostEth} ETH`);
-    console.log(`Cost (USD): $${shareCostUsd.toFixed(4)}`);
-    console.log("=".repeat(50));
-  } catch (e: any) {
-    console.error("❌ Error estimating logFileShare:", e.message);
-  }
-
-  // Estimate logFileDownload
-  try {
-    console.log("\n" + "=".repeat(50));
-    console.log("📥 FUNCTION: logFileDownload");
-    console.log("=".repeat(50));
-
-    const downloadGas = await publicClient.estimateContractGas({
-      address: contractAddress,
-      abi: fileActivityLogger.abi,
-      functionName: "logFileDownload",
-      args: [fileId, recipient1],
-      account: deployer.account,
-    });
-
-    const downloadCostWei = downloadGas * gasPrice;
-    const downloadCostEth = formatEther(downloadCostWei);
-    const downloadCostUsd = Number(downloadCostEth) * ethPriceUsd;
-
-    console.log(`Gas Required: ${downloadGas.toLocaleString()}`);
-    console.log(`Cost (ETH): ${downloadCostEth} ETH`);
-    console.log(`Cost (USD): $${downloadCostUsd.toFixed(4)}`);
-    console.log("=".repeat(50));
-  } catch (e: any) {
-    console.error("❌ Error estimating logFileDownload:", e.message);
-  }
-
-  // Summary
+  // ── 2. logFileShare ───────────────────────────────────────────────────────
   console.log("\n" + "=".repeat(50));
-  console.log("💡 SUMMARY");
+  console.log("📤 FUNCTION: logFileShare");
   console.log("=".repeat(50));
-  console.log("✅ All cost estimations completed");
-  console.log(`📍 Contract deployed at: ${contractAddress}`);
-  console.log(`🔗 View on Sepolia Etherscan:`);
-  console.log(`   https://sepolia.etherscan.io/address/${contractAddress}`);
+  try {
+    const shareGas = await publicClient.estimateContractGas({
+      address: DEPLOYED_CONTRACT_ADDRESS,
+      abi: contractArtifact.abi,
+      functionName: "logFileShare",
+      args: [fileId, senderEmail, recipientEmail, expiresAt],
+      account: deployer.account,
+    });
+    const share = costSummary(shareGas);
+    console.log(`Gas Required : ${share.gas.toLocaleString()}`);
+    console.log(`Cost (ETH)   : ${share.costEth} ETH`);
+    console.log(`Cost (USD)   : $${share.costUsd.toFixed(6)}`);
+  } catch (e: any) {
+    console.error("❌ Error:", e.shortMessage ?? e.message);
+  }
+
+  // ── 3. logFileDownload ────────────────────────────────────────────────────
+  console.log("\n" + "=".repeat(50));
+  console.log("📥 FUNCTION: logFileDownload");
+  console.log("=".repeat(50));
+  try {
+    const downloadGas = await publicClient.estimateContractGas({
+      address: DEPLOYED_CONTRACT_ADDRESS,
+      abi: contractArtifact.abi,
+      functionName: "logFileDownload",
+      args: [fileId, recipientEmail],
+      account: deployer.account,
+    });
+    const dl = costSummary(downloadGas);
+    console.log(`Gas Required : ${dl.gas.toLocaleString()}`);
+    console.log(`Cost (ETH)   : ${dl.costEth} ETH`);
+    console.log(`Cost (USD)   : $${dl.costUsd.toFixed(6)}`);
+  } catch (e: any) {
+    console.error("❌ Error:", e.shortMessage ?? e.message);
+  }
+
+  // ── 4. logFileView ────────────────────────────────────────────────────────
+  console.log("\n" + "=".repeat(50));
+  console.log("👁  FUNCTION: logFileView");
+  console.log("=".repeat(50));
+  try {
+    const viewGas = await publicClient.estimateContractGas({
+      address: DEPLOYED_CONTRACT_ADDRESS,
+      abi: contractArtifact.abi,
+      functionName: "logFileView",
+      args: [fileId, senderEmail],
+      account: deployer.account,
+    });
+    const view = costSummary(viewGas);
+    console.log(`Gas Required : ${view.gas.toLocaleString()}`);
+    console.log(`Cost (ETH)   : ${view.costEth} ETH`);
+    console.log(`Cost (USD)   : $${view.costUsd.toFixed(6)}`);
+  } catch (e: any) {
+    console.error("❌ Error:", e.shortMessage ?? e.message);
+  }
+
+  // ── 5. On-chain stats (read, no gas) ─────────────────────────────────────
+  console.log("\n" + "=".repeat(50));
+  console.log("📈 CONTRACT STATS (on-chain, no gas cost)");
+  console.log("=".repeat(50));
+  try {
+    const [totalShares, totalDownloads, totalViews] =
+      (await contract.read.getContractStats()) as [bigint, bigint, bigint];
+    console.log(`Total shares    : ${totalShares.toLocaleString()}`);
+    console.log(`Total downloads : ${totalDownloads.toLocaleString()}`);
+    console.log(`Total views     : ${totalViews.toLocaleString()}`);
+  } catch (e: any) {
+    console.error("❌ Error:", e.shortMessage ?? e.message);
+  }
+
+  console.log("\n" + "=".repeat(50));
+  console.log("Note: costs use current Sepolia gas price.");
   console.log("=".repeat(50));
 }
 
